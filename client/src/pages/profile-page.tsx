@@ -18,9 +18,9 @@ import { Loader2, Save, UserCog } from "lucide-react";
 
 const profileSchema = z.object({
   name: z.string().min(2, "Il nome deve essere di almeno 2 caratteri"),
-  phone: z.string().optional(),
-  imageUrl: z.string().optional(),
-  preferredBarberId: z.number().optional(),
+  phone: z.string().nullable().optional().or(z.literal("")),
+  imageUrl: z.string().nullable().optional().or(z.literal("")),
+  preferredBarberId: z.number().nullable(),
 });
 
 type ProfileFormValues = z.infer<typeof profileSchema>;
@@ -36,7 +36,7 @@ export default function ProfilePage() {
       name: user?.name || "",
       phone: user?.phone || "",
       imageUrl: user?.imageUrl || "",
-      preferredBarberId: user?.preferredBarberId || undefined,
+      preferredBarberId: user?.preferredBarberId || null,
     }
   });
 
@@ -46,7 +46,7 @@ export default function ProfilePage() {
         name: user.name || "",
         phone: user.phone || "",
         imageUrl: user.imageUrl || "",
-        preferredBarberId: user.preferredBarberId || undefined,
+        preferredBarberId: user.preferredBarberId || null,
       });
     }
   }, [user, form]);
@@ -156,8 +156,8 @@ export default function ProfilePage() {
                           <FormLabel>Barbiere Preferito</FormLabel>
                           <Select
                             disabled={isLoadingBarbers}
-                            value={field.value?.toString() || ""}
-                            onValueChange={(value) => field.onChange(value ? parseInt(value) : undefined)}
+                            value={field.value ? field.value.toString() : ""} 
+                            onValueChange={(value) => field.onChange(value ? parseInt(value) : null)}
                           >
                             <FormControl>
                               <SelectTrigger>
