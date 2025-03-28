@@ -26,29 +26,43 @@
   
   /* Stili per schede e pannelli */
   .panel {
-    @apply bg-white rounded-lg shadow-sm p-6 border border-gray-100;
+    @apply bg-white rounded-lg shadow-md p-6 border border-gray-100;
   }
   
   /* Miglioramenti navigazione */
   .nav-item.active {
-    @apply font-bold border-b-2 border-primary text-primary;
+    @apply font-bold border-b-2 border-primary text-primary bg-primary/5 transition-all duration-150;
+  }
+  
+  /* Effetti hover e focus */
+  .btn-hover {
+    @apply transition-all duration-200 hover:shadow-md;
+  }
+  
+  /* Gradienti e ombre speciali */
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/80;
+  }
+  
+  .shadow-elegant {
+    @apply shadow-[0_8px_30px_rgb(0,0,0,0.06)];
   }
   
   /* Colori per stati appuntamenti */
   .status-confirmed {
-    @apply text-green-700 bg-green-50 border-green-200;
+    @apply text-green-700 bg-green-50 border-green-200 font-medium;
   }
   
   .status-pending {
-    @apply text-amber-700 bg-amber-50 border-amber-200;
+    @apply text-amber-700 bg-amber-50 border-amber-200 font-medium;
   }
   
   .status-cancelled {
-    @apply text-red-700 bg-red-50 border-red-200;
+    @apply text-red-700 bg-red-50 border-red-200 font-medium;
   }
   
   .status-completed {
-    @apply text-blue-700 bg-blue-50 border-blue-200;
+    @apply text-blue-700 bg-blue-50 border-blue-200 font-medium;
   }
   
   /* Stili specifici per ruoli */
@@ -62,5 +76,15 @@
   
   .client-theme {
     @apply bg-slate-50;
+  }
+  
+  /* Stili per card con effetti eleganti */
+  .card-elegant {
+    @apply bg-white rounded-md border border-gray-100 shadow-elegant transition-transform duration-300 hover:translate-y-[-3px];
+  }
+  
+  /* Stili per bottoni sofisticati */
+  .btn-elegant {
+    @apply bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white font-medium rounded-md transition-all duration-300 shadow-md hover:shadow-lg;
   }
 }

@@ -682,7 +682,9 @@ export class DatabaseStorage implements IStorage {
         eq(messages.receiverId, userId)
       )
     )
-    .groupBy(sql`CASE WHEN ${messages.senderId} = ${userId} THEN ${messages.receiverId} ELSE ${messages.senderId} END`);
+    .groupBy(
+      sql`CASE WHEN ${messages.senderId} = ${userId} THEN ${messages.receiverId} ELSE ${messages.senderId} END`
+    );
     
     const result = [];
     const unreadCounts = await this.getUnreadMessageCount(userId);

@@ -19,63 +19,63 @@ export default function NavigationTabs() {
   };
 
   return (
-    <nav className="bg-white border-b border-neutral-light overflow-x-auto">
-      <div className="flex">
-        <Link href="/">
-          <a className={`nav-item flex-1 py-4 px-4 font-medium text-center focus:outline-none ${
-            isActive("/") ? "active text-primary border-b-3 border-accent" : "text-neutral-dark"
-          }`}>
-            <div className="flex flex-col items-center">
+    <nav className="bg-white border-b border-neutral-200 shadow-sm overflow-x-auto">
+      <div className="flex justify-around">
+        <div className={`nav-item py-4 px-6 font-medium text-center ${
+          isActive("/") ? "active" : "text-neutral-700 hover:text-primary transition-colors"
+        }`}>
+          <Link href="/">
+            <div className="flex flex-col items-center cursor-pointer">
               <Calendar className="h-5 w-5 mb-1" />
               <span>Appuntamenti</span>
             </div>
-          </a>
-        </Link>
+          </Link>
+        </div>
         
-        <Link href="/clients">
-          <a className={`nav-item flex-1 py-4 px-4 font-medium text-center focus:outline-none ${
-            isActive("/clients") ? "active text-primary border-b-3 border-accent" : "text-neutral-dark"
-          }`}>
-            <div className="flex flex-col items-center">
+        <div className={`nav-item py-4 px-6 font-medium text-center ${
+          isActive("/clients") ? "active" : "text-neutral-700 hover:text-primary transition-colors"
+        }`}>
+          <Link href="/clients">
+            <div className="flex flex-col items-center cursor-pointer">
               <Users className="h-5 w-5 mb-1" />
               <span>Clienti</span>
             </div>
-          </a>
-        </Link>
+          </Link>
+        </div>
         
-        <Link href="/chat">
-          <a className={`nav-item flex-1 py-4 px-4 font-medium text-center focus:outline-none ${
-            isActive("/chat") ? "active text-primary border-b-3 border-accent" : "text-neutral-dark"
-          }`}>
-            <div className="flex flex-col items-center">
+        <div className={`nav-item py-4 px-6 font-medium text-center ${
+          isActive("/chat") ? "active" : "text-neutral-700 hover:text-primary transition-colors"
+        }`}>
+          <Link href="/chat">
+            <div className="flex flex-col items-center cursor-pointer">
               <MessageSquare className="h-5 w-5 mb-1" />
               <span>Chat</span>
             </div>
-          </a>
-        </Link>
+          </Link>
+        </div>
         
-        <Link href="/services">
-          <a className={`nav-item flex-1 py-4 px-4 font-medium text-center focus:outline-none ${
-            isActive("/services") ? "active text-primary border-b-3 border-accent" : "text-neutral-dark"
-          }`}>
-            <div className="flex flex-col items-center">
+        <div className={`nav-item py-4 px-6 font-medium text-center ${
+          isActive("/services") ? "active" : "text-neutral-700 hover:text-primary transition-colors"
+        }`}>
+          <Link href="/services">
+            <div className="flex flex-col items-center cursor-pointer">
               <Sparkles className="h-5 w-5 mb-1" />
               <span>Servizi</span>
             </div>
-          </a>
-        </Link>
+          </Link>
+        </div>
         
         {user?.isBarber && (
-          <Link href="/statistics">
-            <a className={`nav-item flex-1 py-4 px-4 font-medium text-center focus:outline-none ${
-              isActive("/statistics") ? "active text-primary border-b-3 border-accent" : "text-neutral-dark"
-            }`}>
-              <div className="flex flex-col items-center">
+          <div className={`nav-item py-4 px-6 font-medium text-center ${
+            isActive("/statistics") ? "active" : "text-neutral-700 hover:text-primary transition-colors"
+          }`}>
+            <Link href="/statistics">
+              <div className="flex flex-col items-center cursor-pointer">
                 <BarChart className="h-5 w-5 mb-1" />
                 <span>Statistiche</span>
               </div>
-            </a>
-          </Link>
+            </Link>
+          </div>
         )}
       </div>
     </nav>
