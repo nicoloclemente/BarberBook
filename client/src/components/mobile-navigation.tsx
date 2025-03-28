@@ -6,7 +6,8 @@ import {
   MessageSquare,
   Sparkles,
   UserCog,
-  BarChart
+  BarChart,
+  ShieldCheck
 } from "lucide-react";
 
 export default function MobileNavigation() {
@@ -80,6 +81,19 @@ export default function MobileNavigation() {
               <div className="flex flex-col items-center cursor-pointer">
                 <BarChart className="h-5 w-5" />
                 <span className="text-xs mt-1">Stats</span>
+              </div>
+            </Link>
+          </div>
+        )}
+        
+        {isAdmin && (
+          <div className={`py-3 px-2 font-medium focus:outline-none ${
+            isActive("/admin") ? "text-primary" : "text-neutral-700"
+          }`}>
+            <Link href="/admin">
+              <div className="flex flex-col items-center cursor-pointer">
+                <ShieldCheck className="h-5 w-5" />
+                <span className="text-xs mt-1">Admin</span>
               </div>
             </Link>
           </div>

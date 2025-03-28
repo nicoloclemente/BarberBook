@@ -1,0 +1,275 @@
+import { useState, useEffect } from "react";
+import { useAuth } from "@/hooks/use-auth";
+import { useLocation } from "wouter";
+import MainLayout from "@/components/main-layout";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/hooks/use-toast";
+import { Loader2, UserCheck, UserX, RefreshCw, Info } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+
+interface Barber {
+  id: number;
+  name: string;
+  username: string;
+  isApproved: boolean;
+  role: string;
+  imageUrl: string | null;
+  phone: string | null;
+  email: string | null;
+  bio: string | null;
+  createdAt: Date;
+}
+
+// Componente principale della dashboard amministrativa
+export default function AdminDashboard() {
+  const { user } = useAuth();
+  const [, navigate] = useLocation();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  
+  // Verifica che l'utente sia un amministratore
+  useEffect(() => {
+    if (user && user.role !== "admin") {
+      toast({
+        title: "Accesso non autorizzato",
+        description: "Solo gli amministratori possono accedere a questa pagina",
+        variant: "destructive"
+      });
+      navigate("/");
+    }
+  }, [user, navigate, toast]);
+
+  // Query per ottenere tutti i barbieri
+  const { data: barbers, isLoading } = useQuery({
+    queryKey: ["/api/admin/barbers"],
+    queryFn: async () => {
+      const res = await fetch("/api/admin/barbers");
+      if (!res.ok) {
+        throw new Error("Impossibile caricare l'elenco dei barbieri");
+      }
+      return res.json() as Promise<Barber[]>;
+    },
+    enabled: !!user && user.role === "admin"
+  });
+
+  // Mutation per approvare un barbiere
+  const approveMutation = useMutation({
+    mutationFn: async (barberId: number) => {
+      const res = await apiRequest("PUT", `/api/admin/approve-barber/${barberId}`);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/barbers"] });
+      toast({
+        title: "Barbiere approvato",
+        description: "Il barbiere è stato approvato con successo"
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Errore",
+        description: `Impossibile approvare il barbiere: ${error.message}`,
+        variant: "destructive"
+      });
+    }
+  });
+
+  if (!user || user.role !== "admin") {
+    return null;
+  }
+
+  return (
+    <MainLayout>
+      <div className="container mx-auto py-8">
+        <h1 className="text-3xl font-bold mb-6 bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+          Dashboard Amministrativa
+        </h1>
+        
+        <Tabs defaultValue="barbers" className="w-full">
+          <TabsList className="mb-4">
+            <TabsTrigger value="barbers">Gestione Barbieri</TabsTrigger>
+            <TabsTrigger value="statistics">Statistiche Globali</TabsTrigger>
+            <TabsTrigger value="system">Sistema</TabsTrigger>
+          </TabsList>
+
+          {/* Pannello Gestione Barbieri */}
+          <TabsContent value="barbers">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex justify-between items-center">
+                  <span>Gestione Barbieri</span>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => queryClient.invalidateQueries({ queryKey: ["/api/admin/barbers"] })}
+                  >
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Aggiorna
+                  </Button>
+                </CardTitle>
+                <CardDescription>
+                  Approva i nuovi barbieri e gestisci gli account esistenti
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {isLoading ? (
+                  <div className="flex justify-center py-8">
+                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                  </div>
+                ) : !barbers || barbers.length === 0 ? (
+                  <div className="text-center text-muted-foreground py-8">
+                    <Info className="h-12 w-12 mx-auto mb-2 text-muted-foreground/60" />
+                    <p>Nessun barbiere trovato nel sistema</p>
+                  </div>
+                ) : (
+                  <div className="divide-y">
+                    {barbers.map((barber) => (
+                      <div key={barber.id} className="py-4 flex items-center justify-between">
+                        <div className="flex items-center">
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-400 to-indigo-500 flex items-center justify-center text-white font-bold">
+                            {barber.imageUrl ? (
+                              <img 
+                                src={barber.imageUrl} 
+                                alt={barber.name} 
+                                className="w-10 h-10 rounded-full object-cover"
+                              />
+                            ) : (
+                              barber.name.charAt(0)
+                            )}
+                          </div>
+                          <div className="ml-4">
+                            <p className="font-medium">{barber.name}</p>
+                            <p className="text-sm text-muted-foreground">{barber.username}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {barber.isApproved ? (
+                            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                              Approvato
+                            </Badge>
+                          ) : (
+                            <>
+                              <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
+                                In attesa
+                              </Badge>
+                              <Button 
+                                size="sm" 
+                                onClick={() => approveMutation.mutate(barber.id)} 
+                                disabled={approveMutation.isPending}
+                              >
+                                {approveMutation.isPending ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <>
+                                    <UserCheck className="h-4 w-4 mr-2" />
+                                    Approva
+                                  </>
+                                )}
+                              </Button>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Pannello Statistiche Globali */}
+          <TabsContent value="statistics">
+            <Card>
+              <CardHeader>
+                <CardTitle>Statistiche Globali</CardTitle>
+                <CardDescription>
+                  Panoramica delle statistiche di tutti i barbieri e del sistema
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium text-muted-foreground">
+                        Appuntamenti Totali
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">
+                        {isLoading ? <Loader2 className="h-5 w-5 animate-spin inline" /> : "0"}
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium text-muted-foreground">
+                        Barbieri Attivi
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">
+                        {isLoading ? (
+                          <Loader2 className="h-5 w-5 animate-spin inline" />
+                        ) : (
+                          barbers?.filter(b => b.isApproved).length || 0
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium text-muted-foreground">
+                        Clienti Registrati
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">
+                        {isLoading ? <Loader2 className="h-5 w-5 animate-spin inline" /> : "0"}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Pannello Sistema */}
+          <TabsContent value="system">
+            <Card>
+              <CardHeader>
+                <CardTitle>Informazioni di Sistema</CardTitle>
+                <CardDescription>
+                  Monitora lo stato del sistema e le risorse
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex justify-between px-4 py-3 bg-muted/50 rounded-lg">
+                    <span className="font-medium">Versione sistema</span>
+                    <span>1.0.0</span>
+                  </div>
+                  <div className="flex justify-between px-4 py-3 bg-muted/50 rounded-lg">
+                    <span className="font-medium">Ultimo aggiornamento</span>
+                    <span>{new Date().toLocaleDateString()}</span>
+                  </div>
+                  <div className="flex justify-between px-4 py-3 bg-muted/50 rounded-lg">
+                    <span className="font-medium">Stato database</span>
+                    <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                      Operativo
+                    </Badge>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </div>
+    </MainLayout>
+  );
+}

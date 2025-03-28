@@ -6,7 +6,8 @@ import {
   MessageSquare,
   Sparkles,
   BarChart,
-  UserCog
+  UserCog,
+  ShieldCheck
 } from "lucide-react";
 
 export default function NavigationTabs() {
@@ -85,6 +86,20 @@ export default function NavigationTabs() {
               <div className="flex flex-col items-center cursor-pointer">
                 <BarChart className="h-5 w-5 mb-1" />
                 <span>Statistiche</span>
+              </div>
+            </Link>
+          </div>
+        )}
+        
+        {/* Solo gli admin vedono la dashboard amministrativa */}
+        {isAdmin && (
+          <div className={`nav-item py-4 px-6 font-medium text-center ${
+            isActive("/admin") ? "active" : "text-neutral-700 hover:text-primary transition-colors"
+          }`}>
+            <Link href="/admin">
+              <div className="flex flex-col items-center cursor-pointer">
+                <ShieldCheck className="h-5 w-5 mb-1" />
+                <span>Admin</span>
               </div>
             </Link>
           </div>
