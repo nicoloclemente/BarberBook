@@ -23,15 +23,20 @@ export const users = pgTable("users", {
   imageUrl: text("image_url"),
   isActive: boolean("is_active").default(true).notNull(),
   isApproved: boolean("is_approved").default(false), // Solo per i barbieri, approvati dall'admin
+  preferredBarberId: integer("preferred_barber_id"), // Barbiere preferito per i clienti
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-export const userRelations = relations(users, ({ many }) => ({
+export const userRelations = relations(users, ({ many, one }) => ({
   appointments: many(appointments),
   appointmentsAsBarber: many(appointments, { relationName: "barber" }),
   appointmentsAsClient: many(appointments, { relationName: "client" }),
   messagesSent: many(messages, { relationName: "sender" }),
   messagesReceived: many(messages, { relationName: "receiver" }),
+  preferredBarber: one(users, {
+    fields: [users.preferredBarberId],
+    references: [users.id],
+  })
 }));
 
 export const insertUserSchema = createInsertSchema(users)
@@ -45,6 +50,7 @@ export const insertUserSchema = createInsertSchema(users)
     imageUrl: true,
     isActive: true,
     isApproved: true,
+    preferredBarberId: true,
   });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;

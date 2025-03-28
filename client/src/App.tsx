@@ -9,6 +9,7 @@ import ClientsPage from "@/pages/clients-page";
 import ServicesPage from "@/pages/services-page";
 import ChatPage from "@/pages/chat-page";
 import StatisticsPage from "@/pages/statistics-page";
+import ProfilePage from "@/pages/profile-page";
 import { AuthProvider } from "@/hooks/use-auth";
 import { ProtectedRoute } from "@/lib/protected-route";
 
@@ -22,6 +23,7 @@ function Router() {
       <ProtectedRoute path="/chat" component={ChatPage} />
       <ProtectedRoute path="/chat/:userId" component={ChatPage} />
       <ProtectedRoute path="/statistics" component={StatisticsPage} />
+      <ProtectedRoute path="/profile" component={ProfilePage} />
       <Route component={NotFound} />
     </Switch>
   );

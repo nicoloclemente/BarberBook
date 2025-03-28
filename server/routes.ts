@@ -8,7 +8,9 @@ import {
   insertAppointmentSchema, 
   insertMessageSchema, 
   insertReviewSchema, 
-  insertStatisticsSchema 
+  insertStatisticsSchema,
+  insertUserSchema,
+  UserRole
 } from "@shared/schema";
 import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
@@ -441,6 +443,78 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(reviews);
   });
   
+  // User Routes
+  app.get("/api/user/:id", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      return res.status(400).json({ error: "Invalid user ID" });
+    }
+
+    // Solo l'utente stesso o un barbiere/admin può vedere le informazioni di un utente specifico
+    const currentUser = req.user!;
+    if (currentUser.id !== id && !currentUser.isBarber && currentUser.role !== UserRole.ADMIN) {
+      return res.status(403).json({ error: "Not authorized to access this user" });
+    }
+
+    const user = await storage.getUser(id);
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    res.json(user);
+  });
+
+  app.patch("/api/users/:id", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      return res.status(400).json({ error: "Invalid user ID" });
+    }
+
+    // Solo l'utente stesso o un admin può modificare le informazioni di un utente
+    const currentUser = req.user!;
+    if (currentUser.id !== id && currentUser.role !== UserRole.ADMIN) {
+      return res.status(403).json({ error: "Not authorized to update this user" });
+    }
+
+    try {
+      // Utilizziamo uno schema parziale per consentire aggiornamenti selettivi
+      const userData = insertUserSchema.partial().parse(req.body);
+      
+      // Impediamo la modifica di campi sensibili se non sei un admin
+      if (currentUser.role !== UserRole.ADMIN) {
+        delete userData.role;
+        delete userData.isApproved;
+        delete userData.isActive;
+      }
+      
+      // Non consentire di cambiare username o password tramite questa rotta
+      delete userData.username;
+      delete userData.password;
+      
+      const updatedUser = await storage.updateUser(id, userData);
+      if (!updatedUser) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      
+      res.json(updatedUser);
+    } catch (error) {
+      if (error instanceof ZodError) {
+        const validationError = fromZodError(error);
+        res.status(400).json({ error: validationError.message });
+      } else {
+        res.status(500).json({ error: "Failed to update user" });
+      }
+    }
+  });
+
   // Admin Routes
   app.get("/api/admin/barbers", async (req, res) => {
     if (!req.isAuthenticated()) {

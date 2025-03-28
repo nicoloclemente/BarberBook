@@ -5,7 +5,8 @@ import {
   Users,
   MessageSquare,
   Sparkles,
-  BarChart
+  BarChart,
+  UserCog
 } from "lucide-react";
 
 export default function NavigationTabs() {
@@ -18,9 +19,14 @@ export default function NavigationTabs() {
     return false;
   };
 
+  const isAdmin = user?.role === 'admin';
+  const isBarber = user?.isBarber || user?.role === 'barber';
+  const isClient = !isBarber && !isAdmin;
+
   return (
     <nav className="bg-white border-b border-neutral-200 shadow-sm overflow-x-auto">
       <div className="flex justify-around">
+        {/* Tutti gli utenti vedono gli appuntamenti, ma per scopi diversi */}
         <div className={`nav-item py-4 px-6 font-medium text-center ${
           isActive("/") ? "active" : "text-neutral-700 hover:text-primary transition-colors"
         }`}>
@@ -32,17 +38,21 @@ export default function NavigationTabs() {
           </Link>
         </div>
         
-        <div className={`nav-item py-4 px-6 font-medium text-center ${
-          isActive("/clients") ? "active" : "text-neutral-700 hover:text-primary transition-colors"
-        }`}>
-          <Link href="/clients">
-            <div className="flex flex-col items-center cursor-pointer">
-              <Users className="h-5 w-5 mb-1" />
-              <span>Clienti</span>
-            </div>
-          </Link>
-        </div>
+        {/* Solo barbieri e admin vedono la lista dei clienti */}
+        {(isBarber || isAdmin) && (
+          <div className={`nav-item py-4 px-6 font-medium text-center ${
+            isActive("/clients") ? "active" : "text-neutral-700 hover:text-primary transition-colors"
+          }`}>
+            <Link href="/clients">
+              <div className="flex flex-col items-center cursor-pointer">
+                <Users className="h-5 w-5 mb-1" />
+                <span>Clienti</span>
+              </div>
+            </Link>
+          </div>
+        )}
         
+        {/* Tutti gli utenti vedono la chat */}
         <div className={`nav-item py-4 px-6 font-medium text-center ${
           isActive("/chat") ? "active" : "text-neutral-700 hover:text-primary transition-colors"
         }`}>
@@ -54,6 +64,7 @@ export default function NavigationTabs() {
           </Link>
         </div>
         
+        {/* Tutti gli utenti vedono i servizi */}
         <div className={`nav-item py-4 px-6 font-medium text-center ${
           isActive("/services") ? "active" : "text-neutral-700 hover:text-primary transition-colors"
         }`}>
@@ -65,7 +76,8 @@ export default function NavigationTabs() {
           </Link>
         </div>
         
-        {user?.isBarber && (
+        {/* Solo i barbieri vedono le statistiche */}
+        {isBarber && (
           <div className={`nav-item py-4 px-6 font-medium text-center ${
             isActive("/statistics") ? "active" : "text-neutral-700 hover:text-primary transition-colors"
           }`}>
@@ -77,6 +89,18 @@ export default function NavigationTabs() {
             </Link>
           </div>
         )}
+        
+        {/* L'utente può accedere al suo profilo */}
+        <div className={`nav-item py-4 px-6 font-medium text-center ${
+          isActive("/profile") ? "active" : "text-neutral-700 hover:text-primary transition-colors"
+        }`}>
+          <Link href="/profile">
+            <div className="flex flex-col items-center cursor-pointer">
+              <UserCog className="h-5 w-5 mb-1" />
+              <span>Profilo</span>
+            </div>
+          </Link>
+        </div>
       </div>
     </nav>
   );

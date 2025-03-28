@@ -1,13 +1,21 @@
 import { Link, useLocation } from "wouter";
+import { useAuth } from "@/hooks/use-auth";
 import {
   Calendar,
   Users,
   MessageSquare,
-  Sparkles
+  Sparkles,
+  UserCog,
+  BarChart
 } from "lucide-react";
 
 export default function MobileNavigation() {
   const [location] = useLocation();
+  const { user } = useAuth();
+
+  const isAdmin = user?.role === 'admin';
+  const isBarber = user?.isBarber || user?.role === 'barber';
+  const isClient = !isBarber && !isAdmin;
 
   const isActive = (path: string) => {
     if (path === "/" && location === "/") return true;
@@ -16,51 +24,77 @@ export default function MobileNavigation() {
   };
 
   return (
-    <nav className="md:hidden bg-white border-t border-neutral-light">
+    <nav className="md:hidden bg-white border-t border-neutral-200 shadow-t">
       <div className="flex justify-around">
-        <Link href="/">
-          <a className={`py-3 px-4 font-medium focus:outline-none ${
-            isActive("/") ? "text-primary" : "text-neutral-dark"
-          }`}>
-            <div className="flex flex-col items-center">
-              <Calendar className="h-6 w-6" />
+        <div className={`py-3 px-2 font-medium focus:outline-none ${
+          isActive("/") ? "text-primary" : "text-neutral-700"
+        }`}>
+          <Link href="/">
+            <div className="flex flex-col items-center cursor-pointer">
+              <Calendar className="h-5 w-5" />
               <span className="text-xs mt-1">Agenda</span>
             </div>
-          </a>
-        </Link>
+          </Link>
+        </div>
         
-        <Link href="/clients">
-          <a className={`py-3 px-4 font-medium focus:outline-none ${
-            isActive("/clients") ? "text-primary" : "text-neutral-dark"
+        {(isBarber || isAdmin) && (
+          <div className={`py-3 px-2 font-medium focus:outline-none ${
+            isActive("/clients") ? "text-primary" : "text-neutral-700"
           }`}>
-            <div className="flex flex-col items-center">
-              <Users className="h-6 w-6" />
-              <span className="text-xs mt-1">Clienti</span>
-            </div>
-          </a>
-        </Link>
+            <Link href="/clients">
+              <div className="flex flex-col items-center cursor-pointer">
+                <Users className="h-5 w-5" />
+                <span className="text-xs mt-1">Clienti</span>
+              </div>
+            </Link>
+          </div>
+        )}
         
-        <Link href="/chat">
-          <a className={`py-3 px-4 font-medium focus:outline-none ${
-            isActive("/chat") ? "text-primary" : "text-neutral-dark"
-          }`}>
-            <div className="flex flex-col items-center">
-              <MessageSquare className="h-6 w-6" />
+        <div className={`py-3 px-2 font-medium focus:outline-none ${
+          isActive("/chat") ? "text-primary" : "text-neutral-700"
+        }`}>
+          <Link href="/chat">
+            <div className="flex flex-col items-center cursor-pointer">
+              <MessageSquare className="h-5 w-5" />
               <span className="text-xs mt-1">Chat</span>
             </div>
-          </a>
-        </Link>
+          </Link>
+        </div>
         
-        <Link href="/services">
-          <a className={`py-3 px-4 font-medium focus:outline-none ${
-            isActive("/services") ? "text-primary" : "text-neutral-dark"
-          }`}>
-            <div className="flex flex-col items-center">
-              <Sparkles className="h-6 w-6" />
+        <div className={`py-3 px-2 font-medium focus:outline-none ${
+          isActive("/services") ? "text-primary" : "text-neutral-700"
+        }`}>
+          <Link href="/services">
+            <div className="flex flex-col items-center cursor-pointer">
+              <Sparkles className="h-5 w-5" />
               <span className="text-xs mt-1">Servizi</span>
             </div>
-          </a>
-        </Link>
+          </Link>
+        </div>
+        
+        {isBarber && (
+          <div className={`py-3 px-2 font-medium focus:outline-none ${
+            isActive("/statistics") ? "text-primary" : "text-neutral-700"
+          }`}>
+            <Link href="/statistics">
+              <div className="flex flex-col items-center cursor-pointer">
+                <BarChart className="h-5 w-5" />
+                <span className="text-xs mt-1">Stats</span>
+              </div>
+            </Link>
+          </div>
+        )}
+        
+        <div className={`py-3 px-2 font-medium focus:outline-none ${
+          isActive("/profile") ? "text-primary" : "text-neutral-700"
+        }`}>
+          <Link href="/profile">
+            <div className="flex flex-col items-center cursor-pointer">
+              <UserCog className="h-5 w-5" />
+              <span className="text-xs mt-1">Profilo</span>
+            </div>
+          </Link>
+        </div>
       </div>
     </nav>
   );
