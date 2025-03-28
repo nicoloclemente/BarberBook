@@ -16,6 +16,7 @@ import connectPg from "connect-pg-simple";
 import session from "express-session";
 import { db, pool } from "./db";
 import { eq, and, or, between, desc, sql, asc, isNull, lt, gt } from "drizzle-orm";
+import { cache } from "./cache";
 
 export interface IStorage {
   // User related operations
@@ -427,13 +428,21 @@ export class DatabaseStorage implements IStorage {
 
   // User related methods
   async getUser(id: number): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.id, id));
-    return user;
+    // Utilizziamo la cache per l'utente, valida per 5 minuti
+    const cacheKey = `user:${id}`;
+    return cache.getOrSet(cacheKey, async () => {
+      const [user] = await db.select().from(users).where(eq(users.id, id));
+      return user;
+    }, 5 * 60 * 1000); // 5 minuti
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.username, username));
-    return user;
+    // Utilizziamo la cache per gli utenti cercati per username
+    const cacheKey = `user:username:${username}`;
+    return cache.getOrSet(cacheKey, async () => {
+      const [user] = await db.select().from(users).where(eq(users.username, username));
+      return user;
+    }, 5 * 60 * 1000); // 5 minuti
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
@@ -447,40 +456,54 @@ export class DatabaseStorage implements IStorage {
     }
     
     const [user] = await db.insert(users).values(userToInsert).returning();
+    
+    // Invalidiamo la cache relativa ai barbieri o clienti
+    cache.delete('users:barbers');
+    cache.delete('users:clients');
+    
     return user;
   }
 
   async getAllBarbers(): Promise<User[]> {
-    return db.select().from(users).where(
-      and(
-        eq(users.isActive, true),
-        or(
-          eq(users.isBarber, true),
-          eq(users.role, UserRole.BARBER)
+    // Memorizziamo la lista dei barbieri in cache per 10 minuti
+    return cache.getOrSet('users:barbers', async () => {
+      return db.select().from(users).where(
+        and(
+          eq(users.isActive, true),
+          or(
+            eq(users.isBarber, true),
+            eq(users.role, UserRole.BARBER)
+          )
         )
-      )
-    );
+      );
+    }, 10 * 60 * 1000); // 10 minuti
   }
 
   async getAllClients(): Promise<User[]> {
-    return db.select().from(users).where(
-      and(
-        eq(users.isActive, true),
-        or(
-          eq(users.isBarber, false),
-          eq(users.role, UserRole.CLIENT)
+    // Memorizziamo la lista dei clienti in cache per 10 minuti
+    return cache.getOrSet('users:clients', async () => {
+      return db.select().from(users).where(
+        and(
+          eq(users.isActive, true),
+          or(
+            eq(users.isBarber, false),
+            eq(users.role, UserRole.CLIENT)
+          )
         )
-      )
-    );
+      );
+    }, 10 * 60 * 1000); // 10 minuti
   }
   
   async getUsersByRole(role: string): Promise<User[]> {
-    return db.select().from(users).where(
-      and(
-        eq(users.isActive, true),
-        eq(users.role, role)
-      )
-    );
+    // Memorizziamo la lista degli utenti per ruolo in cache per 10 minuti
+    return cache.getOrSet(`users:role:${role}`, async () => {
+      return db.select().from(users).where(
+        and(
+          eq(users.isActive, true),
+          eq(users.role, role)
+        )
+      );
+    }, 10 * 60 * 1000); // 10 minuti
   }
   
   async updateUser(id: number, userData: Partial<InsertUser>): Promise<User | undefined> {
@@ -489,6 +512,16 @@ export class DatabaseStorage implements IStorage {
       .set(userData)
       .where(eq(users.id, id))
       .returning();
+    
+    if (user) {
+      // Invalidiamo le cache relative all'utente
+      cache.delete(`user:${id}`);
+      cache.delete(`user:username:${user.username}`);
+      cache.delete('users:barbers');
+      cache.delete('users:clients');
+      cache.delete(`users:role:${user.role}`);
+    }
+    
     return user;
   }
   
@@ -498,21 +531,41 @@ export class DatabaseStorage implements IStorage {
       .set({ isApproved: true })
       .where(eq(users.id, id))
       .returning();
+    
+    if (user) {
+      // Invalidiamo le cache relative all'utente
+      cache.delete(`user:${id}`);
+      cache.delete(`user:username:${user.username}`);
+      cache.delete('users:barbers');
+      cache.delete(`users:role:${UserRole.BARBER}`);
+    }
+    
     return user;
   }
 
   // Service related methods
   async getService(id: number): Promise<Service | undefined> {
-    const [service] = await db.select().from(services).where(eq(services.id, id));
-    return service;
+    // Utilizziamo la cache per il servizio, valida per 30 minuti
+    const cacheKey = `service:${id}`;
+    return cache.getOrSet(cacheKey, async () => {
+      const [service] = await db.select().from(services).where(eq(services.id, id));
+      return service;
+    }, 30 * 60 * 1000); // 30 minuti
   }
 
   async getAllServices(): Promise<Service[]> {
-    return db.select().from(services);
+    // Memorizziamo la lista dei servizi in cache per 30 minuti
+    return cache.getOrSet('services:all', async () => {
+      return db.select().from(services);
+    }, 30 * 60 * 1000); // 30 minuti
   }
 
   async createService(service: InsertService): Promise<Service> {
     const [createdService] = await db.insert(services).values(service).returning();
+    
+    // Invalidiamo la cache dei servizi
+    cache.delete('services:all');
+    
     return createdService;
   }
 
@@ -522,11 +575,25 @@ export class DatabaseStorage implements IStorage {
       .set(serviceUpdate)
       .where(eq(services.id, id))
       .returning();
+    
+    // Invalidiamo le cache
+    if (service) {
+      cache.delete(`service:${id}`);
+      cache.delete('services:all');
+    }
+    
     return service;
   }
 
   async deleteService(id: number): Promise<boolean> {
     const result = await db.delete(services).where(eq(services.id, id));
+    
+    // Invalidiamo le cache
+    if (result.count > 0) {
+      cache.delete(`service:${id}`);
+      cache.delete('services:all');
+    }
+    
     return result.count > 0;
   }
 
@@ -584,36 +651,81 @@ export class DatabaseStorage implements IStorage {
     const endOfDay = new Date(date);
     endOfDay.setHours(23, 59, 59, 999);
     
-    return db.query.appointments.findMany({
-      where: and(
-        eq(appointments.barberId, barberId),
-        between(appointments.date, startOfDay, endOfDay)
-      ),
-      with: {
-        client: true,
-        barber: true,
-        service: true,
-      },
-      orderBy: [asc(appointments.date)],
-    });
+    // Memorizziamo gli appuntamenti giornalieri in cache per 5 minuti
+    // perché vengono consultati frequentemente nella vista calendario
+    const dateString = startOfDay.toISOString().split('T')[0];
+    const cacheKey = `appointments:date:${barberId}:${dateString}`;
+    
+    return cache.getOrSet(cacheKey, async () => {
+      return db.query.appointments.findMany({
+        where: and(
+          eq(appointments.barberId, barberId),
+          between(appointments.date, startOfDay, endOfDay)
+        ),
+        with: {
+          client: true,
+          barber: true,
+          service: true,
+        },
+        orderBy: [asc(appointments.date)],
+      });
+    }, 5 * 60 * 1000); // 5 minuti
   }
 
   async createAppointment(appointment: InsertAppointment): Promise<Appointment> {
     const [createdAppointment] = await db.insert(appointments).values(appointment).returning();
+    
+    // Invalidiamo la cache degli appuntamenti giornalieri
+    const date = new Date(appointment.date);
+    const dateString = date.toISOString().split('T')[0];
+    cache.delete(`appointments:date:${appointment.barberId}:${dateString}`);
+    
     return createdAppointment;
   }
 
   async updateAppointment(id: number, appointmentUpdate: Partial<InsertAppointment>): Promise<Appointment | undefined> {
+    // Prima otteniamo l'appuntamento corrente per conoscere la data e il barbiere da invalidare
+    const [existingAppointment] = await db.select().from(appointments).where(eq(appointments.id, id));
+    
     const [appointment] = await db
       .update(appointments)
       .set(appointmentUpdate)
       .where(eq(appointments.id, id))
       .returning();
+    
+    if (appointment) {
+      // Invalidiamo la cache dell'appuntamento precedente
+      if (existingAppointment) {
+        const oldDate = new Date(existingAppointment.date);
+        const oldDateString = oldDate.toISOString().split('T')[0];
+        cache.delete(`appointments:date:${existingAppointment.barberId}:${oldDateString}`);
+      }
+      
+      // Invalidiamo la cache della nuova data se è cambiata
+      if (appointmentUpdate.date || appointmentUpdate.barberId) {
+        const newDate = appointmentUpdate.date ? new Date(appointmentUpdate.date) : new Date(existingAppointment.date);
+        const newDateString = newDate.toISOString().split('T')[0];
+        const barberId = appointmentUpdate.barberId || existingAppointment.barberId;
+        cache.delete(`appointments:date:${barberId}:${newDateString}`);
+      }
+    }
+    
     return appointment;
   }
 
   async deleteAppointment(id: number): Promise<boolean> {
+    // Prima otteniamo l'appuntamento per conoscere la data e il barbiere da invalidare
+    const [appointment] = await db.select().from(appointments).where(eq(appointments.id, id));
+    
     const result = await db.delete(appointments).where(eq(appointments.id, id));
+    
+    if (result.count > 0 && appointment) {
+      // Invalidiamo la cache degli appuntamenti giornalieri
+      const date = new Date(appointment.date);
+      const dateString = date.toISOString().split('T')[0];
+      cache.delete(`appointments:date:${appointment.barberId}:${dateString}`);
+    }
+    
     return result.count > 0;
   }
 
@@ -668,12 +780,13 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getRecentChats(userId: number): Promise<{userId: number, user: User, lastMessage: Message, unreadCount: number}[]> {
-    // 1. Trova gli utenti con cui l'utente corrente ha scambiato messaggi
-    const chatPartners = await db.select({
-      partnerId: sql<number>`CASE 
-        WHEN ${messages.senderId} = ${userId} THEN ${messages.receiverId} 
-        ELSE ${messages.senderId} 
-      END`,
+    // Approccio aggiornato: prima raggruppiamo per ogni partner, poi otteniamo i dettagli separatamente
+    // Otteniamo solo gli ID unici dei partner di chat
+    const partnerIds = await db.select({
+      partnerId: sql<number>`DISTINCT 
+        CASE WHEN ${messages.senderId} = ${userId} THEN ${messages.receiverId} 
+             ELSE ${messages.senderId} 
+        END`,
     })
     .from(messages)
     .where(
@@ -681,19 +794,18 @@ export class DatabaseStorage implements IStorage {
         eq(messages.senderId, userId),
         eq(messages.receiverId, userId)
       )
-    )
-    .groupBy(
-      sql`CASE WHEN ${messages.senderId} = ${userId} THEN ${messages.receiverId} ELSE ${messages.senderId} END`
     );
     
     const result = [];
     const unreadCounts = await this.getUnreadMessageCount(userId);
     
-    for (const { partnerId } of chatPartners) {
+    // Per ogni partner, otteniamo il loro profilo e l'ultimo messaggio
+    for (const { partnerId } of partnerIds) {
+      // Utilizziamo la cache per l'utente
       const user = await this.getUser(partnerId);
       if (!user) continue;
       
-      // Get the most recent message
+      // Otteniamo l'ultimo messaggio scambiato
       const [lastMessage] = await db.select()
         .from(messages)
         .where(
@@ -713,6 +825,7 @@ export class DatabaseStorage implements IStorage {
       
       if (!lastMessage) continue;
       
+      // Aggiungiamo alla lista dei risultati
       result.push({
         userId: partnerId,
         user,
@@ -721,7 +834,7 @@ export class DatabaseStorage implements IStorage {
       });
     }
     
-    // Sort by most recent message
+    // Ordiniamo per timestamp del messaggio più recente
     result.sort((a, b) => 
       new Date(b.lastMessage.timestamp).getTime() - new Date(a.lastMessage.timestamp).getTime()
     );
