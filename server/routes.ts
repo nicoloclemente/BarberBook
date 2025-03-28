@@ -3,7 +3,13 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth } from "./auth";
 import { WebSocketServer, WebSocket } from "ws";
-import { insertServiceSchema, insertAppointmentSchema, insertMessageSchema } from "@shared/schema";
+import { 
+  insertServiceSchema, 
+  insertAppointmentSchema, 
+  insertMessageSchema, 
+  insertReviewSchema, 
+  insertStatisticsSchema 
+} from "@shared/schema";
 import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
 
@@ -327,6 +333,150 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     const clients = await storage.getAllClients();
     res.json(clients);
+  });
+  
+  // Statistics Routes
+  app.get("/api/statistics", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    const user = req.user!;
+    if (!user.isBarber) {
+      return res.status(403).json({ error: "Only barbers can access this endpoint" });
+    }
+    
+    let startDate, endDate;
+    
+    if (req.query.start && req.query.end) {
+      startDate = new Date(req.query.start as string);
+      endDate = new Date(req.query.end as string);
+      
+      if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+        return res.status(400).json({ error: "Invalid date format" });
+      }
+    }
+    
+    const period = startDate && endDate ? { start: startDate, end: endDate } : undefined;
+    const statistics = await storage.getBarberStatistics(user.id, period);
+    res.json(statistics);
+  });
+  
+  app.post("/api/statistics", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    const user = req.user!;
+    if (!user.isBarber) {
+      return res.status(403).json({ error: "Only barbers can access this endpoint" });
+    }
+    
+    try {
+      const statsData = insertStatisticsSchema.partial().parse({
+        ...req.body,
+        barberId: user.id
+      });
+      
+      // Estrai la data dal body o usa la data corrente
+      const date = req.body.date ? new Date(req.body.date) : new Date();
+      
+      if (isNaN(date.getTime())) {
+        return res.status(400).json({ error: "Invalid date format" });
+      }
+      
+      const statistics = await storage.createOrUpdateDailyStatistics(user.id, date, statsData);
+      res.status(201).json(statistics);
+    } catch (error) {
+      if (error instanceof ZodError) {
+        const validationError = fromZodError(error);
+        res.status(400).json({ error: validationError.message });
+      } else {
+        res.status(500).json({ error: "Failed to create/update statistics" });
+      }
+    }
+  });
+  
+  // Reviews Routes
+  app.post("/api/reviews", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    
+    try {
+      const reviewData = insertReviewSchema.parse({
+        ...req.body,
+        clientId: req.user!.id,
+        createdAt: new Date()
+      });
+      
+      const review = await storage.createReview(reviewData);
+      res.status(201).json(review);
+    } catch (error) {
+      if (error instanceof ZodError) {
+        const validationError = fromZodError(error);
+        res.status(400).json({ error: validationError.message });
+      } else {
+        res.status(500).json({ error: "Failed to create review" });
+      }
+    }
+  });
+  
+  app.get("/api/reviews/barber/:barberId", async (req, res) => {
+    const barberId = parseInt(req.params.barberId);
+    if (isNaN(barberId)) {
+      return res.status(400).json({ error: "Invalid barber ID" });
+    }
+    
+    const reviews = await storage.getReviewsByBarber(barberId);
+    res.json(reviews);
+  });
+  
+  app.get("/api/reviews/client", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    
+    const reviews = await storage.getReviewsByClient(req.user!.id);
+    res.json(reviews);
+  });
+  
+  // Admin Routes
+  app.get("/api/admin/barbers", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    
+    const user = req.user!;
+    if (user.role !== 'admin') {
+      return res.status(403).json({ error: "Only admins can access this endpoint" });
+    }
+    
+    const barbers = await storage.getUsersByRole('barber');
+    res.json(barbers);
+  });
+  
+  app.put("/api/admin/approve-barber/:id", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    
+    const user = req.user!;
+    if (user.role !== 'admin') {
+      return res.status(403).json({ error: "Only admins can access this endpoint" });
+    }
+    
+    const barberId = parseInt(req.params.id);
+    if (isNaN(barberId)) {
+      return res.status(400).json({ error: "Invalid barber ID" });
+    }
+    
+    const barber = await storage.approveBarber(barberId);
+    if (!barber) {
+      return res.status(404).json({ error: "Barber not found" });
+    }
+    
+    res.json(barber);
   });
 
   // Create HTTP server

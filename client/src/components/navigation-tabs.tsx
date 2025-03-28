@@ -1,14 +1,17 @@
 import { Link, useLocation } from "wouter";
+import { useAuth } from "@/hooks/use-auth";
 import {
   Calendar,
   Users,
   MessageSquare,
-  Sparkles
+  Sparkles,
+  BarChart
 } from "lucide-react";
 
 export default function NavigationTabs() {
   const [location] = useLocation();
-
+  const { user } = useAuth();
+  
   const isActive = (path: string) => {
     if (path === "/" && location === "/") return true;
     if (path !== "/" && location.startsWith(path)) return true;
@@ -61,6 +64,19 @@ export default function NavigationTabs() {
             </div>
           </a>
         </Link>
+        
+        {user?.isBarber && (
+          <Link href="/statistics">
+            <a className={`nav-item flex-1 py-4 px-4 font-medium text-center focus:outline-none ${
+              isActive("/statistics") ? "active text-primary border-b-3 border-accent" : "text-neutral-dark"
+            }`}>
+              <div className="flex flex-col items-center">
+                <BarChart className="h-5 w-5 mb-1" />
+                <span>Statistiche</span>
+              </div>
+            </a>
+          </Link>
+        )}
       </div>
     </nav>
   );
