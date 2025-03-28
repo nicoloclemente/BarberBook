@@ -6,12 +6,13 @@ import * as schema from "@shared/schema";
 // Ottimizzazione della connessione al database PostgreSQL
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  // Riduciamo il numero massimo di connessioni per risparmiare memoria
+  // Riduciamo il numero massimo di connessioni per risparmiare memoria ma garantiamo un minimo
   max: 10,
-  // Impostiamo un timeout di inattività più breve per liberare connessioni inutilizzate
-  idleTimeoutMillis: 30000,
-  // Impostiamo un limite di tempo massimo per l'acquisizione di una connessione
-  connectionTimeoutMillis: 2000,
+  min: 1,
+  // Impostiamo un timeout di inattività più lungo per evitare disconnessioni frequenti
+  idleTimeoutMillis: 60000,
+  // Aumentiamo il timeout di connessione per dare più tempo alla connessione di stabilirsi
+  connectionTimeoutMillis: 10000,
 });
 
 // Gestione errori di connessione
