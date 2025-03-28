@@ -14,6 +14,7 @@ import {
 } from "@shared/schema";
 import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
+import { cache } from "./cache";
 
 // Map to store active client connections
 const clients = new Map<number, WebSocket>();
@@ -111,110 +112,136 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (isNaN(date.getTime())) {
       return res.status(400).json({ error: "Invalid date format" });
     }
-    
-    // Get the barber
-    const barber = await storage.getUser(barberId);
-    if (!barber || !barber.isBarber) {
-      return res.status(404).json({ error: "Barber not found" });
-    }
-    
-    // Get existing appointments for the day
-    const appointments = await storage.getAppointmentsByDate(barberId, date);
-    
-    // Get the working hours for the day of the week
-    const dayOfWeek = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"][date.getDay()];
-    const workingHours = barber.workingHours ? barber.workingHours[dayOfWeek] : null;
-    
-    // Check if the barber has any breaks for this date
-    const dateFormatted = date.toISOString().split('T')[0];
-    const breaks = barber.breaks ? barber.breaks.filter(b => b.date === dateFormatted) : [];
-    
-    // Generate available time slots
-    const availableSlots = [];
-    
-    if (workingHours && workingHours.length > 0) {
-      // For each working hour block
-      for (const block of workingHours) {
-        if (!block.enabled) continue;
-        
-        const startTime = block.start.split(':').map(Number);
-        const endTime = block.end.split(':').map(Number);
-        
-        // Generate slots at 30-minute intervals
-        let current = new Date(date);
-        current.setHours(startTime[0], startTime[1], 0, 0);
-        
-        const end = new Date(date);
-        end.setHours(endTime[0], endTime[1], 0, 0);
-        
-        while (current < end) {
-          const slotEnd = new Date(current);
-          slotEnd.setMinutes(slotEnd.getMinutes() + 30);
-          
-          // Skip if this slot overlaps with a break
-          let isBreak = false;
-          for (const breakItem of breaks) {
-            for (const slot of breakItem.slots) {
-              const breakStart = slot.start.split(':').map(Number);
-              const breakEnd = slot.end.split(':').map(Number);
-              
-              const breakStartDate = new Date(date);
-              breakStartDate.setHours(breakStart[0], breakStart[1], 0, 0);
-              
-              const breakEndDate = new Date(date);
-              breakEndDate.setHours(breakEnd[0], breakEnd[1], 0, 0);
-              
-              if (
-                (current >= breakStartDate && current < breakEndDate) || 
-                (slotEnd > breakStartDate && slotEnd <= breakEndDate) ||
-                (current <= breakStartDate && slotEnd >= breakEndDate)
-              ) {
-                isBreak = true;
-                break;
-              }
-            }
-            if (isBreak) break;
+
+    // Genera chiave univoca per la cache
+    const cacheKey = `availability:${barberId}:${dateStr}`;
+
+    try {
+      // Utilizza la cache quando possibile
+      const availabilityData = await cache.getOrSet(
+        cacheKey,
+        async () => {
+          // Get the barber
+          const barber = await storage.getUser(barberId);
+          if (!barber || !barber.isBarber) {
+            throw new Error("Barber not found");
           }
           
-          if (!isBreak) {
-            // Check if the slot is already booked
-            let isBooked = false;
-            for (const appt of appointments) {
-              const apptDate = new Date(appt.date);
-              const apptEndTime = new Date(apptDate);
-              // Use the service duration if available, or default to 30 minutes
-              const duration = appt.service?.duration || 30;
-              apptEndTime.setMinutes(apptEndTime.getMinutes() + duration);
+          // Get existing appointments for the day
+          const appointments = await storage.getAppointmentsByDate(barberId, date);
+          
+          // Get the working hours for the day of the week
+          const dayOfWeek = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"][date.getDay()];
+          const workingHours = barber.workingHours ? barber.workingHours[dayOfWeek] : null;
+          
+          // Check if the barber has any breaks for this date
+          const dateFormatted = date.toISOString().split('T')[0];
+          const breaks = barber.breaks ? barber.breaks.filter(b => b.date === dateFormatted) : [];
+          
+          // Generate available time slots
+          const availableSlots = [];
+          
+          if (workingHours && workingHours.length > 0) {
+            // For each working hour block
+            for (const block of workingHours) {
+              if (!block.enabled) continue;
               
-              if (
-                (current >= apptDate && current < apptEndTime) ||
-                (slotEnd > apptDate && slotEnd <= apptEndTime) ||
-                (current <= apptDate && slotEnd >= apptEndTime)
-              ) {
-                isBooked = true;
-                break;
+              const startTime = block.start.split(':').map(Number);
+              const endTime = block.end.split(':').map(Number);
+              
+              // Generate slots at 30-minute intervals
+              let current = new Date(date);
+              current.setHours(startTime[0], startTime[1], 0, 0);
+              
+              const end = new Date(date);
+              end.setHours(endTime[0], endTime[1], 0, 0);
+              
+              while (current < end) {
+                const slotEnd = new Date(current);
+                slotEnd.setMinutes(slotEnd.getMinutes() + 30);
+                
+                // Skip if this slot overlaps with a break
+                let isBreak = false;
+                for (const breakItem of breaks) {
+                  for (const slot of breakItem.slots) {
+                    const breakStart = slot.start.split(':').map(Number);
+                    const breakEnd = slot.end.split(':').map(Number);
+                    
+                    const breakStartDate = new Date(date);
+                    breakStartDate.setHours(breakStart[0], breakStart[1], 0, 0);
+                    
+                    const breakEndDate = new Date(date);
+                    breakEndDate.setHours(breakEnd[0], breakEnd[1], 0, 0);
+                    
+                    if (
+                      (current >= breakStartDate && current < breakEndDate) || 
+                      (slotEnd > breakStartDate && slotEnd <= breakEndDate) ||
+                      (current <= breakStartDate && slotEnd >= breakEndDate)
+                    ) {
+                      isBreak = true;
+                      break;
+                    }
+                  }
+                  if (isBreak) break;
+                }
+                
+                if (!isBreak) {
+                  // Check if the slot is already booked
+                  let isBooked = false;
+                  for (const appt of appointments) {
+                    const apptDate = new Date(appt.date);
+                    const apptEndTime = new Date(apptDate);
+                    // Use the service duration if available, or default to 30 minutes
+                    const duration = appt.service?.duration || 30;
+                    apptEndTime.setMinutes(apptEndTime.getMinutes() + duration);
+                    
+                    if (
+                      (current >= apptDate && current < apptEndTime) ||
+                      (slotEnd > apptDate && slotEnd <= apptEndTime) ||
+                      (current <= apptDate && slotEnd >= apptEndTime)
+                    ) {
+                      isBooked = true;
+                      break;
+                    }
+                  }
+                  
+                  if (!isBooked) {
+                    availableSlots.push({
+                      start: current.toISOString(),
+                      end: slotEnd.toISOString()
+                    });
+                  }
+                }
+                
+                // Move to the next slot
+                current.setMinutes(current.getMinutes() + 30);
               }
-            }
-            
-            if (!isBooked) {
-              availableSlots.push({
-                start: current.toISOString(),
-                end: slotEnd.toISOString()
-              });
             }
           }
           
-          // Move to the next slot
-          current.setMinutes(current.getMinutes() + 30);
+          return {
+            barberId,
+            date: date.toISOString(),
+            availableSlots
+          };
+        },
+        {
+          // Utilizza un TTL più lungo per gli orari di disponibilità futura
+          keyType: 'working-hours',
+          // Taglia l'invalidazione per barber ID e data
+          tags: [`barber:${barberId}`, `date:${dateStr.substring(0, 10)}`]
         }
+      );
+      
+      res.json(availabilityData);
+    } catch (error) {
+      if (error.message === "Barber not found") {
+        return res.status(404).json({ error: "Barber not found" });
       }
+      
+      console.error("Error calculating availability:", error);
+      res.status(500).json({ error: "Failed to calculate availability" });
     }
-    
-    res.json({
-      barberId,
-      date: date.toISOString(),
-      availableSlots
-    });
   });
   
   app.get("/api/appointments", async (req, res) => {
@@ -251,7 +278,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(400).json({ error: "Invalid date format" });
     }
 
-    const appointments = await storage.getAppointmentsByDate(user.id, date);
+    // Utilizziamo la cache per gli appuntamenti giornalieri per migliorare le prestazioni
+    const cacheKey = `appointments:barber:${user.id}:date:${dateStr}`;
+    
+    const appointments = await cache.getOrSet(
+      cacheKey,
+      () => storage.getAppointmentsByDate(user.id, date),
+      { 
+        ttlMs: 2 * 60 * 1000,  // 2 minuti di cache per gli appuntamenti
+        keyType: 'appointment',
+        tags: [`barber:${user.id}`, `date:${dateStr}`]
+      }
+    );
+    
     res.json(appointments);
   });
 
@@ -263,6 +302,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const appointmentData = insertAppointmentSchema.parse(req.body);
       const appointment = await storage.createAppointment(appointmentData);
+      
+      // Invalida la cache per gli appuntamenti di questo barbiere e per questa data
+      const dateStr = new Date(appointmentData.date).toISOString().split('T')[0];
+      cache.invalidateByTag(`barber:${appointmentData.barberId}`);
+      cache.invalidateByTag(`date:${dateStr}`);
+      
+      console.log(`Invalidated cache for barber ${appointmentData.barberId} and date ${dateStr} after creating appointment`);
+      
       res.status(201).json(appointment);
     } catch (error) {
       if (error instanceof ZodError) {
@@ -331,6 +378,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Appointment not found" });
       }
       
+      // Invalida la cache per gli appuntamenti di questo barbiere e per questa data
+      const dateStr = new Date(updatedAppointment.date).toISOString().split('T')[0];
+      cache.invalidateByTag(`barber:${updatedAppointment.barberId}`);
+      cache.invalidateByTag(`date:${dateStr}`);
+      
+      console.log(`Invalidated cache for barber ${updatedAppointment.barberId} and date ${dateStr} after updating appointment ${id}`);
+      
       res.json(updatedAppointment);
     } catch (error) {
       if (error instanceof ZodError) {
@@ -369,6 +423,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (!deleted) {
       return res.status(404).json({ error: "Appointment not found" });
     }
+
+    // Invalida la cache per gli appuntamenti di questo barbiere e per questa data
+    const dateStr = new Date(appointment.date).toISOString().split('T')[0];
+    cache.invalidateByTag(`barber:${appointment.barberId}`);
+    cache.invalidateByTag(`date:${dateStr}`);
+    
+    console.log(`Invalidated cache for barber ${appointment.barberId} and date ${dateStr} after deleting appointment ${id}`);
 
     res.status(204).end();
   });
@@ -615,8 +676,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "User not found" });
       }
       
+      // Invalida tutte le cache relative agli orari di lavoro di questo barbiere
+      const invalidatedCount = cache.invalidateByTag(`barber:${id}`);
+      console.log(`Invalidated ${invalidatedCount} cached availability entries for barber ${id}`);
+      
       res.json(updatedUser);
     } catch (error) {
+      console.error("Error updating working hours:", error);
       res.status(500).json({ error: "Failed to update working hours" });
     }
   });
@@ -648,8 +714,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "User not found" });
       }
       
+      // Invalida le cache anche quando vengono aggiornate le pause
+      // Estrai le date dalle pause per invalidare solo quelle giornate specifiche
+      if (req.body.breaks && Array.isArray(req.body.breaks)) {
+        const dates = req.body.breaks.map(b => b.date);
+        const uniqueDates = [...new Set(dates)];
+        
+        // Invalida per barbiere
+        cache.invalidateByTag(`barber:${id}`);
+        
+        // Invalida anche per date specifiche
+        for (const dateStr of uniqueDates) {
+          cache.invalidateByTag(`date:${dateStr}`);
+        }
+        
+        console.log(`Invalidated cache for barber ${id} and dates: ${uniqueDates.join(', ')}`);
+      }
+      
       res.json(updatedUser);
     } catch (error) {
+      console.error("Error updating breaks:", error);
       res.status(500).json({ error: "Failed to update breaks" });
     }
   });
