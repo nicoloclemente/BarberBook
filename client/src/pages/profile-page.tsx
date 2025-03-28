@@ -14,7 +14,9 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { User, UserRole } from "@shared/schema";
-import { Loader2, Save, UserCog } from "lucide-react";
+import { Loader2, Save, UserCog, Calendar, Clock } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import WorkingHoursForm from "@/components/schedule/working-hours-form";
 
 const profileSchema = z.object({
   name: z.string().min(2, "Il nome deve essere di almeno 2 caratteri"),
@@ -266,6 +268,36 @@ export default function ProfilePage() {
             </CardContent>
           </Card>
         </div>
+        
+        {/* Sezione Orari di Lavoro per i Barbieri */}
+        {isBarber && user?.isApproved && (
+          <div className="mt-8">
+            <Tabs defaultValue="schedule" className="w-full">
+              <TabsList className="grid w-full max-w-md grid-cols-2">
+                <TabsTrigger value="schedule">
+                  <Clock className="h-4 w-4 mr-2" />
+                  Orari di Lavoro
+                </TabsTrigger>
+                <TabsTrigger value="calendar">
+                  <Calendar className="h-4 w-4 mr-2" />
+                  Calendario
+                </TabsTrigger>
+              </TabsList>
+              <TabsContent value="schedule" className="mt-4">
+                <WorkingHoursForm />
+              </TabsContent>
+              <TabsContent value="calendar" className="mt-4">
+                <div className="rounded-lg border p-8 text-center bg-background">
+                  <Calendar className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-medium mb-2">Visualizzazione del calendario in arrivo</h3>
+                  <p className="text-muted-foreground max-w-md mx-auto">
+                    La visualizzazione completa del calendario con le tue prenotazioni sarà disponibile a breve.
+                  </p>
+                </div>
+              </TabsContent>
+            </Tabs>
+          </div>
+        )}
       </div>
     </MainLayout>
   );

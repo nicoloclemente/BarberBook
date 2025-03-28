@@ -97,6 +97,126 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Appointments Routes
+  
+  // Get available time slots
+  app.get("/api/availability/:barberId/:date", async (req, res) => {
+    const barberId = parseInt(req.params.barberId);
+    if (isNaN(barberId)) {
+      return res.status(400).json({ error: "Invalid barber ID" });
+    }
+
+    const dateStr = req.params.date;
+    const date = new Date(dateStr);
+    
+    if (isNaN(date.getTime())) {
+      return res.status(400).json({ error: "Invalid date format" });
+    }
+    
+    // Get the barber
+    const barber = await storage.getUser(barberId);
+    if (!barber || !barber.isBarber) {
+      return res.status(404).json({ error: "Barber not found" });
+    }
+    
+    // Get existing appointments for the day
+    const appointments = await storage.getAppointmentsByDate(barberId, date);
+    
+    // Get the working hours for the day of the week
+    const dayOfWeek = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"][date.getDay()];
+    const workingHours = barber.workingHours ? barber.workingHours[dayOfWeek] : null;
+    
+    // Check if the barber has any breaks for this date
+    const dateFormatted = date.toISOString().split('T')[0];
+    const breaks = barber.breaks ? barber.breaks.filter(b => b.date === dateFormatted) : [];
+    
+    // Generate available time slots
+    const availableSlots = [];
+    
+    if (workingHours && workingHours.length > 0) {
+      // For each working hour block
+      for (const block of workingHours) {
+        if (!block.enabled) continue;
+        
+        const startTime = block.start.split(':').map(Number);
+        const endTime = block.end.split(':').map(Number);
+        
+        // Generate slots at 30-minute intervals
+        let current = new Date(date);
+        current.setHours(startTime[0], startTime[1], 0, 0);
+        
+        const end = new Date(date);
+        end.setHours(endTime[0], endTime[1], 0, 0);
+        
+        while (current < end) {
+          const slotEnd = new Date(current);
+          slotEnd.setMinutes(slotEnd.getMinutes() + 30);
+          
+          // Skip if this slot overlaps with a break
+          let isBreak = false;
+          for (const breakItem of breaks) {
+            for (const slot of breakItem.slots) {
+              const breakStart = slot.start.split(':').map(Number);
+              const breakEnd = slot.end.split(':').map(Number);
+              
+              const breakStartDate = new Date(date);
+              breakStartDate.setHours(breakStart[0], breakStart[1], 0, 0);
+              
+              const breakEndDate = new Date(date);
+              breakEndDate.setHours(breakEnd[0], breakEnd[1], 0, 0);
+              
+              if (
+                (current >= breakStartDate && current < breakEndDate) || 
+                (slotEnd > breakStartDate && slotEnd <= breakEndDate) ||
+                (current <= breakStartDate && slotEnd >= breakEndDate)
+              ) {
+                isBreak = true;
+                break;
+              }
+            }
+            if (isBreak) break;
+          }
+          
+          if (!isBreak) {
+            // Check if the slot is already booked
+            let isBooked = false;
+            for (const appt of appointments) {
+              const apptDate = new Date(appt.date);
+              const apptEndTime = new Date(apptDate);
+              // Use the service duration if available, or default to 30 minutes
+              const duration = appt.service?.duration || 30;
+              apptEndTime.setMinutes(apptEndTime.getMinutes() + duration);
+              
+              if (
+                (current >= apptDate && current < apptEndTime) ||
+                (slotEnd > apptDate && slotEnd <= apptEndTime) ||
+                (current <= apptDate && slotEnd >= apptEndTime)
+              ) {
+                isBooked = true;
+                break;
+              }
+            }
+            
+            if (!isBooked) {
+              availableSlots.push({
+                start: current.toISOString(),
+                end: slotEnd.toISOString()
+              });
+            }
+          }
+          
+          // Move to the next slot
+          current.setMinutes(current.getMinutes() + 30);
+        }
+      }
+    }
+    
+    res.json({
+      barberId,
+      date: date.toISOString(),
+      availableSlots
+    });
+  });
+  
   app.get("/api/appointments", async (req, res) => {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ error: "Not authenticated" });
@@ -468,6 +588,72 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(user);
   });
 
+  // Endpoint specifico per gli orari di lavoro
+  app.post("/api/users/:id/working-hours", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      return res.status(400).json({ error: "Invalid user ID" });
+    }
+    
+    // Solo l'utente stesso o un admin può modificare gli orari di lavoro
+    const currentUser = req.user!;
+    if (currentUser.id !== id && currentUser.role !== UserRole.ADMIN) {
+      return res.status(403).json({ error: "Not authorized to update working hours for this user" });
+    }
+    
+    try {
+      const userData = {
+        workingHours: req.body.workingHours
+      };
+      
+      const updatedUser = await storage.updateUser(id, userData);
+      if (!updatedUser) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      
+      res.json(updatedUser);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update working hours" });
+    }
+  });
+  
+  // Endpoint specifico per pause e ferie
+  app.post("/api/users/:id/breaks", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      return res.status(400).json({ error: "Invalid user ID" });
+    }
+    
+    // Solo l'utente stesso o un admin può modificare le pause
+    const currentUser = req.user!;
+    if (currentUser.id !== id && currentUser.role !== UserRole.ADMIN) {
+      return res.status(403).json({ error: "Not authorized to update breaks for this user" });
+    }
+    
+    try {
+      const userData = {
+        breaks: req.body.breaks
+      };
+      
+      const updatedUser = await storage.updateUser(id, userData);
+      if (!updatedUser) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      
+      res.json(updatedUser);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update breaks" });
+    }
+  });
+  
   app.patch("/api/users/:id", async (req, res) => {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ error: "Not authenticated" });

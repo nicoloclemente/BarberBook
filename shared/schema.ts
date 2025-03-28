@@ -24,6 +24,19 @@ export const users = pgTable("users", {
   isActive: boolean("is_active").default(true).notNull(),
   isApproved: boolean("is_approved").default(false), // Solo per i barbieri, approvati dall'admin
   preferredBarberId: integer("preferred_barber_id"), // Barbiere preferito per i clienti
+  workingHours: jsonb("working_hours").$type<{
+    monday: { start: string; end: string; enabled: boolean }[];
+    tuesday: { start: string; end: string; enabled: boolean }[];
+    wednesday: { start: string; end: string; enabled: boolean }[];
+    thursday: { start: string; end: string; enabled: boolean }[];
+    friday: { start: string; end: string; enabled: boolean }[];
+    saturday: { start: string; end: string; enabled: boolean }[];
+    sunday: { start: string; end: string; enabled: boolean }[];
+  }>(),
+  breaks: jsonb("breaks").$type<{ 
+    date: string; 
+    slots: { start: string; end: string }[] 
+  }[]>(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -51,6 +64,8 @@ export const insertUserSchema = createInsertSchema(users)
     isActive: true,
     isApproved: true,
     preferredBarberId: true,
+    workingHours: true,
+    breaks: true,
   });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;

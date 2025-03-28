@@ -1,0 +1,531 @@
+import { useState } from "react";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { useToast } from "@/hooks/use-toast";
+import { useForm } from "react-hook-form";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { User } from "@shared/schema";
+import { useAuth } from "@/hooks/use-auth";
+import { CalendarIcon, Clock, Info, Loader2, Plus, Save, Scissors, Trash2 } from "lucide-react";
+import { format, formatISO, parse } from "date-fns";
+import { it } from "date-fns/locale";
+import { Badge } from "@/components/ui/badge";
+
+// Schema per gli orari di lavoro
+const workingHoursSchema = z.object({
+  monday: z.array(z.object({
+    start: z.string(),
+    end: z.string(),
+    enabled: z.boolean().default(true)
+  })),
+  tuesday: z.array(z.object({
+    start: z.string(),
+    end: z.string(),
+    enabled: z.boolean().default(true)
+  })),
+  wednesday: z.array(z.object({
+    start: z.string(),
+    end: z.string(),
+    enabled: z.boolean().default(true)
+  })),
+  thursday: z.array(z.object({
+    start: z.string(),
+    end: z.string(),
+    enabled: z.boolean().default(true)
+  })),
+  friday: z.array(z.object({
+    start: z.string(),
+    end: z.string(),
+    enabled: z.boolean().default(true)
+  })),
+  saturday: z.array(z.object({
+    start: z.string(),
+    end: z.string(),
+    enabled: z.boolean().default(true)
+  })),
+  sunday: z.array(z.object({
+    start: z.string(),
+    end: z.string(),
+    enabled: z.boolean().default(true)
+  }))
+});
+
+// Schema per le pause
+const breaksSchema = z.array(z.object({
+  date: z.string(),
+  slots: z.array(z.object({
+    start: z.string(),
+    end: z.string()
+  }))
+}));
+
+// Schema combinato
+const scheduleSchema = z.object({
+  workingHours: workingHoursSchema,
+  breaks: breaksSchema
+});
+
+type ScheduleFormValues = z.infer<typeof scheduleSchema>;
+
+const daysOfWeek = [
+  { id: "monday", name: "Lunedì" },
+  { id: "tuesday", name: "Martedì" },
+  { id: "wednesday", name: "Mercoledì" },
+  { id: "thursday", name: "Giovedì" },
+  { id: "friday", name: "Venerdì" },
+  { id: "saturday", name: "Sabato" },
+  { id: "sunday", name: "Domenica" }
+];
+
+// Orari di slot predefiniti
+const defaultTimeSlots = {
+  start: "09:00",
+  end: "18:00",
+  enabled: true
+};
+
+export default function WorkingHoursForm() {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [currentDay, setCurrentDay] = useState("monday");
+  const [selectedBreakDate, setSelectedBreakDate] = useState<Date | undefined>(new Date());
+  const [isEditingBreak, setIsEditingBreak] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Valore predefinito per gli orari di lavoro (9-18 per i giorni settimanali, chiuso la domenica)
+  const defaultWorkingHours = {
+    monday: [{ ...defaultTimeSlots }],
+    tuesday: [{ ...defaultTimeSlots }],
+    wednesday: [{ ...defaultTimeSlots }],
+    thursday: [{ ...defaultTimeSlots }],
+    friday: [{ ...defaultTimeSlots }],
+    saturday: [{ ...defaultTimeSlots, end: "13:00" }],
+    sunday: [{ start: "00:00", end: "00:00", enabled: false }],
+  };
+
+  const form = useForm<ScheduleFormValues>({
+    resolver: zodResolver(scheduleSchema),
+    defaultValues: {
+      workingHours: user?.workingHours || defaultWorkingHours,
+      breaks: user?.breaks || []
+    }
+  });
+
+  const updateScheduleMutation = useMutation({
+    mutationFn: async (data: ScheduleFormValues) => {
+      const res = await apiRequest("PATCH", `/api/users/${user?.id}`, data);
+      return await res.json();
+    },
+    onSuccess: (updatedUser: User) => {
+      queryClient.setQueryData(["/api/user"], updatedUser);
+      toast({
+        title: "Orari aggiornati",
+        description: "I tuoi orari di lavoro sono stati aggiornati con successo",
+      });
+      setIsSaving(false);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Errore",
+        description: "Impossibile aggiornare gli orari: " + error.message,
+        variant: "destructive",
+      });
+      setIsSaving(false);
+    }
+  });
+
+  const onSubmit = (values: ScheduleFormValues) => {
+    setIsSaving(true);
+    updateScheduleMutation.mutate(values);
+  };
+
+  const addTimeSlot = (day: string) => {
+    const currentSlots = form.getValues().workingHours[day as keyof typeof defaultWorkingHours] || [];
+    const lastSlot = currentSlots[currentSlots.length - 1] || defaultTimeSlots;
+    
+    // Calcoliamo l'orario di inizio della nuova fascia usando l'orario di fine dell'ultima fascia
+    const newSlot = {
+      start: lastSlot.end,
+      end: lastSlot.end.split(":")[0] === "23" ? "00:00" : `${parseInt(lastSlot.end.split(":")[0]) + 1}:00`,
+      enabled: true
+    };
+    
+    form.setValue(`workingHours.${day}`, [...currentSlots, newSlot]);
+  };
+
+  const removeTimeSlot = (day: string, index: number) => {
+    const currentSlots = form.getValues().workingHours[day as keyof typeof defaultWorkingHours] || [];
+    if (currentSlots.length > 1) {
+      form.setValue(`workingHours.${day}`, currentSlots.filter((_, i) => i !== index));
+    } else {
+      // Se c'è un solo slot, lo disabilitiamo invece di rimuoverlo
+      form.setValue(`workingHours.${day}.0.enabled`, false);
+    }
+  };
+
+  const addBreak = () => {
+    if (!selectedBreakDate) return;
+    
+    const formattedDate = formatISO(selectedBreakDate, { representation: 'date' });
+    const existingBreaks = form.getValues().breaks || [];
+    
+    // Verifica se esiste già una pausa per quella data
+    const existingBreakIndex = existingBreaks.findIndex(b => b.date === formattedDate);
+    
+    if (existingBreakIndex >= 0) {
+      // Aggiungi uno slot alla pausa esistente
+      const updatedBreaks = [...existingBreaks];
+      updatedBreaks[existingBreakIndex].slots.push({ start: "12:00", end: "13:00" });
+      form.setValue("breaks", updatedBreaks);
+    } else {
+      // Crea una nuova pausa per quella data
+      const newBreak = {
+        date: formattedDate,
+        slots: [{ start: "12:00", end: "13:00" }]
+      };
+      form.setValue("breaks", [...existingBreaks, newBreak]);
+    }
+    
+    setIsEditingBreak(true);
+  };
+
+  const removeBreakSlot = (dateIndex: number, slotIndex: number) => {
+    const currentBreaks = form.getValues().breaks || [];
+    
+    if (currentBreaks[dateIndex].slots.length > 1) {
+      // Rimuovi solo lo slot specifico
+      const updatedBreaks = [...currentBreaks];
+      updatedBreaks[dateIndex].slots = updatedBreaks[dateIndex].slots.filter((_, i) => i !== slotIndex);
+      form.setValue("breaks", updatedBreaks);
+    } else {
+      // Rimuovi l'intera pausa se era l'ultimo slot
+      form.setValue("breaks", currentBreaks.filter((_, i) => i !== dateIndex));
+    }
+  };
+
+  // Ottieni le pause per una data specifica
+  const getBreaksForDate = (date: Date | undefined) => {
+    if (!date) return null;
+    
+    const formattedDate = formatISO(date, { representation: 'date' });
+    const allBreaks = form.getValues().breaks || [];
+    return allBreaks.find(b => b.date === formattedDate);
+  };
+
+  const selectedDateBreak = getBreaksForDate(selectedBreakDate);
+  const selectedDateBreakIndex = selectedBreakDate 
+    ? (form.getValues().breaks || []).findIndex(b => b.date === formatISO(selectedBreakDate, { representation: 'date' }))
+    : -1;
+
+  return (
+    <div className="space-y-8">
+      <Card className="card-elegant">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Scissors className="h-5 w-5 text-primary" />
+            Orari di Lavoro e Pause
+          </CardTitle>
+          <CardDescription>
+            Gestisci i tuoi orari di lavoro e le pause programmate
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <Tabs defaultValue="working-hours" className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="working-hours">Orari di Lavoro</TabsTrigger>
+                  <TabsTrigger value="breaks">Pause e Ferie</TabsTrigger>
+                </TabsList>
+                
+                {/* Tab per gli orari di lavoro */}
+                <TabsContent value="working-hours" className="space-y-4 py-4">
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    {daysOfWeek.map((day) => (
+                      <Button
+                        key={day.id}
+                        type="button"
+                        variant={currentDay === day.id ? "default" : "outline"}
+                        onClick={() => setCurrentDay(day.id)}
+                        className="flex-1 min-w-[80px]"
+                      >
+                        {day.name}
+                      </Button>
+                    ))}
+                  </div>
+                  
+                  <div className="rounded-lg border p-4 bg-card">
+                    <h3 className="font-medium text-lg mb-4">{daysOfWeek.find(d => d.id === currentDay)?.name}</h3>
+                    
+                    {daysOfWeek.map((day) => (
+                      <div key={day.id} className={day.id === currentDay ? "block" : "hidden"}>
+                        {form.getValues().workingHours[day.id as keyof typeof defaultWorkingHours]?.map((_, index) => (
+                          <div key={index} className="grid grid-cols-12 gap-4 mb-4 items-center">
+                            <FormField
+                              control={form.control}
+                              name={`workingHours.${day.id}.${index}.enabled`}
+                              render={({ field }) => (
+                                <FormItem className="col-span-2 flex items-center gap-2">
+                                  <FormControl>
+                                    <Switch
+                                      checked={field.value}
+                                      onCheckedChange={field.onChange}
+                                    />
+                                  </FormControl>
+                                  <Label className="cursor-pointer" htmlFor={field.name}>
+                                    {field.value ? "Attivo" : "Chiuso"}
+                                  </Label>
+                                </FormItem>
+                              )}
+                            />
+                            
+                            <div className="col-span-7 grid grid-cols-7 gap-2 items-center">
+                              <FormField
+                                control={form.control}
+                                name={`workingHours.${day.id}.${index}.start`}
+                                render={({ field }) => (
+                                  <FormItem className="col-span-3">
+                                    <FormControl>
+                                      <Input
+                                        type="time"
+                                        {...field}
+                                        disabled={!form.getValues().workingHours[day.id as keyof typeof defaultWorkingHours][index].enabled}
+                                      />
+                                    </FormControl>
+                                  </FormItem>
+                                )}
+                              />
+                              
+                              <span className="text-center col-span-1">→</span>
+                              
+                              <FormField
+                                control={form.control}
+                                name={`workingHours.${day.id}.${index}.end`}
+                                render={({ field }) => (
+                                  <FormItem className="col-span-3">
+                                    <FormControl>
+                                      <Input
+                                        type="time"
+                                        {...field}
+                                        disabled={!form.getValues().workingHours[day.id as keyof typeof defaultWorkingHours][index].enabled}
+                                      />
+                                    </FormControl>
+                                  </FormItem>
+                                )}
+                              />
+                            </div>
+                            
+                            <div className="col-span-3 flex justify-end gap-2">
+                              <Button 
+                                type="button" 
+                                variant="ghost" 
+                                size="icon"
+                                onClick={() => removeTimeSlot(day.id, index)}
+                                disabled={form.getValues().workingHours[day.id as keyof typeof defaultWorkingHours].length <= 1}
+                                className="h-9 w-9"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                        
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => addTimeSlot(day.id)}
+                          className="mt-2"
+                        >
+                          <Plus className="h-4 w-4 mr-2" />
+                          Aggiungi fascia oraria
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  <div className="bg-amber-50 p-4 rounded-lg border border-amber-200">
+                    <div className="flex items-start gap-2">
+                      <Info className="h-5 w-5 text-amber-700 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <h4 className="font-medium text-amber-900">Nota sugli orari di lavoro</h4>
+                        <p className="text-amber-800 text-sm">
+                          Gli orari di lavoro impostati qui verranno utilizzati per determinare le fasce orarie disponibili per le prenotazioni. 
+                          Se hai più fasce orarie in un giorno (ad esempio mattina e pomeriggio), puoi aggiungerle con il pulsante "Aggiungi fascia oraria".
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </TabsContent>
+                
+                {/* Tab per le pause */}
+                <TabsContent value="breaks" className="space-y-4 py-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-4">
+                      <h3 className="font-medium">Seleziona una data</h3>
+                      <div className="bg-card border rounded-lg p-2">
+                        <Calendar
+                          mode="single"
+                          selected={selectedBreakDate}
+                          onSelect={setSelectedBreakDate}
+                          locale={it}
+                          className="rounded-md"
+                          modifiers={{
+                            hasBreak: (date) => {
+                              const formattedDate = formatISO(date, { representation: 'date' });
+                              return (form.getValues().breaks || []).some(b => b.date === formattedDate);
+                            }
+                          }}
+                          modifiersClassNames={{
+                            hasBreak: "border-2 border-amber-400 bg-amber-50"
+                          }}
+                        />
+                      </div>
+                      
+                      <div className="flex flex-wrap gap-2 items-center">
+                        <div className="flex items-center gap-1">
+                          <div className="w-4 h-4 border-2 border-amber-400 bg-amber-50 rounded-sm"></div>
+                          <span className="text-sm">Giorni con pause</span>
+                        </div>
+                      </div>
+                      
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={addBreak}
+                        disabled={!selectedBreakDate}
+                        className="w-full"
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        {selectedDateBreak 
+                          ? "Aggiungi pausa in questo giorno" 
+                          : "Aggiungi giorno di pausa"}
+                      </Button>
+                    </div>
+                    
+                    <div className="space-y-4">
+                      {selectedDateBreak ? (
+                        <>
+                          <div className="flex items-center justify-between">
+                            <h3 className="font-medium">
+                              Pause del {format(selectedBreakDate as Date, "d MMMM yyyy", { locale: it })}
+                            </h3>
+                            <Badge variant="outline" className="bg-amber-50 border-amber-200 text-amber-700">
+                              {selectedDateBreak.slots.length} {selectedDateBreak.slots.length === 1 ? "pausa" : "pause"}
+                            </Badge>
+                          </div>
+                          
+                          <div className="bg-card border rounded-lg p-4 space-y-3">
+                            {selectedDateBreak.slots.map((slot, slotIndex) => (
+                              <div key={slotIndex} className="flex items-center gap-3">
+                                <div className="flex items-center gap-1 flex-1">
+                                  <Clock className="h-4 w-4 text-muted-foreground" />
+                                  <span>Pausa:</span>
+                                </div>
+                                
+                                <div className="flex-1 grid grid-cols-7 gap-2 items-center">
+                                  <FormField
+                                    control={form.control}
+                                    name={`breaks.${selectedDateBreakIndex}.slots.${slotIndex}.start`}
+                                    render={({ field }) => (
+                                      <FormItem className="col-span-3">
+                                        <FormControl>
+                                          <Input type="time" {...field} />
+                                        </FormControl>
+                                      </FormItem>
+                                    )}
+                                  />
+                                  
+                                  <span className="text-center col-span-1">→</span>
+                                  
+                                  <FormField
+                                    control={form.control}
+                                    name={`breaks.${selectedDateBreakIndex}.slots.${slotIndex}.end`}
+                                    render={({ field }) => (
+                                      <FormItem className="col-span-3">
+                                        <FormControl>
+                                          <Input type="time" {...field} />
+                                        </FormControl>
+                                      </FormItem>
+                                    )}
+                                  />
+                                </div>
+                                
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => removeBreakSlot(selectedDateBreakIndex, slotIndex)}
+                                  className="h-8 w-8 flex-shrink-0"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                        </>
+                      ) : (
+                        <div className="flex flex-col items-center justify-center h-[300px] bg-card border rounded-lg p-4">
+                          <CalendarIcon className="h-12 w-12 text-muted-foreground/50 mb-4" />
+                          <h3 className="font-medium mb-1">Nessuna pausa selezionata</h3>
+                          <p className="text-muted-foreground text-center text-sm max-w-[250px]">
+                            Seleziona un giorno dal calendario per visualizzare o aggiungere pause
+                          </p>
+                        </div>
+                      )}
+                      
+                      <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                        <div className="flex items-start gap-2">
+                          <Info className="h-5 w-5 text-blue-700 mt-0.5 flex-shrink-0" />
+                          <div>
+                            <h4 className="font-medium text-blue-900">Info sulle pause</h4>
+                            <p className="text-blue-800 text-sm">
+                              Puoi utilizzare questo strumento per impostare pause pranzo, ferie o altri periodi di indisponibilità. 
+                              Durante questi periodi non potranno essere prenotati appuntamenti.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </TabsContent>
+              </Tabs>
+              
+              <div className="flex justify-end pt-2">
+                <Button 
+                  type="submit" 
+                  className="btn-elegant"
+                  disabled={isSaving}
+                >
+                  {isSaving ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Salvataggio...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="mr-2 h-4 w-4" />
+                      Salva Orari
+                    </>
+                  )}
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
