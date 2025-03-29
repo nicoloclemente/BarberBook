@@ -5,6 +5,7 @@ import {
   messages, type Message, type InsertMessage,
   statistics, type Statistics, type InsertStatistics,
   reviews, type Review, type InsertReview,
+  notifications, type Notification, type InsertNotification,
   type AppointmentWithDetails,
   type MessageWithSender,
   type StatisticsWithBarber,
