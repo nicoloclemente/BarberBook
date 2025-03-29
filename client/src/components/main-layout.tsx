@@ -35,11 +35,11 @@ export default function MainLayout({ children }: MainLayoutProps) {
   return (
     <div className="h-screen flex flex-col">
       {/* Header */}
-      <header className="bg-primary text-white py-4 px-6 shadow-md">
+      <header className="bg-primary text-white py-3 px-4 shadow-sm">
         <div className="flex justify-between items-center">
           <div className="flex items-center space-x-2">
-            <Scissors className="h-8 w-8 text-accent" />
-            <h1 className="font-heading font-bold text-xl">BarberBook</h1>
+            <Scissors className="h-6 w-6 text-white" />
+            <h1 className="font-medium text-xl tracking-tight">BarberBook</h1>
           </div>
           
           {user && (

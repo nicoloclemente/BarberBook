@@ -62,16 +62,18 @@ export default function MobileNavigation() {
           </Link>
         </div>
         
-        <div className={`py-3 px-2 font-medium focus:outline-none ${
-          isActive("/services") ? "text-primary" : "text-neutral-700"
-        }`}>
-          <Link href="/services">
-            <div className="flex flex-col items-center cursor-pointer">
-              <Sparkles className="h-5 w-5" />
-              <span className="text-xs mt-1">Servizi</span>
-            </div>
-          </Link>
-        </div>
+        {(isBarber || isAdmin) && (
+          <div className={`py-3 px-2 font-medium focus:outline-none ${
+            isActive("/services") ? "text-primary" : "text-neutral-700"
+          }`}>
+            <Link href="/services">
+              <div className="flex flex-col items-center cursor-pointer">
+                <Sparkles className="h-5 w-5" />
+                <span className="text-xs mt-1">Servizi</span>
+              </div>
+            </Link>
+          </div>
+        )}
         
         {isBarber && (
           <div className={`py-3 px-2 font-medium focus:outline-none ${

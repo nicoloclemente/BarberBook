@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -10,21 +10,21 @@
   }
 
   body {
-    @apply font-sans antialiased bg-slate-50 text-foreground;
-    font-family: 'Poppins', sans-serif;
+    @apply font-sans antialiased bg-gray-50 text-foreground;
+    font-family: 'Plus Jakarta Sans', sans-serif;
   }
   
   h1, h2, h3, h4, h5, h6 {
-    @apply font-bold text-slate-800 dark:text-white tracking-tight;
+    @apply font-medium text-gray-800 dark:text-white tracking-tight;
   }
   
   p, span, li {
-    @apply text-slate-700 dark:text-slate-200;
+    @apply text-gray-600 dark:text-gray-200;
   }
   
   /* Miglioramento contrasto per accessibilità */
   .text-muted-foreground {
-    @apply text-slate-600 dark:text-slate-300;
+    @apply text-gray-500 dark:text-gray-300;
   }
   
   /* Stili per il calendario e gli orari di lavoro */
@@ -44,20 +44,19 @@
     @apply border-primary/30;
   }
   
-  /* Card con stile elegante */
+  /* Card con stile elegant e minimale */
   .card-elegant {
-    @apply bg-white shadow-md border-0 rounded-xl overflow-hidden;
+    @apply bg-white shadow-sm border border-gray-100 rounded-lg overflow-hidden;
     transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
   }
   
   .card-elegant:hover {
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+    @apply shadow-md border-gray-200;
   }
   
-  /* Button con stile elegante */
+  /* Button con stile minimal ed elegante */
   .btn-elegant {
-    @apply bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white font-medium;
+    @apply bg-primary hover:bg-primary/90 text-white font-medium rounded-md;
   }
   
   /* Gradient text */
@@ -121,25 +120,25 @@
   
   /* Stili specifici per ruoli */
   .admin-theme {
-    @apply bg-indigo-50/50;
+    @apply bg-gray-50 border-l-4 border-indigo-500;
   }
   
   .barber-theme {
-    @apply bg-blue-50/50;
+    @apply bg-gray-50 border-l-4 border-primary;
   }
   
   .client-theme {
-    @apply bg-slate-50/50;
+    @apply bg-gray-50 border-l-4 border-gray-400;
   }
   
-  /* Stili per card con effetti eleganti */
-  .card-elegant {
-    @apply bg-white rounded-xl border border-slate-100 shadow-elegant transition-all duration-300 hover:translate-y-[-3px] hover:shadow-lg;
+  /* Stili per card con effetti minimal ed eleganti */
+  .card-minimal {
+    @apply bg-white rounded-lg border border-gray-100 shadow-sm transition-all duration-300;
   }
   
-  /* Stili per bottoni sofisticati */
-  .btn-elegant {
-    @apply bg-gradient-to-r from-primary to-blue-500 hover:from-blue-500 hover:to-primary text-white font-medium rounded-lg transition-all duration-300 shadow hover:shadow-xl;
+  /* Stili per bottoni minimal ed eleganti */
+  .btn-minimal {
+    @apply bg-primary hover:bg-primary/90 text-white font-medium rounded-md transition-all duration-200;
   }
 
   /* Stili speciali per calendario */
