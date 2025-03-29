@@ -10,6 +10,8 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, UserCheck, UserX, RefreshCw, Info } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
+import DeleteAccountDialog from "@/components/account/delete-account-dialog";
+import { User } from "@shared/schema";
 
 interface Barber {
   id: number;
@@ -44,7 +46,7 @@ export default function AdminDashboard() {
   }, [user, navigate, toast]);
 
   // Query per ottenere tutti i barbieri
-  const { data: barbers, isLoading } = useQuery({
+  const { data: barbers, isLoading: isLoadingBarbers } = useQuery({
     queryKey: ["/api/admin/barbers"],
     queryFn: async () => {
       const res = await fetch("/api/admin/barbers");
@@ -52,6 +54,19 @@ export default function AdminDashboard() {
         throw new Error("Impossibile caricare l'elenco dei barbieri");
       }
       return res.json() as Promise<Barber[]>;
+    },
+    enabled: !!user && user.role === "admin"
+  });
+  
+  // Query per ottenere tutti i clienti
+  const { data: clients, isLoading: isLoadingClients } = useQuery({
+    queryKey: ["/api/admin/clients"],
+    queryFn: async () => {
+      const res = await fetch("/api/admin/clients");
+      if (!res.ok) {
+        throw new Error("Impossibile caricare l'elenco dei clienti");
+      }
+      return res.json() as Promise<User[]>;
     },
     enabled: !!user && user.role === "admin"
   });
@@ -92,6 +107,7 @@ export default function AdminDashboard() {
         <Tabs defaultValue="barbers" className="w-full">
           <TabsList className="mb-4">
             <TabsTrigger value="barbers">Gestione Barbieri</TabsTrigger>
+            <TabsTrigger value="clients">Gestione Clienti</TabsTrigger>
             <TabsTrigger value="statistics">Statistiche Globali</TabsTrigger>
             <TabsTrigger value="system">Sistema</TabsTrigger>
           </TabsList>
@@ -116,7 +132,7 @@ export default function AdminDashboard() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {isLoading ? (
+                {isLoadingBarbers ? (
                   <div className="flex justify-center py-8">
                     <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                   </div>
@@ -148,9 +164,12 @@ export default function AdminDashboard() {
                         </div>
                         <div className="flex items-center gap-2">
                           {barber.isApproved ? (
-                            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                              Approvato
-                            </Badge>
+                            <>
+                              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                                Approvato
+                              </Badge>
+                              <DeleteAccountDialog userId={barber.id} isAdmin={true} />
+                            </>
                           ) : (
                             <>
                               <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
@@ -170,8 +189,76 @@ export default function AdminDashboard() {
                                   </>
                                 )}
                               </Button>
+                              <DeleteAccountDialog userId={barber.id} isAdmin={true} />
                             </>
                           )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Pannello Gestione Clienti */}
+          <TabsContent value="clients">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex justify-between items-center">
+                  <span>Gestione Clienti</span>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => queryClient.invalidateQueries({ queryKey: ["/api/admin/clients"] })}
+                  >
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Aggiorna
+                  </Button>
+                </CardTitle>
+                <CardDescription>
+                  Visualizza e gestisci gli account dei clienti registrati
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {isLoadingClients ? (
+                  <div className="flex justify-center py-8">
+                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                  </div>
+                ) : !clients || clients.length === 0 ? (
+                  <div className="text-center text-muted-foreground py-8">
+                    <Info className="h-12 w-12 mx-auto mb-2 text-muted-foreground/60" />
+                    <p>Nessun cliente trovato nel sistema</p>
+                  </div>
+                ) : (
+                  <div className="divide-y">
+                    {clients.map((client) => (
+                      <div key={client.id} className="py-4 flex items-center justify-between">
+                        <div className="flex items-center">
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-r from-purple-400 to-pink-500 flex items-center justify-center text-white font-bold">
+                            {client.imageUrl ? (
+                              <img 
+                                src={client.imageUrl} 
+                                alt={client.name} 
+                                className="w-10 h-10 rounded-full object-cover"
+                              />
+                            ) : (
+                              client.name.charAt(0)
+                            )}
+                          </div>
+                          <div className="ml-4">
+                            <p className="font-medium">{client.name}</p>
+                            <p className="text-sm text-muted-foreground">{client.username}</p>
+                            {client.phone && (
+                              <p className="text-xs text-muted-foreground mt-1">{client.phone}</p>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                            Cliente
+                          </Badge>
+                          <DeleteAccountDialog userId={client.id} isAdmin={true} />
                         </div>
                       </div>
                     ))}
@@ -200,7 +287,7 @@ export default function AdminDashboard() {
                     </CardHeader>
                     <CardContent>
                       <div className="text-2xl font-bold">
-                        {isLoading ? <Loader2 className="h-5 w-5 animate-spin inline" /> : "0"}
+                        {isLoadingBarbers || isLoadingClients ? <Loader2 className="h-5 w-5 animate-spin inline" /> : "0"}
                       </div>
                     </CardContent>
                   </Card>
@@ -213,7 +300,7 @@ export default function AdminDashboard() {
                     </CardHeader>
                     <CardContent>
                       <div className="text-2xl font-bold">
-                        {isLoading ? (
+                        {isLoadingBarbers ? (
                           <Loader2 className="h-5 w-5 animate-spin inline" />
                         ) : (
                           barbers?.filter(b => b.isApproved).length || 0
@@ -230,7 +317,7 @@ export default function AdminDashboard() {
                     </CardHeader>
                     <CardContent>
                       <div className="text-2xl font-bold">
-                        {isLoading ? <Loader2 className="h-5 w-5 animate-spin inline" /> : "0"}
+                        {isLoadingClients ? <Loader2 className="h-5 w-5 animate-spin inline" /> : (clients?.length || 0)}
                       </div>
                     </CardContent>
                   </Card>

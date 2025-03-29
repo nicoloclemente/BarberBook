@@ -784,6 +784,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     }
   });
+  
+  // Endpoint per eliminare l'account utente
+  app.delete("/api/users/:id", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      return res.status(400).json({ error: "Invalid user ID" });
+    }
+
+    // Verifica che l'utente stia eliminando il proprio account o che sia un admin
+    const currentUser = req.user!;
+    if (currentUser.id !== id && currentUser.role !== UserRole.ADMIN) {
+      return res.status(403).json({ error: "Not authorized to delete this user" });
+    }
+
+    try {
+      // Controlla se un barbiere sta cercando di eliminare il proprio account
+      if (currentUser.id === id && currentUser.isBarber) {
+        // Conta gli appuntamenti futuri per verificare che non ci siano clienti in attesa
+        const today = new Date();
+        const appointments = await storage.getAppointmentsByBarber(id);
+        const futureAppointments = appointments.filter(appt => new Date(appt.date) > today);
+        
+        if (futureAppointments.length > 0) {
+          return res.status(409).json({ 
+            error: "Non puoi eliminare il tuo account perché hai appuntamenti futuri con clienti. Cancella o completa tutti gli appuntamenti prima di eliminare l'account.",
+            appointmentsCount: futureAppointments.length 
+          });
+        }
+      }
+      
+      // Procedi con l'eliminazione
+      const deleted = await storage.deleteUser(id);
+      
+      if (!deleted) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      
+      // Se l'utente sta eliminando il proprio account, effettua il logout
+      if (currentUser.id === id) {
+        req.logout((err) => {
+          if (err) {
+            console.error("Error during logout after account deletion:", err);
+          }
+          res.status(204).end();
+        });
+      } else {
+        res.status(204).end();
+      }
+    } catch (error) {
+      console.error("Error during user deletion:", error);
+      res.status(500).json({ error: "Failed to delete user account" });
+    }
+  });
 
   // Admin Routes
   app.get("/api/admin/barbers", async (req, res) => {
@@ -798,6 +855,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     const barbers = await storage.getUsersByRole('barber');
     res.json(barbers);
+  });
+  
+  app.get("/api/admin/clients", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    
+    const user = req.user!;
+    if (user.role !== 'admin') {
+      return res.status(403).json({ error: "Only admins can access this endpoint" });
+    }
+    
+    const clients = await storage.getUsersByRole('client');
+    res.json(clients);
   });
   
   app.put("/api/admin/approve-barber/:id", async (req, res) => {

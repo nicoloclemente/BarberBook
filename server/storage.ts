@@ -28,6 +28,7 @@ export interface IStorage {
   getUsersByRole(role: string): Promise<User[]>;
   updateUser(id: number, userData: Partial<InsertUser>): Promise<User | undefined>;
   approveBarber(id: number): Promise<User | undefined>;
+  deleteUser(id: number): Promise<boolean>;
   
   // Service related operations
   getService(id: number): Promise<Service | undefined>;
@@ -411,6 +412,21 @@ export class MemStorage implements IStorage {
       });
     
     return updated;
+  }
+  
+  async deleteUser(id: number): Promise<boolean> {
+    // Elimina tutti gli appuntamenti del cliente o del barbiere
+    Array.from(this.appointments.values())
+      .filter(appointment => appointment.clientId === id || appointment.barberId === id)
+      .forEach(appointment => this.appointments.delete(appointment.id));
+    
+    // Elimina tutti i messaggi inviati o ricevuti dall'utente
+    Array.from(this.messages.values())
+      .filter(message => message.senderId === id || message.receiverId === id)
+      .forEach(message => this.messages.delete(message.id));
+    
+    // Infine elimina l'utente
+    return this.users.delete(id);
   }
 }
 
@@ -864,6 +880,62 @@ export class DatabaseStorage implements IStorage {
       );
     
     return result.count > 0;
+  }
+  
+  async deleteUser(id: number): Promise<boolean> {
+    // Utilizziamo una transazione per assicurarci che tutte le operazioni di eliminazione abbiano successo o falliscano insieme
+    return db.transaction(async (tx) => {
+      // 1. Eliminiamo tutti gli appuntamenti del cliente o del barbiere
+      await tx.delete(appointments).where(
+        or(
+          eq(appointments.clientId, id),
+          eq(appointments.barberId, id)
+        )
+      );
+      
+      // 2. Eliminiamo tutti i messaggi inviati o ricevuti dall'utente
+      await tx.delete(messages).where(
+        or(
+          eq(messages.senderId, id),
+          eq(messages.receiverId, id)
+        )
+      );
+      
+      // 3. Eliminiamo le statistiche associate (solo per i barbieri)
+      await tx.delete(statistics).where(eq(statistics.barberId, id));
+      
+      // 4. Eliminiamo le recensioni associate (per barbieri o clienti)
+      await tx.delete(reviews).where(
+        or(
+          eq(reviews.clientId, id),
+          eq(reviews.barberId, id)
+        )
+      );
+      
+      // 5. Recuperiamo l'utente per poter invalidare la cache in seguito
+      const [user] = await tx.select().from(users).where(eq(users.id, id));
+      
+      // 6. Infine eliminiamo l'utente
+      const result = await tx.delete(users).where(eq(users.id, id));
+      
+      // 7. Invalidiamo tutte le cache relative all'utente
+      if (user) {
+        cache.delete(`user:${id}`);
+        cache.delete(`user:username:${user.username}`);
+        cache.delete('users:barbers');
+        cache.delete('users:clients');
+        cache.delete(`users:role:${user.role}`);
+        
+        // Invalidate appointment caches if user is barber
+        if (user.isBarber || user.role === UserRole.BARBER) {
+          // Clear all date-specific appointment caches for this barber
+          // Non possiamo sapere tutte le date, ma invalidiamo la cache completa
+          cache.invalidateByTag('appointments');
+        }
+      }
+      
+      return result.count > 0;
+    });
   }
   
   // Statistics related operations

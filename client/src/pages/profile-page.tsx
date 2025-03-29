@@ -17,6 +17,7 @@ import { User, UserRole } from "@shared/schema";
 import { Loader2, Save, UserCog, Calendar, Clock } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import WorkingHoursForm from "@/components/schedule/working-hours-form";
+import DeleteAccountDialog from "@/components/account/delete-account-dialog";
 
 const profileSchema = z.object({
   name: z.string().min(2, "Il nome deve essere di almeno 2 caratteri"),
@@ -264,6 +265,14 @@ export default function ProfilePage() {
                     year: 'numeric'
                   })}
                 </p>
+              </div>
+              
+              <div className="pt-4 border-t border-border">
+                <h3 className="font-semibold text-red-600 mb-1">Zona Pericolo</h3>
+                <p className="text-sm text-muted-foreground mb-2">
+                  Una volta eliminato l'account, tutti i tuoi dati saranno rimossi permanentemente.
+                </p>
+                <DeleteAccountDialog />
               </div>
             </CardContent>
           </Card>
