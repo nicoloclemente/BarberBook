@@ -23,23 +23,25 @@ export default function DateSelector({ selectedDate, onDateChange }: DateSelecto
   const capitalizedDate = formattedDate.charAt(0).toUpperCase() + formattedDate.slice(1);
 
   return (
-    <div className="flex items-center justify-between mb-6 bg-white p-4 rounded-lg shadow-sm">
+    <div className="flex items-center justify-between mb-6 bg-white p-3 sm:p-4 rounded-lg shadow-sm">
       <Button 
         variant="ghost" 
         size="icon" 
         onClick={handlePreviousDay} 
-        className="text-primary hover:bg-neutral-light"
+        className="text-primary hover:bg-neutral-light h-9 w-9 sm:h-10 sm:w-10"
       >
-        <ChevronLeft className="h-6 w-6" />
+        <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6" />
       </Button>
-      <h3 className="text-xl font-heading font-semibold">{capitalizedDate}</h3>
+      <h3 className="text-base sm:text-xl font-heading font-semibold text-center truncate max-w-[calc(100%-100px)]">
+        {capitalizedDate}
+      </h3>
       <Button 
         variant="ghost" 
         size="icon" 
         onClick={handleNextDay} 
-        className="text-primary hover:bg-neutral-light"
+        className="text-primary hover:bg-neutral-light h-9 w-9 sm:h-10 sm:w-10"
       >
-        <ChevronRight className="h-6 w-6" />
+        <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6" />
       </Button>
     </div>
   );

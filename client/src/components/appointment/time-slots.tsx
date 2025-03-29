@@ -103,7 +103,7 @@ export default function TimeSlots({
   };
 
   return (
-    <div className="grid grid-cols-4 md:grid-cols-8 gap-2 mb-6">
+    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2 mb-6">
       {timeSlots.map((timeSlot, index) => {
         const isOccupied = isSlotOccupied(timeSlot);
         const isOnBreak = isBreak(timeSlot);

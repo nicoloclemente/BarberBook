@@ -198,23 +198,27 @@ export default function DashboardPage() {
     <MainLayout>
       <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-2">
-          <div className="flex justify-between items-center mb-6">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-3">
             <h2 className="text-2xl font-heading font-bold text-primary">
               {user?.isBarber ? "I tuoi appuntamenti" : "I miei appuntamenti"}
             </h2>
-            <div className="flex space-x-2">
+            <div className="flex flex-wrap gap-2">
               <Button 
                 variant="outline" 
                 onClick={() => refetch()} 
                 disabled={isLoading}
+                size="sm"
+                className="text-xs sm:text-sm h-8 sm:h-10"
               >
-                <RefreshCw className="h-4 w-4 mr-1" />
+                <RefreshCw className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
                 Aggiorna
               </Button>
               <Button 
                 onClick={() => setIsModalOpen(true)}
+                size="sm"
+                className="text-xs sm:text-sm h-8 sm:h-10"
               >
-                <PlusIcon className="h-4 w-4 mr-1" />
+                <PlusIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
                 Nuovo appuntamento
               </Button>
             </div>
@@ -253,7 +257,7 @@ export default function DashboardPage() {
             <h3 className="text-xl font-heading font-semibold mb-4 border-b pb-2">
               Disponibilità del giorno
               {isBarber && (
-                <span className="text-sm font-normal ml-2 text-gray-500">
+                <span className="text-xs sm:text-sm font-normal block sm:inline sm:ml-2 text-gray-500">
                   (Clicca sulle pause per modificarle)
                 </span>
               )}
@@ -280,7 +284,7 @@ export default function DashboardPage() {
 
       {/* Dialogo per la modifica delle pause */}
       <Dialog open={isBreakDialogOpen} onOpenChange={setIsBreakDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-[425px] w-[calc(100%-2rem)] p-4 sm:p-6">
           <DialogHeader>
             <DialogTitle>Modifica pausa</DialogTitle>
             <DialogDescription>
@@ -297,6 +301,7 @@ export default function DashboardPage() {
                   onChange={(e) => setSelectedBreak({ ...selectedBreak, start: e.target.value })}
                   placeholder="10:00"
                   type="time"
+                  className="text-sm sm:text-base"
                 />
               </div>
               <div className="space-y-2">
@@ -307,19 +312,36 @@ export default function DashboardPage() {
                   onChange={(e) => setSelectedBreak({ ...selectedBreak, end: e.target.value })}
                   placeholder="11:00"
                   type="time"
+                  className="text-sm sm:text-base"
                 />
               </div>
             </div>
           </div>
-          <DialogFooter className="flex space-x-2 justify-between sm:justify-between">
-            <Button variant="destructive" onClick={handleDeleteBreak}>
+          <DialogFooter className="flex flex-col sm:flex-row gap-3 sm:gap-0 sm:justify-between">
+            <Button 
+              variant="destructive" 
+              onClick={handleDeleteBreak}
+              size="sm"
+              className="text-xs sm:text-sm h-8 sm:h-10"
+            >
               Elimina pausa
             </Button>
-            <div className="space-x-2">
-              <Button variant="outline" onClick={() => setIsBreakDialogOpen(false)}>
+            <div className="flex justify-end space-x-2">
+              <Button 
+                variant="outline" 
+                onClick={() => setIsBreakDialogOpen(false)}
+                size="sm"
+                className="text-xs sm:text-sm h-8 sm:h-10"
+              >
                 Annulla
               </Button>
-              <Button onClick={handleSaveBreak}>Salva</Button>
+              <Button 
+                onClick={handleSaveBreak}
+                size="sm"
+                className="text-xs sm:text-sm h-8 sm:h-10"
+              >
+                Salva
+              </Button>
             </div>
           </DialogFooter>
         </DialogContent>
