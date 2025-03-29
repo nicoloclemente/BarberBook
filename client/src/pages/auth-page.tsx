@@ -72,44 +72,44 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col lg:flex-row">
+    <div className="min-h-screen bg-slate-50 flex flex-col lg:flex-row">
       {/* Hero section */}
-      <div className="bg-primary text-white p-8 flex flex-col justify-center lg:w-1/2">
+      <div className="bg-primary text-white py-10 px-6 flex flex-col justify-center lg:w-1/2">
         <div className="max-w-xl mx-auto">
-          <div className="flex items-center space-x-3 mb-8">
-            <Scissors className="h-10 w-10" />
-            <h1 className="text-3xl font-bold">BarberBook</h1>
+          <div className="flex items-center space-x-3 mb-6">
+            <Scissors className="h-8 w-8" />
+            <h1 className="text-2xl font-medium tracking-tight">BarberBook</h1>
           </div>
-          <h2 className="text-4xl font-bold mb-4">Gestisci il tuo salone da barbiere in modo efficiente</h2>
-          <p className="text-lg opacity-80 mb-6">
+          <h2 className="text-3xl font-medium mb-4">Gestisci il tuo salone da barbiere in modo efficiente</h2>
+          <p className="text-lg opacity-90 mb-8">
             Prenota appuntamenti, gestisci clienti, organizza il tuo calendario e comunica facilmente con i tuoi clienti.
           </p>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8">
-            <div className="bg-primary-foreground/10 p-4 rounded-lg">
-              <h3 className="font-bold text-xl mb-2">Per Barbieri</h3>
-              <ul className="space-y-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mt-8">
+            <div className="bg-white/10 p-5 rounded-md shadow-sm">
+              <h3 className="font-medium text-lg mb-3">Per Barbieri</h3>
+              <ul className="space-y-2.5">
                 <li className="flex items-center">
-                  <span className="mr-2">✓</span> Gestione calendario
+                  <span className="mr-2.5 text-primary-foreground">✓</span> Gestione calendario
                 </li>
                 <li className="flex items-center">
-                  <span className="mr-2">✓</span> Inserimento clienti
+                  <span className="mr-2.5 text-primary-foreground">✓</span> Inserimento clienti
                 </li>
                 <li className="flex items-center">
-                  <span className="mr-2">✓</span> Chat con i clienti
+                  <span className="mr-2.5 text-primary-foreground">✓</span> Chat con i clienti
                 </li>
               </ul>
             </div>
-            <div className="bg-primary-foreground/10 p-4 rounded-lg">
-              <h3 className="font-bold text-xl mb-2">Per Clienti</h3>
-              <ul className="space-y-2">
+            <div className="bg-white/10 p-5 rounded-md shadow-sm">
+              <h3 className="font-medium text-lg mb-3">Per Clienti</h3>
+              <ul className="space-y-2.5">
                 <li className="flex items-center">
-                  <span className="mr-2">✓</span> Prenotazione semplice
+                  <span className="mr-2.5 text-primary-foreground">✓</span> Prenotazione semplice
                 </li>
                 <li className="flex items-center">
-                  <span className="mr-2">✓</span> Notifiche appuntamenti
+                  <span className="mr-2.5 text-primary-foreground">✓</span> Notifiche appuntamenti
                 </li>
                 <li className="flex items-center">
-                  <span className="mr-2">✓</span> Comunicazione diretta
+                  <span className="mr-2.5 text-primary-foreground">✓</span> Comunicazione diretta
                 </li>
               </ul>
             </div>
@@ -118,38 +118,39 @@ export default function AuthPage() {
       </div>
 
       {/* Auth forms */}
-      <div className="flex items-center justify-center p-8 lg:w-1/2">
-        <Card className="w-full max-w-md">
-          <CardHeader>
-            <CardTitle className="text-2xl text-center">Benvenuto su BarberBook</CardTitle>
-            <CardDescription className="text-center">
+      <div className="flex items-center justify-center p-6 lg:p-8 lg:w-1/2">
+        <Card className="w-full max-w-md shadow-md border-0">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-xl text-center">Benvenuto su BarberBook</CardTitle>
+            <CardDescription className="text-center text-sm">
               Accedi o registrati per iniziare a usare l'applicazione
             </CardDescription>
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="login" value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="grid w-full grid-cols-2 mb-6">
+              <TabsList className="grid w-full grid-cols-2 mb-5">
                 <TabsTrigger value="login">Accedi</TabsTrigger>
                 <TabsTrigger value="register">Registrati</TabsTrigger>
               </TabsList>
 
               <TabsContent value="login">
                 <Form {...loginForm}>
-                  <form onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-4">
+                  <form onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-4 py-2">
                     <FormField
                       control={loginForm.control}
                       name="username"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Username</FormLabel>
+                          <FormLabel className="text-sm">Username</FormLabel>
                           <FormControl>
                             <Input 
+                              className="h-10 shadow-sm"
                               placeholder="Inserisci il tuo username" 
                               {...field}
                               disabled={loginMutation.isPending}
                             />
                           </FormControl>
-                          <FormMessage />
+                          <FormMessage className="text-xs font-medium" />
                         </FormItem>
                       )}
                     />
@@ -158,20 +159,25 @@ export default function AuthPage() {
                       name="password"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Password</FormLabel>
+                          <FormLabel className="text-sm">Password</FormLabel>
                           <FormControl>
                             <Input 
+                              className="h-10 shadow-sm"
                               type="password" 
                               placeholder="Password" 
                               {...field}
                               disabled={loginMutation.isPending}
                             />
                           </FormControl>
-                          <FormMessage />
+                          <FormMessage className="text-xs font-medium" />
                         </FormItem>
                       )}
                     />
-                    <Button type="submit" className="w-full" disabled={loginMutation.isPending}>
+                    <Button 
+                      type="submit" 
+                      className="w-full mt-6 h-10" 
+                      disabled={loginMutation.isPending}
+                    >
                       {loginMutation.isPending ? (
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       ) : null}
@@ -183,102 +189,114 @@ export default function AuthPage() {
 
               <TabsContent value="register">
                 <Form {...registerForm}>
-                  <form onSubmit={registerForm.handleSubmit(onRegisterSubmit)} className="space-y-4">
-                    <FormField
-                      control={registerForm.control}
-                      name="name"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Nome Completo</FormLabel>
-                          <FormControl>
-                            <Input 
-                              placeholder="Inserisci il tuo nome completo" 
-                              {...field}
-                              disabled={registerMutation.isPending}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={registerForm.control}
-                      name="username"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Username</FormLabel>
-                          <FormControl>
-                            <Input 
-                              placeholder="Crea un username" 
-                              {...field}
-                              disabled={registerMutation.isPending}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                  <form onSubmit={registerForm.handleSubmit(onRegisterSubmit)} className="space-y-4 py-2">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField
+                        control={registerForm.control}
+                        name="name"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-sm">Nome Completo</FormLabel>
+                            <FormControl>
+                              <Input 
+                                className="h-10 shadow-sm"
+                                placeholder="Il tuo nome completo" 
+                                {...field}
+                                disabled={registerMutation.isPending}
+                              />
+                            </FormControl>
+                            <FormMessage className="text-xs font-medium" />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={registerForm.control}
+                        name="username"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-sm">Username</FormLabel>
+                            <FormControl>
+                              <Input 
+                                className="h-10 shadow-sm"
+                                placeholder="Crea un username" 
+                                {...field}
+                                disabled={registerMutation.isPending}
+                              />
+                            </FormControl>
+                            <FormMessage className="text-xs font-medium" />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    
                     <FormField
                       control={registerForm.control}
                       name="phone"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Telefono</FormLabel>
+                          <FormLabel className="text-sm">Telefono</FormLabel>
                           <FormControl>
                             <Input 
+                              className="h-10 shadow-sm"
                               placeholder="Numero di telefono (opzionale)" 
                               {...field}
                               disabled={registerMutation.isPending}
                             />
                           </FormControl>
-                          <FormDescription>
+                          <FormDescription className="text-xs font-normal">
                             Inserisci il numero per essere contattato
                           </FormDescription>
-                          <FormMessage />
+                          <FormMessage className="text-xs font-medium" />
                         </FormItem>
                       )}
                     />
-                    <FormField
-                      control={registerForm.control}
-                      name="password"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Password</FormLabel>
-                          <FormControl>
-                            <Input 
-                              type="password" 
-                              placeholder="Crea una password" 
-                              {...field}
-                              disabled={registerMutation.isPending}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={registerForm.control}
-                      name="confirmPassword"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Conferma Password</FormLabel>
-                          <FormControl>
-                            <Input 
-                              type="password" 
-                              placeholder="Conferma la password" 
-                              {...field}
-                              disabled={registerMutation.isPending}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField
+                        control={registerForm.control}
+                        name="password"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-sm">Password</FormLabel>
+                            <FormControl>
+                              <Input 
+                                className="h-10 shadow-sm"
+                                type="password" 
+                                placeholder="Crea una password" 
+                                {...field}
+                                disabled={registerMutation.isPending}
+                              />
+                            </FormControl>
+                            <FormMessage className="text-xs font-medium" />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={registerForm.control}
+                        name="confirmPassword"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-sm">Conferma Password</FormLabel>
+                            <FormControl>
+                              <Input 
+                                className="h-10 shadow-sm"
+                                type="password" 
+                                placeholder="Conferma la password" 
+                                {...field}
+                                disabled={registerMutation.isPending}
+                              />
+                            </FormControl>
+                            <FormMessage className="text-xs font-medium" />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    
                     <FormField
                       control={registerForm.control}
                       name="isBarber"
                       render={({ field }) => (
-                        <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                        <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 mt-2">
                           <FormControl>
                             <Checkbox
                               checked={field.value}
@@ -287,15 +305,19 @@ export default function AuthPage() {
                             />
                           </FormControl>
                           <div className="space-y-1 leading-none">
-                            <FormLabel>Sono un barbiere</FormLabel>
-                            <FormDescription>
+                            <FormLabel className="text-sm">Sono un barbiere</FormLabel>
+                            <FormDescription className="text-xs font-normal">
                               Seleziona questa opzione se vuoi gestire un salone
                             </FormDescription>
                           </div>
                         </FormItem>
                       )}
                     />
-                    <Button type="submit" className="w-full" disabled={registerMutation.isPending}>
+                    <Button 
+                      type="submit" 
+                      className="w-full mt-4 h-10" 
+                      disabled={registerMutation.isPending}
+                    >
                       {registerMutation.isPending ? (
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       ) : null}
@@ -306,14 +328,14 @@ export default function AuthPage() {
               </TabsContent>
             </Tabs>
           </CardContent>
-          <CardFooter className="flex justify-center">
-            <p className="text-sm text-center text-gray-500">
+          <CardFooter className="flex justify-center pt-0 pb-4">
+            <p className="text-xs text-center text-gray-500">
               {activeTab === "login" ? (
                 <>
                   Non hai un account?{" "}
                   <Button 
                     variant="link" 
-                    className="p-0 h-auto" 
+                    className="p-0 h-auto text-xs font-medium" 
                     onClick={() => setActiveTab("register")}
                   >
                     Registrati
@@ -324,7 +346,7 @@ export default function AuthPage() {
                   Hai già un account?{" "}
                   <Button 
                     variant="link" 
-                    className="p-0 h-auto" 
+                    className="p-0 h-auto text-xs font-medium" 
                     onClick={() => setActiveTab("login")}
                   >
                     Accedi
