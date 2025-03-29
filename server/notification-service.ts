@@ -168,6 +168,38 @@ export class NotificationService {
     
     await storage.createNotification(notification);
   }
+  
+  /**
+   * Crea una notifica per una nuova richiesta di appuntamento
+   * @param userId ID dell'utente destinatario (barbiere)
+   * @param appointment L'appuntamento richiesto
+   * @param clientName Nome del cliente che ha effettuato la richiesta
+   */
+  async createAppointmentRequestNotification(userId: number, appointment: Appointment, clientName: string): Promise<void> {
+    // Determina l'orario dell'appuntamento
+    const appointmentDate = new Date(appointment.date);
+    const timeString = appointmentDate.toLocaleTimeString('it-IT', { 
+      hour: '2-digit', 
+      minute: '2-digit' 
+    });
+    const dateString = appointmentDate.toLocaleDateString('it-IT', { 
+      day: '2-digit', 
+      month: '2-digit',
+      year: 'numeric'
+    });
+    
+    // Crea la notifica
+    const notification: InsertNotification = {
+      userId,
+      type: NotificationType.APPOINTMENT_REQUEST,
+      title: "Nuova Richiesta di Appuntamento",
+      message: `${clientName} ha richiesto un appuntamento per il ${dateString} alle ${timeString}.`,
+      isRead: false,
+      relatedId: appointment.id
+    };
+    
+    await storage.createNotification(notification);
+  }
 }
 
 // Esporta un'istanza del servizio

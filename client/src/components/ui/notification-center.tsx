@@ -85,6 +85,8 @@ export function NotificationCenter() {
         return "💬";
       case NotificationType.SYSTEM:
         return "ℹ️";
+      case NotificationType.APPOINTMENT_REQUEST:
+        return "📲";
       default:
         return "📩";
     }
@@ -120,7 +122,8 @@ export function NotificationCenter() {
       (notification.type === NotificationType.APPOINTMENT_REMINDER ||
         notification.type === NotificationType.APPOINTMENT_CONFIRMATION ||
         notification.type === NotificationType.APPOINTMENT_MODIFIED ||
-        notification.type === NotificationType.APPOINTMENT_CANCELLED) &&
+        notification.type === NotificationType.APPOINTMENT_CANCELLED ||
+        notification.type === NotificationType.APPOINTMENT_REQUEST) &&
       notification.relatedId
     ) {
       // Naviga all'appuntamento con l'ID relatedId

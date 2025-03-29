@@ -312,6 +312,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`Invalidated cache for barber ${appointmentData.barberId} and date ${dateStr} after creating appointment`);
       
+      // Se lo stato è "pending", notifica il barbiere della nuova richiesta
+      if (appointment.status === 'pending') {
+        // Ottieni i dati del cliente per il messaggio di notifica
+        const client = await storage.getUser(appointmentData.clientId);
+        if (client) {
+          // Crea una notifica per il barbiere
+          await notificationService.createAppointmentRequestNotification(
+            appointmentData.barberId,
+            appointment,
+            client.name
+          );
+        }
+      }
+      
       res.status(201).json(appointment);
     } catch (error) {
       if (error instanceof ZodError) {
@@ -386,6 +400,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       cache.invalidateByTag(`date:${dateStr}`);
       
       console.log(`Invalidated cache for barber ${updatedAppointment.barberId} and date ${dateStr} after updating appointment ${id}`);
+      
+      // Se lo stato è stato aggiornato, invia notifiche appropriate
+      if (appointmentData.status && appointment.status !== appointmentData.status) {
+        // Invia notifica al cliente basata sul nuovo stato
+        if (appointmentData.status === 'confirmed') {
+          await notificationService.createAppointmentConfirmation(
+            updatedAppointment.clientId,
+            updatedAppointment
+          );
+        } else if (appointmentData.status === 'cancelled') {
+          await notificationService.createAppointmentCancellation(
+            updatedAppointment.clientId, 
+            updatedAppointment
+          );
+        } else if (appointmentData.status === 'completed') {
+          // Si potrebbe inviare un'altra notifica per appuntamento completato
+          // e magari chiedere una recensione
+        }
+      }
       
       res.json(updatedAppointment);
     } catch (error) {

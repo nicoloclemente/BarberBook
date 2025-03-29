@@ -269,6 +269,7 @@ export const NotificationType = {
   APPOINTMENT_CANCELLED: 'appointment_cancelled',
   APPOINTMENT_MODIFIED: 'appointment_modified',
   APPOINTMENT_COMPLETED: 'appointment_completed',
+  APPOINTMENT_REQUEST: 'appointment_request',
   NEW_MESSAGE: 'new_message',
   SYSTEM: 'system',
 } as const;
