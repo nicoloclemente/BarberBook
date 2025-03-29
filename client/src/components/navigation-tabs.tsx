@@ -65,17 +65,19 @@ export default function NavigationTabs() {
           </Link>
         </div>
         
-        {/* Tutti gli utenti vedono i servizi */}
-        <div className={`nav-item py-4 px-6 font-medium text-center ${
-          isActive("/services") ? "active" : "text-neutral-700 hover:text-primary transition-colors"
-        }`}>
-          <Link href="/services">
-            <div className="flex flex-col items-center cursor-pointer">
-              <Sparkles className="h-5 w-5 mb-1" />
-              <span>Servizi</span>
-            </div>
-          </Link>
-        </div>
+        {/* Solo barbieri e admin vedono i servizi */}
+        {(isBarber || isAdmin) && (
+          <div className={`nav-item py-4 px-6 font-medium text-center ${
+            isActive("/services") ? "active" : "text-neutral-700 hover:text-primary transition-colors"
+          }`}>
+            <Link href="/services">
+              <div className="flex flex-col items-center cursor-pointer">
+                <Sparkles className="h-5 w-5 mb-1" />
+                <span>Servizi</span>
+              </div>
+            </Link>
+          </div>
+        )}
         
         {/* Solo i barbieri vedono le statistiche */}
         {isBarber && (

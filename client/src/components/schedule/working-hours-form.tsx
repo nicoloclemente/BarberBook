@@ -18,7 +18,7 @@ import { useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { User } from "@shared/schema";
 import { useAuth } from "@/hooks/use-auth";
-import { CalendarIcon, Clock, Info, Loader2, Plus, Save, Scissors, Trash2 } from "lucide-react";
+import { AlertTriangle, CalendarIcon, CalendarOff, Clock, Info, Loader2, Plus, Save, Scissors, Trash2, X } from "lucide-react";
 import { format, formatISO, parse } from "date-fns";
 import { it } from "date-fns/locale";
 import { Badge } from "@/components/ui/badge";
@@ -71,10 +71,14 @@ const breaksSchema = z.array(z.object({
   }))
 }));
 
+// Schema per i giorni di chiusura totale
+const closedDaysSchema = z.array(z.string());
+
 // Schema combinato
 const scheduleSchema = z.object({
   workingHours: workingHoursSchema,
-  breaks: breaksSchema
+  breaks: breaksSchema,
+  closedDays: closedDaysSchema
 });
 
 type ScheduleFormValues = z.infer<typeof scheduleSchema>;
@@ -103,6 +107,9 @@ export default function WorkingHoursForm() {
   const [selectedBreakDate, setSelectedBreakDate] = useState<Date | undefined>(new Date());
   const [isEditingBreak, setIsEditingBreak] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  
+  // Stato per gestire i giorni di chiusura
+  const [showClosedDays, setShowClosedDays] = useState(false);
 
   // Valore predefinito per gli orari di lavoro (9-18 per i giorni settimanali, chiuso la domenica)
   const defaultWorkingHours = {
@@ -119,7 +126,8 @@ export default function WorkingHoursForm() {
     resolver: zodResolver(scheduleSchema),
     defaultValues: {
       workingHours: user?.workingHours || defaultWorkingHours,
-      breaks: user?.breaks || []
+      breaks: user?.breaks || [],
+      closedDays: user?.closedDays || []
     }
   });
 
@@ -224,10 +232,57 @@ export default function WorkingHoursForm() {
     return allBreaks.find(b => b.date === formattedDate);
   };
 
+  // Funzioni per i giorni di chiusura
+  const addClosedDay = () => {
+    if (!selectedBreakDate) return;
+    
+    const formattedDate = formatISO(selectedBreakDate, { representation: 'date' });
+    const existingClosedDays = form.getValues().closedDays || [];
+    
+    // Verifica se il giorno è già presente tra i giorni di chiusura
+    if (!existingClosedDays.includes(formattedDate)) {
+      form.setValue("closedDays", [...existingClosedDays, formattedDate]);
+      
+      toast({
+        title: "Giorno di chiusura aggiunto",
+        description: `Il ${format(selectedBreakDate, "d MMMM yyyy", { locale: it })} è stato aggiunto come giorno di chiusura.`,
+      });
+      
+      // Mostra la sezione dei giorni di chiusura
+      setShowClosedDays(true);
+    } else {
+      toast({
+        title: "Giorno già presente",
+        description: `Il ${format(selectedBreakDate, "d MMMM yyyy", { locale: it })} è già presente come giorno di chiusura.`,
+        variant: "destructive",
+      });
+    }
+  };
+  
+  const removeClosedDay = (dateStr: string) => {
+    const existingClosedDays = form.getValues().closedDays || [];
+    form.setValue("closedDays", existingClosedDays.filter(d => d !== dateStr));
+    
+    toast({
+      title: "Giorno di chiusura rimosso",
+      description: "Il giorno di chiusura è stato rimosso con successo.",
+    });
+  };
+  
+  // Verifica se la data selezionata è un giorno di chiusura
+  const isClosedDay = (date: Date | undefined) => {
+    if (!date) return false;
+    
+    const formattedDate = formatISO(date, { representation: 'date' });
+    const closedDays = form.getValues().closedDays || [];
+    return closedDays.includes(formattedDate);
+  };
+  
   const selectedDateBreak = getBreaksForDate(selectedBreakDate);
   const selectedDateBreakIndex = selectedBreakDate 
     ? (form.getValues().breaks || []).findIndex(b => b.date === formatISO(selectedBreakDate, { representation: 'date' }))
     : -1;
+  const selectedDateIsClosed = selectedBreakDate ? isClosedDay(selectedBreakDate) : false;
 
   return (
     <div className="space-y-8">
@@ -245,9 +300,10 @@ export default function WorkingHoursForm() {
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <Tabs defaultValue="working-hours" className="w-full">
-                <TabsList className="grid w-full grid-cols-2">
+                <TabsList className="grid w-full grid-cols-3">
                   <TabsTrigger value="working-hours">Orari di Lavoro</TabsTrigger>
-                  <TabsTrigger value="breaks">Pause e Ferie</TabsTrigger>
+                  <TabsTrigger value="breaks">Pause</TabsTrigger>
+                  <TabsTrigger value="closed-days">Giorni di Chiusura</TabsTrigger>
                 </TabsList>
                 
                 {/* Tab per gli orari di lavoro */}
@@ -494,6 +550,125 @@ export default function WorkingHoursForm() {
                             <p className="text-blue-800 text-sm">
                               Puoi utilizzare questo strumento per impostare pause pranzo, ferie o altri periodi di indisponibilità. 
                               Durante questi periodi non potranno essere prenotati appuntamenti.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </TabsContent>
+                
+                {/* Tab per i giorni di chiusura */}
+                <TabsContent value="closed-days" className="space-y-4 py-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-4">
+                      <h3 className="font-medium">Seleziona una data</h3>
+                      <div className="bg-card border rounded-lg p-2">
+                        <Calendar
+                          mode="single"
+                          selected={selectedBreakDate}
+                          onSelect={setSelectedBreakDate}
+                          locale={it}
+                          className="rounded-md"
+                          modifiers={{
+                            isClosed: (date) => {
+                              const formattedDate = formatISO(date, { representation: 'date' });
+                              return (form.getValues().closedDays || []).includes(formattedDate);
+                            }
+                          }}
+                          modifiersClassNames={{
+                            isClosed: "border-2 border-red-400 bg-red-50"
+                          }}
+                        />
+                      </div>
+                      
+                      <div className="flex flex-wrap gap-2 items-center">
+                        <div className="flex items-center gap-1">
+                          <div className="w-4 h-4 border-2 border-red-400 bg-red-50 rounded-sm"></div>
+                          <span className="text-sm">Giorni di chiusura</span>
+                        </div>
+                      </div>
+                      
+                      <Button
+                        type="button"
+                        variant={selectedDateIsClosed ? "destructive" : "default"}
+                        onClick={selectedDateIsClosed ? 
+                          () => removeClosedDay(formatISO(selectedBreakDate as Date, { representation: 'date' })) : 
+                          addClosedDay}
+                        disabled={!selectedBreakDate}
+                        className="w-full"
+                      >
+                        {selectedDateIsClosed ? (
+                          <>
+                            <X className="h-4 w-4 mr-2" />
+                            Rimuovi giorno di chiusura
+                          </>
+                        ) : (
+                          <>
+                            <Plus className="h-4 w-4 mr-2" />
+                            Aggiungi giorno di chiusura
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                    
+                    <div className="space-y-4">
+                      {(form.getValues().closedDays || []).length > 0 ? (
+                        <>
+                          <div className="flex items-center justify-between">
+                            <h3 className="font-medium">
+                              Giorni di chiusura programmati
+                            </h3>
+                            <Badge variant="outline" className="bg-red-50 border-red-200 text-red-700">
+                              {(form.getValues().closedDays || []).length} {(form.getValues().closedDays || []).length === 1 ? "giorno" : "giorni"}
+                            </Badge>
+                          </div>
+                          
+                          <div className="bg-card border rounded-lg p-4 max-h-[300px] overflow-y-auto">
+                            <div className="space-y-2">
+                              {(form.getValues().closedDays || [])
+                                .sort((a, b) => new Date(a).getTime() - new Date(b).getTime())
+                                .map((dateStr, index) => {
+                                  const date = new Date(dateStr);
+                                  return (
+                                    <div key={index} className="flex items-center justify-between p-2 rounded-md hover:bg-muted/50">
+                                      <div className="flex items-center gap-2">
+                                        <Calendar className="h-4 w-4 text-red-600" />
+                                        <span>{format(date, "d MMMM yyyy", { locale: it })}</span>
+                                      </div>
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={() => removeClosedDay(dateStr)}
+                                        className="h-8 w-8"
+                                      >
+                                        <Trash2 className="h-4 w-4" />
+                                      </Button>
+                                    </div>
+                                  );
+                                })}
+                            </div>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="flex flex-col items-center justify-center h-[300px] bg-card border rounded-lg p-4">
+                          <CalendarOff className="h-12 w-12 text-muted-foreground/50 mb-4" />
+                          <h3 className="font-medium mb-1">Nessun giorno di chiusura</h3>
+                          <p className="text-muted-foreground text-center text-sm max-w-[250px]">
+                            Seleziona un giorno dal calendario per impostarlo come giorno di chiusura
+                          </p>
+                        </div>
+                      )}
+                      
+                      <div className="bg-red-50 p-4 rounded-lg border border-red-200">
+                        <div className="flex items-start gap-2">
+                          <AlertTriangle className="h-5 w-5 text-red-700 mt-0.5 flex-shrink-0" />
+                          <div>
+                            <h4 className="font-medium text-red-900">Nota importante</h4>
+                            <p className="text-red-800 text-sm">
+                              I giorni di chiusura rappresentano le date in cui l'attività è completamente chiusa 
+                              (festività, ferie, ecc). Durante questi giorni non sarà possibile prenotare alcun appuntamento.
                             </p>
                           </div>
                         </div>

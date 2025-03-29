@@ -38,6 +38,7 @@ export const users = pgTable("users", {
     date: string; 
     slots: { start: string; end: string }[] 
   }[]>(),
+  closedDays: jsonb("closed_days").$type<string[]>(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -68,6 +69,7 @@ export const insertUserSchema = createInsertSchema(users)
     barberCode: true,
     workingHours: true,
     breaks: true,
+    closedDays: true,
   });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
