@@ -76,7 +76,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
       </header>
 
       {/* Navigation tabs for desktop */}
-      <NavigationTabs />
+      {user?.role !== 'admin' && <NavigationTabs />}
 
       {/* Main content */}
       <main className="flex-1 overflow-y-auto bg-gray-50">

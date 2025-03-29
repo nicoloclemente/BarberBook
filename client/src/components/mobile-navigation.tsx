@@ -17,6 +17,11 @@ export default function MobileNavigation() {
   const isAdmin = user?.role === 'admin';
   const isBarber = user?.isBarber || user?.role === 'barber';
   const isClient = !isBarber && !isAdmin;
+  
+  // Non mostrare la navigazione mobile per l'amministratore
+  if (isAdmin) {
+    return null;
+  }
 
   const isActive = (path: string) => {
     if (path === "/" && location === "/") return true;
@@ -38,7 +43,7 @@ export default function MobileNavigation() {
           </Link>
         </div>
         
-        {(isBarber || isAdmin) && (
+        {isBarber && (
           <div className={`py-3 px-2 font-medium focus:outline-none ${
             isActive("/clients") ? "text-primary" : "text-neutral-700"
           }`}>
@@ -62,7 +67,7 @@ export default function MobileNavigation() {
           </Link>
         </div>
         
-        {(isBarber || isAdmin) && (
+        {isBarber && (
           <div className={`py-3 px-2 font-medium focus:outline-none ${
             isActive("/services") ? "text-primary" : "text-neutral-700"
           }`}>
@@ -83,19 +88,6 @@ export default function MobileNavigation() {
               <div className="flex flex-col items-center cursor-pointer">
                 <BarChart className="h-5 w-5" />
                 <span className="text-xs mt-1">Stats</span>
-              </div>
-            </Link>
-          </div>
-        )}
-        
-        {isAdmin && (
-          <div className={`py-3 px-2 font-medium focus:outline-none ${
-            isActive("/admin") ? "text-primary" : "text-neutral-700"
-          }`}>
-            <Link href="/admin">
-              <div className="flex flex-col items-center cursor-pointer">
-                <ShieldCheck className="h-5 w-5" />
-                <span className="text-xs mt-1">Admin</span>
               </div>
             </Link>
           </div>
