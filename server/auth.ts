@@ -98,7 +98,8 @@ export function setupAuth(app: Express) {
         const validationError = fromZodError(error);
         res.status(400).json({ error: validationError.message });
       } else {
-        res.status(500).json({ error: "Registration failed" });
+        console.error("Registration error:", error);
+        res.status(500).json({ error: "Registration failed: " + (error instanceof Error ? error.message : String(error)) });
       }
     }
   });
