@@ -520,6 +520,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(clients);
   });
   
+  // Get clients by barber code
+  app.get("/api/clients/barber-code/:barberCode", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    const user = req.user!;
+    if (!user.isBarber && user.role !== UserRole.ADMIN) {
+      return res.status(403).json({ error: "Only barbers can access this endpoint" });
+    }
+    
+    const { barberCode } = req.params;
+    
+    // Verifichiamo che il barberCode appartenga all'utente corrente (se non è admin)
+    if (user.role !== UserRole.ADMIN && user.barberCode !== barberCode) {
+      return res.status(403).json({ error: "You can only access clients associated with your barber code" });
+    }
+
+    const clients = await storage.getClientsByBarberCode(barberCode);
+    res.json(clients);
+  });
+  
   // Statistics Routes
   app.get("/api/statistics", async (req, res) => {
     if (!req.isAuthenticated()) {

@@ -23,7 +23,7 @@ const profileSchema = z.object({
   name: z.string().min(2, "Il nome deve essere di almeno 2 caratteri"),
   phone: z.string().nullable().optional().or(z.literal("")),
   imageUrl: z.string().nullable().optional().or(z.literal("")),
-  preferredBarberId: z.number().nullable(),
+  barberCode: z.string().nullable().optional().or(z.literal("")),
 });
 
 type ProfileFormValues = z.infer<typeof profileSchema>;
@@ -39,7 +39,7 @@ export default function ProfilePage() {
       name: user?.name || "",
       phone: user?.phone || "",
       imageUrl: user?.imageUrl || "",
-      preferredBarberId: user?.preferredBarberId || null,
+      barberCode: user?.barberCode || "",
     }
   });
 
@@ -49,15 +49,12 @@ export default function ProfilePage() {
         name: user.name || "",
         phone: user.phone || "",
         imageUrl: user.imageUrl || "",
-        preferredBarberId: user.preferredBarberId || null,
+        barberCode: user.barberCode || "",
       });
     }
   }, [user, form]);
 
-  const { data: barbers, isLoading: isLoadingBarbers } = useQuery({
-    queryKey: ['/api/barbers'],
-    enabled: user?.role === UserRole.CLIENT
-  });
+  // Non abbiamo più bisogno dell'elenco dei barbieri poiché utilizziamo il codice barbiere
 
   const updateProfileMutation = useMutation({
     mutationFn: async (data: ProfileFormValues) => {
@@ -153,35 +150,45 @@ export default function ProfilePage() {
                   {isClient && (
                     <FormField
                       control={form.control}
-                      name="preferredBarberId"
+                      name="barberCode"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Barbiere Preferito</FormLabel>
-                          <Select
-                            disabled={isLoadingBarbers}
-                            value={field.value ? field.value.toString() : ""} 
-                            onValueChange={(value) => field.onChange(value ? parseInt(value) : null)}
-                          >
+                          <FormLabel>Codice Barbiere</FormLabel>
+                          <FormControl>
+                            <Input 
+                              {...field} 
+                              placeholder="Inserisci il codice del tuo barbiere preferito" 
+                              value={field.value || ""}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Chiedi al tuo barbiere di fiducia il suo codice personale per collegare il tuo account.
+                          </p>
+                        </FormItem>
+                      )}
+                    />
+                  )}
+                  
+                  {isBarber && (
+                    <FormField
+                      control={form.control}
+                      name="barberCode"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Il Tuo Codice Barbiere</FormLabel>
+                          <div className="flex space-x-2">
                             <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Seleziona il tuo barbiere" />
-                              </SelectTrigger>
+                              <Input 
+                                {...field} 
+                                placeholder="Il tuo codice identificativo" 
+                                value={field.value || ""}
+                              />
                             </FormControl>
-                            <SelectContent>
-                              {isLoadingBarbers ? (
-                                <SelectItem value="">Caricamento barbieri...</SelectItem>
-                              ) : (
-                                <>
-                                  <SelectItem value="">Nessun barbiere preferito</SelectItem>
-                                  {barbers?.map((barber: User) => (
-                                    <SelectItem key={barber.id} value={barber.id.toString()}>
-                                      {barber.name}
-                                    </SelectItem>
-                                  ))}
-                                </>
-                              )}
-                            </SelectContent>
-                          </Select>
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Questo è il tuo codice unico. Condividilo con i clienti per permettere loro di selezionarti come loro barbiere.
+                          </p>
                           <FormMessage />
                         </FormItem>
                       )}

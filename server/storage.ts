@@ -25,6 +25,7 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
   getAllBarbers(): Promise<User[]>;
   getAllClients(): Promise<User[]>;
+  getClientsByBarberCode(barberCode: string): Promise<User[]>;
   getUsersByRole(role: string): Promise<User[]>;
   updateUser(id: number, userData: Partial<InsertUser>): Promise<User | undefined>;
   approveBarber(id: number): Promise<User | undefined>;
@@ -166,6 +167,11 @@ export class MemStorage implements IStorage {
 
   async getAllClients(): Promise<User[]> {
     return Array.from(this.users.values()).filter(user => !user.isBarber);
+  }
+  
+  async getClientsByBarberCode(barberCode: string): Promise<User[]> {
+    return Array.from(this.users.values())
+      .filter(user => !user.isBarber && user.barberCode === barberCode);
   }
 
   // Service related methods
@@ -578,6 +584,22 @@ export class DatabaseStorage implements IStorage {
     }, 10 * 60 * 1000); // 10 minuti
   }
   
+  async getClientsByBarberCode(barberCode: string): Promise<User[]> {
+    // Memorizziamo la lista dei clienti per barber code in cache per 5 minuti
+    return cache.getOrSet(`users:clients:barberCode:${barberCode}`, async () => {
+      return db.select().from(users).where(
+        and(
+          eq(users.isActive, true),
+          or(
+            eq(users.isBarber, false),
+            eq(users.role, UserRole.CLIENT)
+          ),
+          eq(users.barberCode, barberCode)
+        )
+      );
+    }, 5 * 60 * 1000); // 5 minuti
+  }
+  
   async getUsersByRole(role: string): Promise<User[]> {
     // Memorizziamo la lista degli utenti per ruolo in cache per 10 minuti
     return cache.getOrSet(`users:role:${role}`, async () => {
@@ -591,6 +613,15 @@ export class DatabaseStorage implements IStorage {
   }
   
   async updateUser(id: number, userData: Partial<InsertUser>): Promise<User | undefined> {
+    // Se stiamo aggiornando il barberCode, dobbiamo invalidare la cache dei clienti per quel barberCode
+    let oldBarberCode: string | null = null;
+    if (userData.barberCode !== undefined) {
+      const [existingUser] = await db.select().from(users).where(eq(users.id, id));
+      if (existingUser) {
+        oldBarberCode = existingUser.barberCode;
+      }
+    }
+    
     const [user] = await db
       .update(users)
       .set(userData)
@@ -604,6 +635,16 @@ export class DatabaseStorage implements IStorage {
       cache.delete('users:barbers');
       cache.delete('users:clients');
       cache.delete(`users:role:${user.role}`);
+      
+      // Se è stato aggiornato il barberCode, invalidiamo anche la cache dei clienti con quel barberCode
+      if (userData.barberCode !== undefined) {
+        if (oldBarberCode) {
+          cache.delete(`users:clients:barberCode:${oldBarberCode}`);
+        }
+        if (userData.barberCode) {
+          cache.delete(`users:clients:barberCode:${userData.barberCode}`);
+        }
+      }
     }
     
     return user;
@@ -999,6 +1040,16 @@ export class DatabaseStorage implements IStorage {
           // Clear all date-specific appointment caches for this barber
           // Non possiamo sapere tutte le date, ma invalidiamo la cache completa
           cache.invalidateByTag('appointments');
+          
+          // Se il barbiere ha un barberCode, invalidiamo anche la cache relativa
+          if (user.barberCode) {
+            cache.delete(`users:clients:barberCode:${user.barberCode}`);
+          }
+        }
+        
+        // Se è un cliente con barberCode, invalidiamo la cache relativa
+        if ((!user.isBarber || user.role === UserRole.CLIENT) && user.barberCode) {
+          cache.delete(`users:clients:barberCode:${user.barberCode}`);
         }
       }
       
