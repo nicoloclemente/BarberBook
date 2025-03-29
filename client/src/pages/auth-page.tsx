@@ -36,6 +36,11 @@ export default function AuthPage() {
   const [activeTab, setActiveTab] = useState<string>("login");
   const { loginMutation, registerMutation, user } = useAuth();
   const [, setLocation] = useLocation();
+  
+  // Previene il comportamento predefinito dei pulsanti nelle schede
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+  };
 
   // Redirect if already logged in
   if (user) {
@@ -127,10 +132,10 @@ export default function AuthPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Tabs defaultValue="login" value={activeTab} onValueChange={setActiveTab}>
+            <Tabs defaultValue="login" value={activeTab} onValueChange={handleTabChange}>
               <TabsList className="grid w-full grid-cols-2 mb-5">
-                <TabsTrigger value="login">Accedi</TabsTrigger>
-                <TabsTrigger value="register">Registrati</TabsTrigger>
+                <TabsTrigger value="login" type="button">Accedi</TabsTrigger>
+                <TabsTrigger value="register" type="button">Registrati</TabsTrigger>
               </TabsList>
 
               <TabsContent value="login">
@@ -336,7 +341,10 @@ export default function AuthPage() {
                   <Button 
                     variant="link" 
                     className="p-0 h-auto text-xs font-medium" 
-                    onClick={() => setActiveTab("register")}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handleTabChange("register");
+                    }}
                   >
                     Registrati
                   </Button>
@@ -347,7 +355,10 @@ export default function AuthPage() {
                   <Button 
                     variant="link" 
                     className="p-0 h-auto text-xs font-medium" 
-                    onClick={() => setActiveTab("login")}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handleTabChange("login");
+                    }}
                   >
                     Accedi
                   </Button>
