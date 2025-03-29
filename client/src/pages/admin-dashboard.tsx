@@ -104,11 +104,10 @@ export default function AdminDashboard() {
           Dashboard Amministrativa
         </h1>
         
-        <Tabs defaultValue="barbers" className="w-full">
+        <Tabs defaultValue="system" className="w-full">
           <TabsList className="mb-4">
             <TabsTrigger value="barbers">Gestione Barbieri</TabsTrigger>
             <TabsTrigger value="clients">Gestione Clienti</TabsTrigger>
-            <TabsTrigger value="statistics">Statistiche Globali</TabsTrigger>
             <TabsTrigger value="system">Sistema</TabsTrigger>
           </TabsList>
 
@@ -268,63 +267,7 @@ export default function AdminDashboard() {
             </Card>
           </TabsContent>
 
-          {/* Pannello Statistiche Globali */}
-          <TabsContent value="statistics">
-            <Card>
-              <CardHeader>
-                <CardTitle>Statistiche Globali</CardTitle>
-                <CardDescription>
-                  Panoramica delle statistiche di tutti i barbieri e del sistema
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-sm font-medium text-muted-foreground">
-                        Appuntamenti Totali
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">
-                        {isLoadingBarbers || isLoadingClients ? <Loader2 className="h-5 w-5 animate-spin inline" /> : "0"}
-                      </div>
-                    </CardContent>
-                  </Card>
 
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-sm font-medium text-muted-foreground">
-                        Barbieri Attivi
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">
-                        {isLoadingBarbers ? (
-                          <Loader2 className="h-5 w-5 animate-spin inline" />
-                        ) : (
-                          barbers?.filter(b => b.isApproved).length || 0
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-sm font-medium text-muted-foreground">
-                        Clienti Registrati
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">
-                        {isLoadingClients ? <Loader2 className="h-5 w-5 animate-spin inline" /> : (clients?.length || 0)}
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
 
           {/* Pannello Sistema */}
           <TabsContent value="system">
