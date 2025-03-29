@@ -25,7 +25,7 @@ export default function NavigationTabs() {
   const isClient = !isBarber && !isAdmin;
 
   return (
-    <nav className="bg-white border-b border-neutral-200 shadow-sm overflow-x-auto">
+    <nav className="hidden md:flex bg-white border-b border-neutral-200 shadow-sm overflow-x-auto">
       <div className="flex justify-around">
         {/* Tutti gli utenti vedono gli appuntamenti, ma per scopi diversi */}
         <div className={`nav-item py-4 px-6 font-medium text-center ${
