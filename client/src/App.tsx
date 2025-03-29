@@ -11,6 +11,7 @@ import ChatPage from "@/pages/chat-page";
 import StatisticsPage from "@/pages/statistics-page";
 import ProfilePage from "@/pages/profile-page";
 import AdminDashboard from "@/pages/admin-dashboard";
+import AdminNotificationsPage from "@/pages/admin-notifications";
 import { AuthProvider } from "@/hooks/use-auth";
 import { ProtectedRoute } from "@/lib/protected-route";
 
@@ -26,6 +27,7 @@ function Router() {
       <ProtectedRoute path="/statistics" component={StatisticsPage} />
       <ProtectedRoute path="/profile" component={ProfilePage} />
       <ProtectedRoute path="/admin" component={AdminDashboard} />
+      <ProtectedRoute path="/admin/notifications" component={AdminNotificationsPage} />
       <Route component={NotFound} />
     </Switch>
   );

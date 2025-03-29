@@ -265,6 +265,7 @@ export type ReviewWithDetails = Review & {
 // Tipo di notifica
 export const NotificationType = {
   APPOINTMENT_REMINDER: 'appointment_reminder',
+  APPOINTMENT_REMINDER_SAME_DAY: 'appointment_reminder_same_day',
   APPOINTMENT_CONFIRMATION: 'appointment_confirmation',
   APPOINTMENT_CANCELLED: 'appointment_cancelled',
   APPOINTMENT_MODIFIED: 'appointment_modified',

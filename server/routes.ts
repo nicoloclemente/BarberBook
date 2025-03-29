@@ -1005,6 +1005,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(notifications);
   });
   
+  app.get("/api/notifications/all", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    
+    // Solo gli amministratori possono vedere tutte le notifiche
+    if (req.user!.role !== UserRole.ADMIN) {
+      return res.status(403).json({ error: "Not authorized to view all notifications" });
+    }
+    
+    const notifications = await storage.getAllNotifications();
+    res.json(notifications);
+  });
+  
   app.get("/api/notifications/unread/count", async (req, res) => {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ error: "Not authenticated" });

@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, UserCheck, UserX, RefreshCw, Info } from "lucide-react";
+import { Loader2, UserCheck, UserX, RefreshCw, Info, Bell } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import DeleteAccountDialog from "@/components/account/delete-account-dialog";
@@ -351,6 +351,17 @@ export default function AdminDashboard() {
                       Operativo
                     </Badge>
                   </div>
+                  <Button 
+                    className="w-full justify-between" 
+                    variant="outline" 
+                    onClick={() => navigate("/admin/notifications")}
+                  >
+                    <span className="font-medium flex items-center gap-2">
+                      <Bell className="h-4 w-4" />
+                      Gestione Notifiche
+                    </span>
+                    <span>→</span>
+                  </Button>
                 </div>
               </CardContent>
             </Card>

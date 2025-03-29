@@ -69,6 +69,7 @@ export interface IStorage {
   // Notification related operations
   getNotification(id: number): Promise<Notification | undefined>;
   getNotificationsByUser(userId: number): Promise<Notification[]>;
+  getAllNotifications(): Promise<Notification[]>;
   getUnreadNotificationCount(userId: number): Promise<number>;
   createNotification(notification: InsertNotification): Promise<Notification>;
   markNotificationAsRead(id: number): Promise<boolean>;
@@ -460,6 +461,11 @@ export class MemStorage implements IStorage {
   async getNotificationsByUser(userId: number): Promise<Notification[]> {
     return Array.from(this.notifications.values())
       .filter(notification => notification.userId === userId)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }
+  
+  async getAllNotifications(): Promise<Notification[]> {
+    return Array.from(this.notifications.values())
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }
   
@@ -1142,6 +1148,11 @@ export class DatabaseStorage implements IStorage {
   async getNotificationsByUser(userId: number): Promise<Notification[]> {
     return db.select().from(notifications)
       .where(eq(notifications.userId, userId))
+      .orderBy(desc(notifications.createdAt));
+  }
+  
+  async getAllNotifications(): Promise<Notification[]> {
+    return db.select().from(notifications)
       .orderBy(desc(notifications.createdAt));
   }
   

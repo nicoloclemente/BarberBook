@@ -38,6 +38,32 @@ export class NotificationService {
   }
   
   /**
+   * Crea una notifica per un promemoria di appuntamento nello stesso giorno
+   * @param userId ID dell'utente destinatario
+   * @param appointment L'appuntamento per cui creare il promemoria
+   */
+  async createSameDayAppointmentReminder(userId: number, appointment: Appointment): Promise<void> {
+    // Determina l'orario dell'appuntamento
+    const appointmentDate = new Date(appointment.date);
+    const timeString = appointmentDate.toLocaleTimeString('it-IT', { 
+      hour: '2-digit', 
+      minute: '2-digit' 
+    });
+    
+    // Crea la notifica
+    const notification: InsertNotification = {
+      userId,
+      type: NotificationType.APPOINTMENT_REMINDER_SAME_DAY,
+      title: "Promemoria Appuntamento Oggi",
+      message: `Ricorda: hai un appuntamento oggi alle ${timeString}. Ti aspettiamo!`,
+      isRead: false,
+      relatedId: appointment.id
+    };
+    
+    await storage.createNotification(notification);
+  }
+  
+  /**
    * Crea una notifica per la conferma di un appuntamento
    * @param userId ID dell'utente destinatario
    * @param appointment L'appuntamento confermato
