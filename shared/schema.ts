@@ -257,3 +257,52 @@ export type ReviewWithDetails = Review & {
   barber: User;
   appointment: Appointment;
 };
+
+// Tipo di notifica
+export const NotificationType = {
+  APPOINTMENT_REMINDER: 'appointment_reminder',
+  APPOINTMENT_CONFIRMATION: 'appointment_confirmation',
+  APPOINTMENT_CANCELLED: 'appointment_cancelled',
+  APPOINTMENT_MODIFIED: 'appointment_modified',
+  APPOINTMENT_COMPLETED: 'appointment_completed',
+  NEW_MESSAGE: 'new_message',
+  SYSTEM: 'system',
+} as const;
+
+export type NotificationTypeType = typeof NotificationType[keyof typeof NotificationType];
+
+// Notifiche
+export const notifications = pgTable("notifications", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(), // Utente destinatario
+  type: text("type").notNull(), // Tipo di notifica
+  title: text("title").notNull(),
+  message: text("message").notNull(),
+  isRead: boolean("is_read").default(false).notNull(),
+  relatedId: integer("related_id"), // ID correlato (es. appointmentId, messageId)
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const notificationRelations = relations(notifications, ({ one }) => ({
+  user: one(users, {
+    fields: [notifications.userId],
+    references: [users.id]
+  })
+}));
+
+export const insertNotificationSchema = createInsertSchema(notifications)
+  .pick({
+    userId: true,
+    type: true,
+    title: true,
+    message: true,
+    isRead: true,
+    relatedId: true,
+  });
+
+export type InsertNotification = z.infer<typeof insertNotificationSchema>;
+export type Notification = typeof notifications.$inferSelect;
+
+export type NotificationWithUser = Notification & {
+  user: User;
+};

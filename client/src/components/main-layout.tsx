@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { ProfileImage } from "@/components/ui/profile-image";
 import { Button } from "@/components/ui/button";
 import { Scissors, LogOut } from "lucide-react";
+import { NotificationCenter } from "@/components/ui/notification-center";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -43,6 +44,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
           
           {user && (
             <div className="flex items-center space-x-4">
+              <NotificationCenter />
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative h-8 w-8 rounded-full">

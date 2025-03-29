@@ -10,8 +10,10 @@ import {
   insertReviewSchema, 
   insertStatisticsSchema,
   insertUserSchema,
+  insertNotificationSchema,
   UserRole
 } from "@shared/schema";
+import { notificationService } from "./notification-service";
 import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
 import { cache } from "./cache";
@@ -935,6 +937,96 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
     });
+  });
+
+  // Notifications Routes
+  app.get("/api/notifications", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    
+    const userId = req.user!.id;
+    const notifications = await storage.getNotificationsByUser(userId);
+    res.json(notifications);
+  });
+  
+  app.get("/api/notifications/unread/count", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    
+    const userId = req.user!.id;
+    const count = await storage.getUnreadNotificationCount(userId);
+    res.json({ count });
+  });
+  
+  app.post("/api/notifications", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    
+    try {
+      const notificationData = insertNotificationSchema.parse(req.body);
+      
+      // Solo amministratori o l'utente stesso possono creare notifiche per un utente
+      const currentUser = req.user!;
+      if (notificationData.userId !== currentUser.id && currentUser.role !== UserRole.ADMIN) {
+        return res.status(403).json({ error: "Not authorized to create notifications for other users" });
+      }
+      
+      const notification = await storage.createNotification(notificationData);
+      res.status(201).json(notification);
+    } catch (error) {
+      if (error instanceof ZodError) {
+        const validationError = fromZodError(error);
+        res.status(400).json({ error: validationError.message });
+      } else {
+        res.status(500).json({ error: "Failed to create notification" });
+      }
+    }
+  });
+  
+  app.put("/api/notifications/:id/read", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      return res.status(400).json({ error: "Invalid notification ID" });
+    }
+    
+    const notification = await storage.getNotification(id);
+    if (!notification) {
+      return res.status(404).json({ error: "Notification not found" });
+    }
+    
+    // Solo l'utente destinatario può segnare come letta la notifica
+    if (notification.userId !== req.user!.id) {
+      return res.status(403).json({ error: "Not authorized to mark this notification as read" });
+    }
+    
+    const success = await storage.markNotificationAsRead(id);
+    if (!success) {
+      return res.status(500).json({ error: "Failed to mark notification as read" });
+    }
+    
+    res.status(204).end();
+  });
+  
+  app.put("/api/notifications/all/read", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    
+    const userId = req.user!.id;
+    const success = await storage.markAllNotificationsAsRead(userId);
+    
+    if (!success) {
+      return res.status(500).json({ error: "Failed to mark all notifications as read" });
+    }
+    
+    res.status(204).end();
   });
 
   return httpServer;

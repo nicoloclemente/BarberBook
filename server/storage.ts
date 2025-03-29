@@ -65,6 +65,14 @@ export interface IStorage {
   getReviewsByBarber(barberId: number): Promise<ReviewWithDetails[]>;
   getReviewsByClient(clientId: number): Promise<ReviewWithDetails[]>;
   
+  // Notification related operations
+  getNotification(id: number): Promise<Notification | undefined>;
+  getNotificationsByUser(userId: number): Promise<Notification[]>;
+  getUnreadNotificationCount(userId: number): Promise<number>;
+  createNotification(notification: InsertNotification): Promise<Notification>;
+  markNotificationAsRead(id: number): Promise<boolean>;
+  markAllNotificationsAsRead(userId: number): Promise<boolean>;
+  
   // Session store
   sessionStore: session.Store;
 }
@@ -74,21 +82,25 @@ export class MemStorage implements IStorage {
   private services: Map<number, Service>;
   private appointments: Map<number, Appointment>;
   private messages: Map<number, Message>;
+  private notifications: Map<number, Notification>;
   private userIdCounter: number;
   private serviceIdCounter: number;
   private appointmentIdCounter: number;
   private messageIdCounter: number;
-  sessionStore: session.SessionStore;
+  private notificationIdCounter: number;
+  sessionStore: session.Store;
 
   constructor() {
     this.users = new Map();
     this.services = new Map();
     this.appointments = new Map();
     this.messages = new Map();
+    this.notifications = new Map();
     this.userIdCounter = 1;
     this.serviceIdCounter = 1;
     this.appointmentIdCounter = 1;
     this.messageIdCounter = 1;
+    this.notificationIdCounter = 1;
 
     // Initialize session store
     const MemoryStore = createMemoryStore(session);
@@ -425,8 +437,64 @@ export class MemStorage implements IStorage {
       .filter(message => message.senderId === id || message.receiverId === id)
       .forEach(message => this.messages.delete(message.id));
     
+    // Elimina tutte le notifiche dell'utente
+    Array.from(this.notifications.values())
+      .filter(notification => notification.userId === id)
+      .forEach(notification => this.notifications.delete(notification.id));
+    
     // Infine elimina l'utente
     return this.users.delete(id);
+  }
+  
+  // Notification related methods
+  async getNotification(id: number): Promise<Notification | undefined> {
+    return this.notifications.get(id);
+  }
+  
+  async getNotificationsByUser(userId: number): Promise<Notification[]> {
+    return Array.from(this.notifications.values())
+      .filter(notification => notification.userId === userId)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }
+  
+  async getUnreadNotificationCount(userId: number): Promise<number> {
+    return Array.from(this.notifications.values())
+      .filter(notification => notification.userId === userId && !notification.isRead)
+      .length;
+  }
+  
+  async createNotification(notification: InsertNotification): Promise<Notification> {
+    const id = this.notificationIdCounter++;
+    const newNotification: Notification = {
+      ...notification,
+      id,
+      createdAt: new Date()
+    };
+    this.notifications.set(id, newNotification);
+    return newNotification;
+  }
+  
+  async markNotificationAsRead(id: number): Promise<boolean> {
+    const notification = this.notifications.get(id);
+    if (!notification) return false;
+    
+    notification.isRead = true;
+    this.notifications.set(id, notification);
+    return true;
+  }
+  
+  async markAllNotificationsAsRead(userId: number): Promise<boolean> {
+    let updated = false;
+    
+    Array.from(this.notifications.values())
+      .filter(notification => notification.userId === userId && !notification.isRead)
+      .forEach(notification => {
+        notification.isRead = true;
+        this.notifications.set(notification.id, notification);
+        updated = true;
+      });
+    
+    return updated;
   }
 }
 
@@ -1012,6 +1080,58 @@ export class DatabaseStorage implements IStorage {
       },
       orderBy: [desc(reviews.createdAt)],
     });
+  }
+  
+  // Notification related operations
+  async getNotification(id: number): Promise<Notification | undefined> {
+    const [notification] = await db.select().from(notifications).where(eq(notifications.id, id));
+    return notification;
+  }
+  
+  async getNotificationsByUser(userId: number): Promise<Notification[]> {
+    return db.select().from(notifications)
+      .where(eq(notifications.userId, userId))
+      .orderBy(desc(notifications.createdAt));
+  }
+  
+  async getUnreadNotificationCount(userId: number): Promise<number> {
+    const result = await db.select({ count: sql<number>`count(*)` })
+      .from(notifications)
+      .where(and(
+        eq(notifications.userId, userId),
+        eq(notifications.isRead, false)
+      ));
+    
+    return result[0]?.count || 0;
+  }
+  
+  async createNotification(notification: InsertNotification): Promise<Notification> {
+    const [createdNotification] = await db.insert(notifications)
+      .values(notification)
+      .returning();
+    
+    return createdNotification;
+  }
+  
+  async markNotificationAsRead(id: number): Promise<boolean> {
+    const result = await db.update(notifications)
+      .set({ isRead: true })
+      .where(eq(notifications.id, id))
+      .returning();
+    
+    return result.length > 0;
+  }
+  
+  async markAllNotificationsAsRead(userId: number): Promise<boolean> {
+    const result = await db.update(notifications)
+      .set({ isRead: true })
+      .where(and(
+        eq(notifications.userId, userId),
+        eq(notifications.isRead, false)
+      ))
+      .returning();
+    
+    return result.length > 0;
   }
 }
 
