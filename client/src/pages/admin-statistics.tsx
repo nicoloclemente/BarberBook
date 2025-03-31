@@ -27,7 +27,8 @@ import {
   Clock,
   BarChart4,
   CircleUser,
-  Scissors
+  Scissors,
+  HardDrive
 } from 'lucide-react';
 
 import {
@@ -103,6 +104,12 @@ interface SystemStats {
     confirmedCount: number;
     cancelledCount: number;
     completedCount: number;
+    serverUsage: {
+      estimatedRequests: number;
+      activeConnections: number;
+      messageCount: number;
+      impactPercentage: string;
+    }
   }>;
 }
 
@@ -133,6 +140,14 @@ interface ClientPerBarber {
     appointmentCount: number;
     lastAppointment: string | null;
   }>;
+}
+
+// Metriche di utilizzo del server per barbiere
+interface ServerUsageMetrics {
+  estimatedRequests: number;
+  activeConnections: number;
+  messageCount: number;
+  impactPercentage: string;
 }
 
 export default function AdminStatisticsPage() {
@@ -519,6 +534,62 @@ export default function AdminStatisticsPage() {
               </CardContent>
             </Card>
           </div>
+
+          {/* Utenti Online */}
+          {/* Utilizzo del Server per Barbiere */}
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Cpu className="mr-2 h-5 w-5" />
+                Impatto sul Server per Barbiere
+              </CardTitle>
+              <CardDescription>
+                Analisi dell'impatto di ciascun barbiere sull'utilizzo delle risorse del server
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {systemStats ? (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Barbiere</TableHead>
+                        <TableHead>Richieste Stimate</TableHead>
+                        <TableHead>Connessioni Attive</TableHead>
+                        <TableHead>Messaggi</TableHead>
+                        <TableHead>Impatto sul Server</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {systemStats.clientsPerBarber.map(barber => (
+                        <TableRow key={barber.barberId}>
+                          <TableCell className="font-medium">{barber.barberName}</TableCell>
+                          <TableCell>{barber.serverUsage.estimatedRequests}</TableCell>
+                          <TableCell>{barber.serverUsage.activeConnections}</TableCell>
+                          <TableCell>{barber.serverUsage.messageCount}</TableCell>
+                          <TableCell>
+                            <div className="flex items-center">
+                              <div className="w-full bg-gray-200 rounded-full h-2.5 mr-2">
+                                <div 
+                                  className="bg-primary h-2.5 rounded-full" 
+                                  style={{ width: barber.serverUsage.impactPercentage }}
+                                ></div>
+                              </div>
+                              <span className="whitespace-nowrap">{barber.serverUsage.impactPercentage}</span>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              ) : (
+                <div className="text-center py-4 text-muted-foreground">
+                  Caricamento delle statistiche di utilizzo del server...
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
           {/* Utenti Online */}
           <Card className="mb-6">

@@ -52,6 +52,7 @@ export interface IStorage {
   
   // Message related operations
   getMessage(id: number): Promise<Message | undefined>;
+  getAllMessages(): Promise<Message[]>;
   getMessagesBetweenUsers(user1Id: number, user2Id: number): Promise<MessageWithSender[]>;
   getUnreadMessageCount(userId: number): Promise<Record<number, number>>;
   getRecentChats(userId: number): Promise<{userId: number, user: User, lastMessage: Message, unreadCount: number}[]>;
@@ -329,6 +330,10 @@ export class MemStorage implements IStorage {
   // Message related methods
   async getMessage(id: number): Promise<Message | undefined> {
     return this.messages.get(id);
+  }
+  
+  async getAllMessages(): Promise<Message[]> {
+    return Array.from(this.messages.values());
   }
 
   async getMessagesBetweenUsers(user1Id: number, user2Id: number): Promise<MessageWithSender[]> {
@@ -883,6 +888,10 @@ export class DatabaseStorage implements IStorage {
   async getMessage(id: number): Promise<Message | undefined> {
     const [message] = await db.select().from(messages).where(eq(messages.id, id));
     return message;
+  }
+  
+  async getAllMessages(): Promise<Message[]> {
+    return db.select().from(messages);
   }
 
   async getMessagesBetweenUsers(user1Id: number, user2Id: number): Promise<MessageWithSender[]> {
