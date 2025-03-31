@@ -76,7 +76,8 @@ export default function AdminDashboard() {
     mutationFn: async (barberId: number) => {
       return apiRequest("PUT", `/api/admin/approve-barber/${barberId}`);
     },
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
+      // Invalidate only the specific barber query
       queryClient.invalidateQueries({ queryKey: ["/api/admin/barbers"] });
       toast({
         title: "Barbiere approvato",
@@ -97,7 +98,8 @@ export default function AdminDashboard() {
     mutationFn: async (barberId: number) => {
       return apiRequest("PUT", `/api/admin/remove-barber-approval/${barberId}`);
     },
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
+      // Invalidate only the specific barber query
       queryClient.invalidateQueries({ queryKey: ["/api/admin/barbers"] });
       toast({
         title: "Approvazione rimossa",
@@ -242,7 +244,7 @@ export default function AdminDashboard() {
                                 onClick={() => removeApprovalMutation.mutate(barber.id)} 
                                 disabled={removeApprovalMutation.isPending}
                               >
-                                {removeApprovalMutation.isPending ? (
+                                {removeApprovalMutation.isPending && removeApprovalMutation.variables === barber.id ? (
                                   <Loader2 className="h-4 w-4 animate-spin" />
                                 ) : (
                                   <>
@@ -258,7 +260,7 @@ export default function AdminDashboard() {
                                 onClick={() => approveMutation.mutate(barber.id)} 
                                 disabled={approveMutation.isPending}
                               >
-                                {approveMutation.isPending ? (
+                                {approveMutation.isPending && approveMutation.variables === barber.id ? (
                                   <Loader2 className="h-4 w-4 animate-spin" />
                                 ) : (
                                   <>
