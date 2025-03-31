@@ -14,7 +14,7 @@ type AuthContextType = {
   isLoading: boolean;
   error: Error | null;
   loginMutation: UseMutationResult<Omit<SelectUser, 'password'>, Error, LoginData>;
-  logoutMutation: UseMutationResult<void, Error, void>;
+  logoutMutation: UseMutationResult<{ success: boolean }, Error, void>;
   registerMutation: UseMutationResult<Omit<SelectUser, 'password'>, Error, RegisterData>;
 };
 

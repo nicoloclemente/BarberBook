@@ -23,23 +23,23 @@ import { ProtectedRoute } from "@/lib/protected-route";
 function Router() {
   return (
     <Switch>
-      <Route path="/auth" component={AuthPage} />
-      <ProtectedRoute path="/" component={DashboardPage} />
-      <ProtectedRoute path="/dashboard" component={DashboardPage} />
-      <ProtectedRoute path="/daily" component={DailyPage} />
-      <ProtectedRoute path="/clients" component={ClientsPage} />
-      <ProtectedRoute path="/services" component={ServicesPage} />
-      <ProtectedRoute path="/chat" component={ChatPage} />
-      <ProtectedRoute path="/chat/:userId" component={ChatPage} />
-      <ProtectedRoute path="/statistics" component={StatisticsPage} />
-      <ProtectedRoute path="/profile" component={ProfilePage} />
-      <ProtectedRoute path="/settings" component={SettingsPage} />
-      <Route path="/barbers" component={BarbersListPage} />
-      <Route path="/barbers/:id" component={BarberDetailPage} />
-      <ProtectedRoute path="/admin" component={AdminDashboard} />
-      <ProtectedRoute path="/admin/notifications" component={AdminNotificationsPage} />
-      <ProtectedRoute path="/admin/statistics" component={AdminStatisticsPage} />
-      <Route component={NotFound} />
+      <Route path="/auth" component={AuthPage as React.ComponentType<any>} />
+      <ProtectedRoute path="/" component={DashboardPage as React.ComponentType<any>} />
+      <ProtectedRoute path="/dashboard" component={DashboardPage as React.ComponentType<any>} />
+      <ProtectedRoute path="/daily" component={DailyPage as React.ComponentType<any>} />
+      <ProtectedRoute path="/clients" component={ClientsPage as React.ComponentType<any>} />
+      <ProtectedRoute path="/services" component={ServicesPage as React.ComponentType<any>} />
+      <ProtectedRoute path="/chat" component={ChatPage as React.ComponentType<any>} />
+      <ProtectedRoute path="/chat/:userId" component={ChatPage as React.ComponentType<any>} />
+      <ProtectedRoute path="/statistics" component={StatisticsPage as React.ComponentType<any>} />
+      <ProtectedRoute path="/profile" component={ProfilePage as React.ComponentType<any>} />
+      <ProtectedRoute path="/settings" component={SettingsPage as React.ComponentType<any>} />
+      <Route path="/barbers" component={BarbersListPage as React.ComponentType<any>} />
+      <Route path="/barbers/:id" component={BarberDetailPage as React.ComponentType<any>} />
+      <ProtectedRoute path="/admin" component={AdminDashboard as React.ComponentType<any>} />
+      <ProtectedRoute path="/admin/notifications" component={AdminNotificationsPage as React.ComponentType<any>} />
+      <ProtectedRoute path="/admin/statistics" component={AdminStatisticsPage as React.ComponentType<any>} />
+      <Route component={NotFound as React.ComponentType<any>} />
     </Switch>
   );
 }

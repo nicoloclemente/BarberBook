@@ -738,6 +738,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Endpoint per ottenere tutti i barbieri pubblici
+  app.get("/api/barbers", async (req, res) => {
+    try {
+      const allBarbers = await storage.getAllBarbers();
+      
+      // Filtra solo i barbieri approvati e attivi
+      const publicBarbers = allBarbers
+        .filter(barber => barber.isActive && barber.isApproved)
+        .map(barber => {
+          // Rimuovi informazioni sensibili
+          const { password, ...publicBarberInfo } = barber;
+          return publicBarberInfo;
+        });
+      
+      res.json(publicBarbers);
+    } catch (error) {
+      console.error("Error fetching barbers:", error);
+      res.status(500).json({ error: "Failed to fetch barbers" });
+    }
+  });
+
   // Endpoint per ottenere i dettagli di un singolo barbiere
   app.get("/api/barbers/:id", async (req, res) => {
     const id = parseInt(req.params.id);
