@@ -8,8 +8,8 @@ async function throwIfResNotOk(res: Response) {
 }
 
 export async function apiRequest<T = any>(
-  url: string,
   method: string = "GET",
+  url: string,
   data?: unknown | undefined,
 ): Promise<T> {
   const res = await fetch(url, {
@@ -29,6 +29,7 @@ export async function apiRequest<T = any>(
   try {
     return await res.json();
   } catch (e) {
+    console.error("Error parsing JSON response:", e);
     return {} as T;
   }
 }

@@ -49,8 +49,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginData) => {
-      const res = await apiRequest("POST", "/api/login", credentials);
-      return await res.json();
+      return await apiRequest("POST", "/api/login", credentials);
     },
     onSuccess: (user) => {
       queryClient.setQueryData(["/api/user"], user);
@@ -78,8 +77,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     mutationFn: async (credentials: RegisterData) => {
       // Remove confirmPassword before sending to server
       const { confirmPassword, ...userData } = credentials;
-      const res = await apiRequest("POST", "/api/register", userData);
-      return await res.json();
+      return await apiRequest("POST", "/api/register", userData);
     },
     onSuccess: (user) => {
       queryClient.setQueryData(["/api/user"], user);
@@ -99,10 +97,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
-      await apiRequest("POST", "/api/logout");
+      try {
+        await apiRequest("POST", "/api/logout");
+        // Forza la rimozione dell'utente subito dopo la chiamata API
+        queryClient.setQueryData(["/api/user"], null);
+        
+        // Opzionalmente, possiamo anche forzare il redirect alla pagina di login
+        window.location.href = '/';
+        
+        return { success: true };
+      } catch (error) {
+        console.error("Logout error:", error);
+        throw error;
+      }
     },
     onSuccess: () => {
-      queryClient.setQueryData(["/api/user"], null);
       toast({
         title: "Logout successful",
         description: "You have been successfully logged out.",
@@ -114,6 +123,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         description: error.message,
         variant: "destructive",
       });
+      
+      // In caso di errore di logout, tentiamo comunque di pulire lo stato
+      queryClient.setQueryData(["/api/user"], null);
+      setTimeout(() => {
+        window.location.href = '/';
+      }, 1000);
     },
   });
 
