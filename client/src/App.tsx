@@ -10,6 +10,7 @@ import ServicesPage from "@/pages/services-page";
 import ChatPage from "@/pages/chat-page";
 import StatisticsPage from "@/pages/statistics-page";
 import ProfilePage from "@/pages/profile-page";
+import BarberDetailPage from "@/pages/barber-detail-page";
 import AdminDashboard from "@/pages/admin-dashboard";
 import AdminNotificationsPage from "@/pages/admin-notifications";
 import AdminStatisticsPage from "@/pages/admin-statistics";
@@ -27,6 +28,7 @@ function Router() {
       <ProtectedRoute path="/chat/:userId" component={ChatPage} />
       <ProtectedRoute path="/statistics" component={StatisticsPage} />
       <ProtectedRoute path="/profile" component={ProfilePage} />
+      <Route path="/barbers/:id" component={BarberDetailPage} />
       <ProtectedRoute path="/admin" component={AdminDashboard} />
       <ProtectedRoute path="/admin/notifications" component={AdminNotificationsPage} />
       <ProtectedRoute path="/admin/statistics" component={AdminStatisticsPage} />

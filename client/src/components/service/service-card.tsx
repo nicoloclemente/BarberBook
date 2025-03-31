@@ -4,9 +4,10 @@ import { Clock } from "lucide-react";
 
 interface ServiceCardProps {
   service: Service;
-  canEdit: boolean;
-  onEdit: () => void;
-  onDelete: () => void;
+  canEdit?: boolean;
+  onEdit?: () => void;
+  onDelete?: () => void;
+  onBook?: () => void;
 }
 
 export default function ServiceCard({
@@ -14,6 +15,7 @@ export default function ServiceCard({
   canEdit,
   onEdit,
   onDelete,
+  onBook,
 }: ServiceCardProps) {
   // Format price from cents to euros
   const formattedPrice = (service.price / 100).toFixed(2);
@@ -43,24 +45,36 @@ export default function ServiceCard({
             <span>{service.duration} minuti</span>
           </div>
         </div>
-        {canEdit && (
-          <div className="mt-4 flex justify-end space-x-2">
+        <div className="mt-4 flex justify-end space-x-2">
+          {onBook && (
             <Button
-              variant="outline"
+              variant="default"
               size="sm"
-              onClick={onDelete}
+              onClick={onBook}
             >
-              Elimina
+              Prenota
             </Button>
-            <Button
-              className="bg-primary hover:bg-primary/90"
-              size="sm"
-              onClick={onEdit}
-            >
-              Modifica
-            </Button>
-          </div>
-        )}
+          )}
+          
+          {canEdit && (
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onDelete}
+              >
+                Elimina
+              </Button>
+              <Button
+                className="bg-primary hover:bg-primary/90"
+                size="sm"
+                onClick={onEdit}
+              >
+                Modifica
+              </Button>
+            </>
+          )}
+        </div>
       </div>
     </div>
   );

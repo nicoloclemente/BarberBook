@@ -543,6 +543,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(barbers);
   });
 
+
   // Get all clients
   app.get("/api/clients", async (req, res) => {
     if (!req.isAuthenticated()) {
@@ -722,6 +723,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     res.json(user);
   });
+  
+  // Endpoint per ottenere le informazioni pubbliche di un barbiere
+  app.get("/api/barbers/:id", async (req, res) => {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      return res.status(400).json({ error: "Invalid barber ID" });
+    }
+
+    try {
+      const barber = await storage.getUser(id);
+      if (!barber || !barber.isBarber) {
+        return res.status(404).json({ error: "Barber not found" });
+      }
+
+      // Filtra le informazioni sensibili per l'uso pubblico
+      const { password, phone, ...publicBarberInfo } = barber;
+      res.json(publicBarberInfo);
+    } catch (error) {
+      console.error("Error fetching barber:", error);
+      res.status(500).json({ error: "Failed to fetch barber information" });
+    }
+  });
+
+  // Endpoint specifico per gli orari di lavoro di un barbiere
+  app.get("/api/barbers/:id/schedule", async (req, res) => {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      return res.status(400).json({ error: "Invalid barber ID" });
+    }
+
+    try {
+      const barber = await storage.getUser(id);
+      if (!barber || !barber.isBarber) {
+        return res.status(404).json({ error: "Barber not found" });
+      }
+
+      // Estrai solo le informazioni relative agli orari
+      const scheduleInfo = {
+        id: barber.id,
+        name: barber.name, 
+        workingHours: barber.workingHours || {},
+        breaks: barber.breaks || [],
+        closedDays: barber.closedDays || []
+      };
+
+      res.json(scheduleInfo);
+    } catch (error) {
+      console.error("Error fetching barber schedule:", error);
+      res.status(500).json({ error: "Failed to fetch barber schedule" });
+    }
+  });
 
   // Endpoint specifico per gli orari di lavoro
   app.post("/api/users/:id/working-hours", async (req, res) => {
@@ -809,6 +861,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error updating breaks:", error);
       res.status(500).json({ error: "Failed to update breaks" });
+    }
+  });
+  
+  // Endpoint specifico per giorni di chiusura
+  app.post("/api/users/:id/closed-days", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      return res.status(400).json({ error: "Invalid user ID" });
+    }
+    
+    // Solo l'utente stesso o un admin può modificare i giorni di chiusura
+    const currentUser = req.user!;
+    if (currentUser.id !== id && currentUser.role !== UserRole.ADMIN) {
+      return res.status(403).json({ error: "Not authorized to update closed days for this user" });
+    }
+    
+    try {
+      const userData = {
+        closedDays: req.body.closedDays
+      };
+      
+      const updatedUser = await storage.updateUser(id, userData);
+      if (!updatedUser) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      
+      // Invalida le cache quando vengono aggiornati i giorni di chiusura
+      if (req.body.closedDays && Array.isArray(req.body.closedDays)) {
+        // Invalida per barbiere
+        cache.invalidateByTag(`barber:${id}`);
+        
+        // Invalida anche per date specifiche
+        for (const dateStr of req.body.closedDays) {
+          cache.invalidateByTag(`date:${dateStr}`);
+        }
+        
+        console.log(`Invalidated cache for barber ${id} and closed days`);
+      }
+      
+      res.json(updatedUser);
+    } catch (error) {
+      console.error("Error updating closed days:", error);
+      res.status(500).json({ error: "Failed to update closed days" });
     }
   });
   

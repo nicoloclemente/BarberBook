@@ -25,6 +25,7 @@ export const users = pgTable("users", {
   isApproved: boolean("is_approved").default(false), // Solo per i barbieri, approvati dall'admin
   preferredBarberId: integer("preferred_barber_id"), // Barbiere preferito per i clienti (deprecato)
   barberCode: text("barber_code"), // Codice univoco del barbiere che il cliente può utilizzare
+  description: text("description"), // Descrizione/biografia del barbiere
   workingHours: jsonb("working_hours").$type<{
     monday: { start: string; end: string; enabled: boolean }[];
     tuesday: { start: string; end: string; enabled: boolean }[];
@@ -67,6 +68,7 @@ export const insertUserSchema = createInsertSchema(users)
     isApproved: true,
     preferredBarberId: true,
     barberCode: true,
+    description: true,
     workingHours: true,
     breaks: true,
     closedDays: true,
