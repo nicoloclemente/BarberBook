@@ -15,10 +15,11 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { User, UserRole } from "@shared/schema";
-import { Loader2, Save, UserCog, Calendar, Clock } from "lucide-react";
+import { Loader2, Save, UserCog, Calendar, Clock, AlertCircle } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import WorkingHoursForm from "@/components/schedule/working-hours-form";
 import DeleteAccountDialog from "@/components/account/delete-account-dialog";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const profileSchema = z.object({
   name: z.string().min(2, "Il nome deve essere di almeno 2 caratteri"),
@@ -33,43 +34,71 @@ export default function ProfilePage() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [isUpdating, setIsUpdating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
+  // Utilizziamo la query per assicurarci di ottenere i dati utente più aggiornati
+  const { data: userData, isLoading, isError } = useQuery<User>({
+    queryKey: ['/api/user'],
+    retry: 2, 
+    staleTime: 30000
+  });
+
+  // Utilizziamo i dati dalla query o quelli dall'hook di autenticazione
+  const userInfo = userData || user || undefined;
+  
+  // Debug logs
+  console.log("Profile Page rendering, user:", userInfo ? "User loaded" : "No user", "Loading:", isLoading);
+  
+  // Creiamo il form all'inizio
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
-      name: user?.name || "",
-      phone: user?.phone || "",
-      imageUrl: user?.imageUrl || "",
-      barberCode: user?.barberCode || "",
+      name: userInfo?.name || "",
+      phone: userInfo?.phone || "",
+      imageUrl: userInfo?.imageUrl || "",
+      barberCode: userInfo?.barberCode || "",
     }
   });
 
+  // Aggiorniamo il form quando l'utente cambia
   useEffect(() => {
-    if (user) {
-      form.reset({
-        name: user.name || "",
-        phone: user.phone || "",
-        imageUrl: user.imageUrl || "",
-        barberCode: user.barberCode || "",
-      });
+    try {
+      if (userInfo) {
+        form.reset({
+          name: userInfo.name || "",
+          phone: userInfo.phone || "",
+          imageUrl: userInfo.imageUrl || "",
+          barberCode: userInfo.barberCode || "",
+        });
+      }
+    } catch (err) {
+      console.error("Error resetting form:", err);
+      setError("Errore nell'inizializzazione del form");
     }
-  }, [user, form]);
+  }, [userInfo, form]);
 
-  // Aggiungiamo un controllo per assicurare che l'utente sia caricato
+  // Aggiungiamo un controllo per lo stato di caricamento
   useEffect(() => {
-    if (!user) {
+    if (isLoading) {
+      console.log("Loading user data...");
+    } else if (isError) {
+      console.log("Error loading user data");
+      setError("Errore nel caricamento dei dati utente. Ricarica la pagina.");
+    } else if (!userInfo) {
       console.log("User not loaded yet");
+    } else {
+      console.log("User data loaded successfully");
     }
-  }, [user]);
+  }, [userInfo, isLoading, isError]);
 
   const updateProfileMutation = useMutation({
     mutationFn: async (data: ProfileFormValues) => {
-      if (!user?.id) {
+      if (!userInfo?.id) {
         throw new Error("Utente non disponibile");
       }
       
-      console.log("Updating user:", user.id, data);
-      return await apiRequest<User>('PATCH', `/api/users/${user.id}`, data);
+      console.log("Updating user:", userInfo.id, data);
+      return await apiRequest<User>('PATCH', `/api/users/${userInfo.id}`, data);
     },
     onSuccess: (updatedUser: User) => {
       console.log("User updated successfully:", updatedUser);
@@ -79,6 +108,7 @@ export default function ProfilePage() {
         description: "Le tue informazioni sono state aggiornate con successo.",
       });
       setIsUpdating(false);
+      setError(null);
     },
     onError: (error: Error) => {
       console.error("Error updating profile:", error);
@@ -88,6 +118,7 @@ export default function ProfilePage() {
         variant: "destructive",
       });
       setIsUpdating(false);
+      setError(error.message);
     }
   });
 
@@ -96,10 +127,30 @@ export default function ProfilePage() {
     updateProfileMutation.mutate(values);
   };
 
-  const isClient = user && !user.isBarber && user.role === UserRole.CLIENT;
-  const isBarber = user && (user.isBarber || user.role === UserRole.BARBER);
-  const isAdmin = user && user.role === UserRole.ADMIN;
+  // Aggiorniamo per usare userInfo consistentemente
+  const isClient = userInfo && !userInfo.isBarber && userInfo.role === UserRole.CLIENT;
+  const isBarber = userInfo && (userInfo.isBarber || userInfo.role === UserRole.BARBER);
+  const isAdmin = userInfo && userInfo.role === UserRole.ADMIN;
 
+  // Mostriamo un indicatore di caricamento se l'utente non è ancora disponibile
+  if (isLoading || !userInfo) {
+    return (
+      <MainLayout>
+        <div className="container mx-auto py-8">
+          <div className="flex items-center gap-3 mb-6">
+            <UserCog className="h-8 w-8 text-primary" />
+            <h1 className="text-3xl font-bold text-gradient">Il Tuo Profilo</h1>
+          </div>
+          
+          <div className="flex flex-col items-center justify-center p-12">
+            <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
+            <p className="text-lg">Caricamento delle informazioni in corso...</p>
+          </div>
+        </div>
+      </MainLayout>
+    );
+  }
+  
   return (
     <MainLayout>
       <div className="container mx-auto py-8">
@@ -107,6 +158,14 @@ export default function ProfilePage() {
           <UserCog className="h-8 w-8 text-primary" />
           <h1 className="text-3xl font-bold text-gradient">Il Tuo Profilo</h1>
         </div>
+        
+        {error && (
+          <Alert variant="destructive" className="mb-6">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Errore</AlertTitle>
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <Card className="col-span-2 card-elegant">
@@ -124,7 +183,7 @@ export default function ProfilePage() {
                       <FormItem>
                         <FormLabel>Nome completo</FormLabel>
                         <FormControl>
-                          <Input {...field} placeholder="Il tuo nome" />
+                          <Input {...field} placeholder="Il tuo nome" value={field.value || ""} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -239,7 +298,7 @@ export default function ProfilePage() {
             <CardContent className="space-y-4">
               <div>
                 <Label>Username</Label>
-                <p className="text-neutral-700">{user?.username}</p>
+                <p className="text-neutral-700">{userInfo?.username}</p>
               </div>
               
               <div>
@@ -254,7 +313,7 @@ export default function ProfilePage() {
               <div>
                 <Label>Stato account</Label>
                 <p className="text-neutral-700">
-                  {user?.isActive ? (
+                  {userInfo?.isActive ? (
                     <span className="text-green-600 font-medium">Attivo</span>
                   ) : (
                     <span className="text-red-600 font-medium">Disattivato</span>
@@ -266,7 +325,7 @@ export default function ProfilePage() {
                 <div>
                   <Label>Stato approvazione</Label>
                   <p className="text-neutral-700">
-                    {user?.isApproved ? (
+                    {userInfo?.isApproved ? (
                       <span className="text-green-600 font-medium">Approvato</span>
                     ) : (
                       <span className="text-amber-600 font-medium">In attesa di approvazione</span>
@@ -278,7 +337,7 @@ export default function ProfilePage() {
               <div>
                 <Label>Data registrazione</Label>
                 <p className="text-neutral-700">
-                  {user?.createdAt && new Date(user.createdAt).toLocaleDateString('it-IT', {
+                  {userInfo?.createdAt && new Date(userInfo.createdAt).toLocaleDateString('it-IT', {
                     day: '2-digit',
                     month: '2-digit',
                     year: 'numeric'
@@ -298,7 +357,7 @@ export default function ProfilePage() {
         </div>
         
         {/* Sezione Orari di Lavoro per i Barbieri */}
-        {isBarber && user?.isApproved && (
+        {isBarber && userInfo?.isApproved && (
           <div className="mt-8">
             <Tabs defaultValue="schedule" className="w-full">
               <TabsList className="grid w-full max-w-md grid-cols-2">
