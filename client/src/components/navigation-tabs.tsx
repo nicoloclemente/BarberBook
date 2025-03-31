@@ -108,7 +108,7 @@ export default function NavigationTabs({ orientation = "vertical", onItemClick }
     if (user) {
       const fetchUnreadCount = async () => {
         try {
-          const result = await apiRequest<{count: string}>('/api/notifications/unread/count');
+          const result = await apiRequest<{count: string}>("GET", '/api/notifications/unread/count');
           setUnreadCount(Number(result.count) || 0);
         } catch (error) {
           console.error('Errore nel recupero delle notifiche non lette:', error);

@@ -12,6 +12,7 @@ import StatisticsPage from "@/pages/statistics-page";
 import ProfilePage from "@/pages/profile-page";
 import BarberDetailPage from "@/pages/barber-detail-page";
 import BarbersListPage from "@/pages/barbers-list-page";
+import DailyPage from "@/pages/daily-page";
 import AdminDashboard from "@/pages/admin-dashboard";
 import AdminNotificationsPage from "@/pages/admin-notifications";
 import AdminStatisticsPage from "@/pages/admin-statistics";
@@ -23,6 +24,8 @@ function Router() {
     <Switch>
       <Route path="/auth" component={AuthPage} />
       <ProtectedRoute path="/" component={DashboardPage} />
+      <ProtectedRoute path="/dashboard" component={DashboardPage} />
+      <ProtectedRoute path="/daily" component={DailyPage} />
       <ProtectedRoute path="/clients" component={ClientsPage} />
       <ProtectedRoute path="/services" component={ServicesPage} />
       <ProtectedRoute path="/chat" component={ChatPage} />
