@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, UserCheck, UserX, RefreshCw, Info, Bell } from "lucide-react";
+import { Loader2, UserCheck, UserX, RefreshCw, Info, Bell, Calendar, UserCog } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import DeleteAccountDialog from "@/components/account/delete-account-dialog";
@@ -100,9 +100,30 @@ export default function AdminDashboard() {
   return (
     <MainLayout>
       <div className="container mx-auto py-8">
-        <h1 className="text-3xl font-bold mb-6 bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-          Dashboard Amministrativa
-        </h1>
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+            Dashboard Amministrativa
+          </h1>
+          
+          <div className="flex items-center space-x-4">
+            <Button 
+              variant="outline" 
+              onClick={() => navigate("/")}
+              className="flex items-center gap-2"
+            >
+              <Calendar className="h-4 w-4" />
+              Dashboard
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={() => navigate("/profile")}
+              className="flex items-center gap-2"
+            >
+              <UserCog className="h-4 w-4" />
+              Profilo
+            </Button>
+          </div>
+        </div>
         
         <Tabs defaultValue="system" className="w-full">
           <TabsList className="mb-4">

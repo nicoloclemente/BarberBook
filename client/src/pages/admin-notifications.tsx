@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
+import { useLocation } from "wouter";
 
 import {
   Card,
@@ -24,10 +25,16 @@ import { formatDistanceToNow } from "date-fns";
 import { it } from "date-fns/locale";
 import MainLayout from "@/components/main-layout";
 import { useAuth } from "@/hooks/use-auth";
+import { 
+  Calendar, 
+  UserCog, 
+  ArrowLeft
+} from "lucide-react";
 
 export default function AdminNotificationsPage() {
   const { toast } = useToast();
-  const { user, isAuthenticated, isLoading: isAuthLoading } = useAuth();
+  const { user, isLoading: isAuthLoading } = useAuth();
+  const [, navigate] = useLocation();
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
   
@@ -97,6 +104,39 @@ export default function AdminNotificationsPage() {
   return (
     <MainLayout>
       <div className="container mx-auto py-6">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+            Gestione Notifiche
+          </h1>
+          
+          <div className="flex items-center space-x-4">
+            <Button 
+              variant="outline" 
+              onClick={() => navigate("/")}
+              className="flex items-center gap-2"
+            >
+              <Calendar className="h-4 w-4" />
+              Dashboard
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={() => navigate("/profile")}
+              className="flex items-center gap-2"
+            >
+              <UserCog className="h-4 w-4" />
+              Profilo
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={() => navigate("/admin")}
+              className="flex items-center gap-2"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Admin
+            </Button>
+          </div>
+        </div>
+        
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
