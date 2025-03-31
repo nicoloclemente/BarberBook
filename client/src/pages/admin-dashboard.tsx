@@ -74,8 +74,7 @@ export default function AdminDashboard() {
   // Mutation per approvare un barbiere
   const approveMutation = useMutation({
     mutationFn: async (barberId: number) => {
-      const res = await apiRequest("PUT", `/api/admin/approve-barber/${barberId}`);
-      return res.json();
+      return apiRequest("PUT", `/api/admin/approve-barber/${barberId}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/barbers"] });
@@ -96,8 +95,7 @@ export default function AdminDashboard() {
   // Mutation per rimuovere l'approvazione di un barbiere
   const removeApprovalMutation = useMutation({
     mutationFn: async (barberId: number) => {
-      const res = await apiRequest("PUT", `/api/admin/remove-barber-approval/${barberId}`);
-      return res.json();
+      return apiRequest("PUT", `/api/admin/remove-barber-approval/${barberId}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/barbers"] });
