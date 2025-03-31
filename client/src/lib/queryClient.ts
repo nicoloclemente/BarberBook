@@ -20,7 +20,17 @@ export async function apiRequest<T = any>(
   });
 
   await throwIfResNotOk(res);
-  return await res.json();
+  
+  // Special handling for endpoints that return no content (like logout)
+  if (res.status === 204 || res.headers.get('content-length') === '0') {
+    return {} as T;
+  }
+  
+  try {
+    return await res.json();
+  } catch (e) {
+    return {} as T;
+  }
 }
 
 type UnauthorizedBehavior = "returnNull" | "throw";
