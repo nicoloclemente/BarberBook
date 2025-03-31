@@ -151,7 +151,7 @@ export default function NavigationTabs({ orientation = "vertical", onItemClick }
                 icon={<ShieldCheck className="h-4 w-4" />}
                 label="Admin"
                 href="/admin"
-                isActive={isActive("/admin") && !isActive("/admin/dashboard") && !isActive("/admin/notifications")}
+                isActive={isActive("/admin") && !isActive("/admin/dashboard") && !isActive("/admin/notifications") && !isActive("/admin/statistics")}
                 onClick={handleItemClick}
               />
               <NavItem
@@ -160,6 +160,13 @@ export default function NavigationTabs({ orientation = "vertical", onItemClick }
                 href="/admin/notifications"
                 isActive={isActive("/admin/notifications")}
                 badge={unreadCount}
+                onClick={handleItemClick}
+              />
+              <NavItem
+                icon={<BarChart className="h-4 w-4" />}
+                label="Statistiche"
+                href="/admin/statistics"
+                isActive={isActive("/admin/statistics")}
                 onClick={handleItemClick}
               />
             </>
@@ -293,6 +300,14 @@ export default function NavigationTabs({ orientation = "vertical", onItemClick }
                 isActive={isActive("/admin/notifications")}
                 badge={unreadCount}
                 tooltip={collapsed ? "Notifiche" : undefined}
+                onClick={handleItemClick}
+              />
+              <NavItem
+                icon={<BarChart className="h-5 w-5" />}
+                label={collapsed ? "" : "Statistiche Avanzate"}
+                href="/admin/statistics"
+                isActive={isActive("/admin/statistics")}
+                tooltip={collapsed ? "Statistiche Avanzate" : undefined}
                 onClick={handleItemClick}
               />
             </NavSection>

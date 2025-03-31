@@ -1,12 +1,15 @@
 let socket: WebSocket | null = null;
 let reconnectInterval: number | null = null;
+let heartbeatInterval: number | null = null;
 const listeners = new Map<string, Set<(data: any) => void>>();
+let currentUserId: number | null = null;
 
 export function connectWebSocket(userId: number) {
   if (socket) {
     return;
   }
-
+  
+  currentUserId = userId;
   const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
   const wsUrl = `${protocol}//${window.location.host}/ws`;
   
@@ -26,6 +29,13 @@ export function connectWebSocket(userId: number) {
     if (reconnectInterval) {
       clearInterval(reconnectInterval);
       reconnectInterval = null;
+    }
+    
+    // Set up heartbeat to keep the connection alive and track user activity
+    if (!heartbeatInterval) {
+      heartbeatInterval = window.setInterval(() => {
+        sendHeartbeat();
+      }, 60000); // Ogni minuto
     }
   };
 
@@ -60,6 +70,15 @@ export function connectWebSocket(userId: number) {
   };
 }
 
+export function sendHeartbeat() {
+  if (socket && socket.readyState === WebSocket.OPEN && currentUserId) {
+    socket.send(JSON.stringify({
+      type: 'heartbeat',
+      userId: currentUserId
+    }));
+  }
+}
+
 export function disconnectWebSocket() {
   if (socket) {
     socket.close();
@@ -70,7 +89,15 @@ export function disconnectWebSocket() {
     clearInterval(reconnectInterval);
     reconnectInterval = null;
   }
+  
+  if (heartbeatInterval) {
+    clearInterval(heartbeatInterval);
+    heartbeatInterval = null;
+  }
 
+  // Reset current user ID
+  currentUserId = null;
+  
   // Clear all listeners
   listeners.clear();
 }

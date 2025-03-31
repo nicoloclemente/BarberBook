@@ -20,6 +20,10 @@ import { cache } from "./cache";
 
 // Map to store active client connections
 const clients = new Map<number, WebSocket>();
+// Mappa degli utenti online e il timestamp dell'ultimo accesso
+const onlineUsers = new Map<number, Date>();
+// Timestamp di avvio del server
+const serverStartTime = new Date();
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Authentication routes (/api/register, /api/login, /api/logout, /api/user)
@@ -992,6 +996,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const userId = data.userId;
           clients.set(userId, ws);
           
+          // Registra l'utente come online
+          onlineUsers.set(userId, new Date());
+          
           console.log(`User ${userId} authenticated on WebSocket`);
           
           // Send a confirmation
@@ -999,6 +1006,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
             type: 'authenticated',
             success: true
           }));
+        } else if (data.type === 'heartbeat') {
+          // Aggiorna il timestamp dell'attività dell'utente
+          if (data.userId) {
+            onlineUsers.set(data.userId, new Date());
+            ws.send(JSON.stringify({ type: 'heartbeat_ack' }));
+          }
         }
       } catch (error) {
         console.error('Error processing WebSocket message:', error);
@@ -1018,6 +1031,249 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Notifications Routes
+  // Statistiche avanzate per l'admin
+
+  // Endpoint per ottenere le statistiche delle risorse di sistema
+  app.get("/api/admin/system-stats", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    const user = req.user!;
+    if (user.role !== 'admin') {
+      return res.status(403).json({ error: "Only admins can access this endpoint" });
+    }
+
+    // Ottieni statistiche di sistema usando il modulo 'os' di Node.js
+    const os = require('os');
+    
+    // Calcola l'uptime del server in formato leggibile
+    const serverUptime = new Date().getTime() - serverStartTime.getTime();
+    const uptimeDays = Math.floor(serverUptime / (1000 * 60 * 60 * 24));
+    const uptimeHours = Math.floor((serverUptime % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const uptimeMinutes = Math.floor((serverUptime % (1000 * 60 * 60)) / (1000 * 60));
+    
+    // Numero di connessioni attive
+    const activeConnections = clients.size;
+    
+    // Calcola l'utilizzo medio della CPU
+    const cpus = os.cpus();
+    let totalIdle = 0;
+    let totalTick = 0;
+    
+    for(const cpu of cpus) {
+      for (const type in cpu.times) {
+        totalTick += cpu.times[type];
+      }
+      totalIdle += cpu.times.idle;
+    }
+    
+    const cpuUsage = 100 - (totalIdle / totalTick * 100);
+    
+    // Utilizzo della memoria
+    const totalMemory = os.totalmem();
+    const freeMemory = os.freemem();
+    const usedMemory = totalMemory - freeMemory;
+    const memoryUsagePercentage = (usedMemory / totalMemory) * 100;
+    
+    // Numero di utenti registrati per tipo
+    const barbers = await storage.getAllBarbers();
+    const allClients = await storage.getAllClients();
+    
+    // Ottieni gli ultimi accessi degli utenti online
+    const onlineUserCount = onlineUsers.size;
+    const lastFiveMinutes = new Date(Date.now() - 5 * 60 * 1000);
+    const recentlyActiveUsers = [...onlineUsers.entries()].filter(([_, lastSeen]) => lastSeen > lastFiveMinutes).length;
+    
+    // Statistiche degli appuntamenti
+    const appointments = await storage.getAllAppointments();
+    const pendingAppointments = appointments.filter(a => a.status === 'pending').length;
+    const confirmedAppointments = appointments.filter(a => a.status === 'confirmed').length;
+    const cancelledAppointments = appointments.filter(a => a.status === 'cancelled').length;
+    const completedAppointments = appointments.filter(a => a.status === 'completed').length;
+    
+    // Statistiche di clienti per barbiere
+    const clientsPerBarber = [];
+    for (const barber of barbers) {
+      const barberAppointments = appointments.filter(a => a.barberId === barber.id);
+      const uniqueClientIds = new Set(barberAppointments.map(a => a.clientId));
+      
+      clientsPerBarber.push({
+        barberId: barber.id,
+        barberName: barber.name,
+        clientCount: uniqueClientIds.size,
+        appointmentCount: barberAppointments.length,
+        pendingCount: barberAppointments.filter(a => a.status === 'pending').length,
+        confirmedCount: barberAppointments.filter(a => a.status === 'confirmed').length,
+        cancelledCount: barberAppointments.filter(a => a.status === 'cancelled').length,
+        completedCount: barberAppointments.filter(a => a.status === 'completed').length
+      });
+    }
+    
+    // Restituisci tutte le statistiche
+    res.json({
+      system: {
+        uptime: {
+          days: uptimeDays,
+          hours: uptimeHours,
+          minutes: uptimeMinutes,
+          raw: serverUptime
+        },
+        cpu: {
+          cores: cpus.length,
+          model: cpus[0].model,
+          usage: cpuUsage.toFixed(2) + '%'
+        },
+        memory: {
+          total: (totalMemory / (1024 * 1024 * 1024)).toFixed(2) + ' GB',
+          used: (usedMemory / (1024 * 1024 * 1024)).toFixed(2) + ' GB',
+          free: (freeMemory / (1024 * 1024 * 1024)).toFixed(2) + ' GB',
+          usagePercentage: memoryUsagePercentage.toFixed(2) + '%'
+        },
+        platform: os.platform(),
+        hostname: os.hostname(),
+        type: os.type(),
+        release: os.release()
+      },
+      users: {
+        total: barbers.length + allClients.length,
+        barbers: barbers.length,
+        clients: allClients.length,
+        online: {
+          current: onlineUserCount,
+          recentlyActive: recentlyActiveUsers
+        }
+      },
+      connections: {
+        active: activeConnections,
+        websocketClients: clients.size
+      },
+      appointments: {
+        total: appointments.length,
+        pending: pendingAppointments,
+        confirmed: confirmedAppointments,
+        cancelled: cancelledAppointments,
+        completed: completedAppointments
+      },
+      clientsPerBarber
+    });
+  });
+
+  // Endpoint per ottenere i clienti associati a ogni barbiere
+  app.get("/api/admin/clients-per-barber", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    
+    const user = req.user!;
+    if (user.role !== 'admin') {
+      return res.status(403).json({ error: "Only admins can access this endpoint" });
+    }
+    
+    try {
+      const barbers = await storage.getAllBarbers();
+      const appointments = await storage.getAllAppointments();
+      
+      const result = [];
+      
+      for (const barber of barbers) {
+        const barberAppointments = appointments.filter(a => a.barberId === barber.id);
+        const uniqueClientIds = new Set(barberAppointments.map(a => a.clientId));
+        const uniqueClients = Array.from(uniqueClientIds);
+        
+        // Ottieni informazioni dettagliate sui clienti
+        const clientDetails = [];
+        for (const clientId of uniqueClients) {
+          const client = await storage.getUser(clientId);
+          if (client) {
+            const clientAppointments = barberAppointments.filter(a => a.clientId === clientId);
+            
+            clientDetails.push({
+              id: client.id,
+              name: client.name,
+              username: client.username,
+              appointmentCount: clientAppointments.length,
+              lastAppointment: clientAppointments.sort((a, b) => 
+                new Date(b.date).getTime() - new Date(a.date).getTime()
+              )[0]?.date || null
+            });
+          }
+        }
+        
+        result.push({
+          barberId: barber.id,
+          barberName: barber.name,
+          clientCount: uniqueClients.length,
+          clients: clientDetails
+        });
+      }
+      
+      res.json(result);
+    } catch (error) {
+      console.error("Error fetching clients per barber:", error);
+      res.status(500).json({ error: "Failed to fetch clients per barber" });
+    }
+  });
+
+  // Endpoint per ottenere gli utenti attualmente online
+  app.get("/api/admin/online-users", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    
+    const user = req.user!;
+    if (user.role !== 'admin') {
+      return res.status(403).json({ error: "Only admins can access this endpoint" });
+    }
+    
+    try {
+      const lastFiveMinutes = new Date(Date.now() - 5 * 60 * 1000);
+      const recentlyActiveUserIds = [...onlineUsers.entries()]
+        .filter(([_, lastSeen]) => lastSeen > lastFiveMinutes)
+        .map(([userId]) => userId);
+      
+      const onlineUserDetails = [];
+      
+      for (const userId of recentlyActiveUserIds) {
+        const userInfo = await storage.getUser(userId);
+        if (userInfo) {
+          onlineUserDetails.push({
+            id: userInfo.id,
+            name: userInfo.name,
+            username: userInfo.username,
+            role: userInfo.role,
+            isBarber: userInfo.isBarber,
+            lastActivity: onlineUsers.get(userId)
+          });
+        }
+      }
+      
+      res.json({
+        totalOnline: onlineUserDetails.length,
+        users: onlineUserDetails
+      });
+    } catch (error) {
+      console.error("Error fetching online users:", error);
+      res.status(500).json({ error: "Failed to fetch online users" });
+    }
+  });
+
+  // Aggiorna la presenza online dell'utente
+  app.post("/api/user/heartbeat", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    
+    const user = req.user!;
+    
+    // Aggiorna il timestamp dell'ultimo accesso
+    onlineUsers.set(user.id, new Date());
+    
+    res.json({ success: true });
+  });
+
+  // Notifiche
+
   app.get("/api/notifications", async (req, res) => {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ error: "Not authenticated" });
