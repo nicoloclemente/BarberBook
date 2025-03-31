@@ -17,6 +17,7 @@ import { notificationService } from "./notification-service";
 import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
 import { cache } from "./cache";
+import * as os from 'os';
 
 // Map to store active client connections
 const clients = new Map<number, WebSocket>();
@@ -1045,7 +1046,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
 
     // Ottieni statistiche di sistema usando il modulo 'os' di Node.js
-    const os = require('os');
     
     // Calcola l'uptime del server in formato leggibile
     const serverUptime = new Date().getTime() - serverStartTime.getTime();
