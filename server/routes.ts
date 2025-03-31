@@ -554,8 +554,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(403).json({ error: "Only barbers can access this endpoint" });
     }
 
-    const clients = await storage.getAllClients();
-    res.json(clients);
+    // Se l'utente è un amministratore, può vedere tutti i clienti
+    if (user.role === UserRole.ADMIN) {
+      const clients = await storage.getAllClients();
+      return res.json(clients);
+    }
+    
+    // Per i barbieri normali, mostra solo i clienti che hanno inserito il loro codice barbiere
+    if (user.barberCode) {
+      const clients = await storage.getClientsByBarberCode(user.barberCode);
+      return res.json(clients);
+    }
+    
+    // Se il barbiere non ha un codice, restituisce un array vuoto
+    res.json([]);
   });
   
   // Get clients by barber code
