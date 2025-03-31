@@ -179,40 +179,68 @@ export default function AdminDashboard() {
                     <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                   </div>
                 ) : !barbers || barbers.length === 0 ? (
-                  <div className="text-center text-muted-foreground py-8">
-                    <Info className="h-12 w-12 mx-auto mb-2 text-muted-foreground/60" />
-                    <p>Nessun barbiere trovato nel sistema</p>
+                  <div className="text-center text-muted-foreground py-10">
+                    <Info className="h-12 w-12 mx-auto mb-3 text-muted-foreground/60" />
+                    <p className="text-lg font-medium mb-1">Nessun barbiere trovato</p>
+                    <p className="text-sm text-muted-foreground">Non ci sono barbieri registrati nel sistema</p>
                   </div>
                 ) : (
-                  <div className="divide-y">
-                    {barbers.map((barber) => (
-                      <div key={barber.id} className="py-4 flex items-center justify-between">
-                        <div className="flex items-center">
-                          <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-400 to-indigo-500 flex items-center justify-center text-white font-bold">
-                            {barber.imageUrl ? (
-                              <img 
-                                src={barber.imageUrl} 
-                                alt={barber.name} 
-                                className="w-10 h-10 rounded-full object-cover"
-                              />
+                  <div className="rounded-md border overflow-hidden">
+                    <div className="bg-muted/50 px-4 py-3 grid grid-cols-3 font-medium text-sm text-muted-foreground">
+                      <div>Barbiere</div>
+                      <div className="text-center">Stato</div>
+                      <div className="text-right">Azioni</div>
+                    </div>
+                    <div className="divide-y">
+                      {barbers.map((barber) => (
+                        <div key={barber.id} className="px-4 py-4 grid grid-cols-3 items-center">
+                          <div className="flex items-center gap-3">
+                            <div className="w-12 h-12 rounded-full bg-gradient-to-r from-blue-400 to-indigo-500 flex items-center justify-center text-white text-lg font-medium ring-2 ring-background shadow-sm">
+                              {barber.imageUrl ? (
+                                <img 
+                                  src={barber.imageUrl} 
+                                  alt={barber.name} 
+                                  className="w-12 h-12 rounded-full object-cover"
+                                />
+                              ) : (
+                                barber.name.charAt(0)
+                              )}
+                            </div>
+                            <div>
+                              <p className="font-medium">{barber.name}</p>
+                              <p className="text-sm text-muted-foreground">@{barber.username}</p>
+                              {barber.phone && (
+                                <p className="text-xs text-muted-foreground mt-0.5">{barber.phone}</p>
+                              )}
+                            </div>
+                          </div>
+                          
+                          <div className="flex justify-center">
+                            {barber.isApproved ? (
+                              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-green-50 text-green-700 border border-green-200">
+                                <span className="relative flex h-2 w-2">
+                                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                                  <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                                </span>
+                                Approvato
+                              </div>
                             ) : (
-                              barber.name.charAt(0)
+                              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-yellow-50 text-yellow-700 border border-yellow-200">
+                                <span className="relative flex h-2 w-2">
+                                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-400 opacity-75"></span>
+                                  <span className="relative inline-flex rounded-full h-2 w-2 bg-yellow-500"></span>
+                                </span>
+                                In attesa
+                              </div>
                             )}
                           </div>
-                          <div className="ml-4">
-                            <p className="font-medium">{barber.name}</p>
-                            <p className="text-sm text-muted-foreground">{barber.username}</p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          {barber.isApproved ? (
-                            <>
-                              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                                Approvato
-                              </Badge>
+                          
+                          <div className="flex items-center justify-end gap-2">
+                            {barber.isApproved ? (
                               <Button 
                                 size="sm"
                                 variant="outline"
+                                className="border-red-200 text-red-700 hover:bg-red-50 hover:text-red-800"
                                 onClick={() => removeApprovalMutation.mutate(barber.id)} 
                                 disabled={removeApprovalMutation.isPending}
                               >
@@ -225,15 +253,10 @@ export default function AdminDashboard() {
                                   </>
                                 )}
                               </Button>
-                              <DeleteAccountDialog userId={barber.id} isAdmin={true} />
-                            </>
-                          ) : (
-                            <>
-                              <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
-                                In attesa
-                              </Badge>
+                            ) : (
                               <Button 
-                                size="sm" 
+                                size="sm"
+                                className="bg-green-600 text-white hover:bg-green-700"
                                 onClick={() => approveMutation.mutate(barber.id)} 
                                 disabled={approveMutation.isPending}
                               >
@@ -246,12 +269,12 @@ export default function AdminDashboard() {
                                   </>
                                 )}
                               </Button>
-                              <DeleteAccountDialog userId={barber.id} isAdmin={true} />
-                            </>
-                          )}
+                            )}
+                            <DeleteAccountDialog userId={barber.id} isAdmin={true} />
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
                 )}
               </CardContent>
@@ -283,42 +306,57 @@ export default function AdminDashboard() {
                     <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                   </div>
                 ) : !clients || clients.length === 0 ? (
-                  <div className="text-center text-muted-foreground py-8">
-                    <Info className="h-12 w-12 mx-auto mb-2 text-muted-foreground/60" />
-                    <p>Nessun cliente trovato nel sistema</p>
+                  <div className="text-center text-muted-foreground py-10">
+                    <Info className="h-12 w-12 mx-auto mb-3 text-muted-foreground/60" />
+                    <p className="text-lg font-medium mb-1">Nessun cliente trovato</p>
+                    <p className="text-sm text-muted-foreground">Non ci sono clienti registrati nel sistema</p>
                   </div>
                 ) : (
-                  <div className="divide-y">
-                    {clients.map((client) => (
-                      <div key={client.id} className="py-4 flex items-center justify-between">
-                        <div className="flex items-center">
-                          <div className="w-10 h-10 rounded-full bg-gradient-to-r from-purple-400 to-pink-500 flex items-center justify-center text-white font-bold">
-                            {client.imageUrl ? (
-                              <img 
-                                src={client.imageUrl} 
-                                alt={client.name} 
-                                className="w-10 h-10 rounded-full object-cover"
-                              />
-                            ) : (
-                              client.name.charAt(0)
-                            )}
+                  <div className="rounded-md border overflow-hidden">
+                    <div className="bg-muted/50 px-4 py-3 grid grid-cols-3 font-medium text-sm text-muted-foreground">
+                      <div>Cliente</div>
+                      <div className="text-center">Info contatto</div>
+                      <div className="text-right">Azioni</div>
+                    </div>
+                    <div className="divide-y">
+                      {clients.map((client) => (
+                        <div key={client.id} className="px-4 py-4 grid grid-cols-3 items-center">
+                          <div className="flex items-center gap-3">
+                            <div className="w-12 h-12 rounded-full bg-gradient-to-r from-purple-400 to-pink-500 flex items-center justify-center text-white text-lg font-medium ring-2 ring-background shadow-sm">
+                              {client.imageUrl ? (
+                                <img 
+                                  src={client.imageUrl} 
+                                  alt={client.name} 
+                                  className="w-12 h-12 rounded-full object-cover"
+                                />
+                              ) : (
+                                client.name.charAt(0)
+                              )}
+                            </div>
+                            <div>
+                              <p className="font-medium">{client.name}</p>
+                              <p className="text-sm text-muted-foreground">@{client.username}</p>
+                            </div>
                           </div>
-                          <div className="ml-4">
-                            <p className="font-medium">{client.name}</p>
-                            <p className="text-sm text-muted-foreground">{client.username}</p>
+                          
+                          <div className="text-center">
+                            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
+                              <span className="relative flex h-2 w-2">
+                                <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+                              </span>
+                              Cliente
+                            </div>
                             {client.phone && (
-                              <p className="text-xs text-muted-foreground mt-1">{client.phone}</p>
+                              <p className="text-xs text-muted-foreground mt-2">{client.phone}</p>
                             )}
                           </div>
+                          
+                          <div className="flex items-center justify-end">
+                            <DeleteAccountDialog userId={client.id} isAdmin={true} />
+                          </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                            Cliente
-                          </Badge>
-                          <DeleteAccountDialog userId={client.id} isAdmin={true} />
-                        </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
                 )}
               </CardContent>
@@ -337,32 +375,91 @@ export default function AdminDashboard() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  <div className="flex justify-between px-4 py-3 bg-muted/50 rounded-lg">
-                    <span className="font-medium">Versione sistema</span>
-                    <span>1.0.0</span>
+                <div className="grid gap-6 lg:grid-cols-2">
+                  <div className="space-y-4">
+                    <div className="rounded-lg border overflow-hidden">
+                      <div className="bg-muted/50 px-4 py-2 font-medium text-sm">
+                        Informazioni di Sistema
+                      </div>
+                      <div className="divide-y">
+                        <div className="flex justify-between items-center px-4 py-3">
+                          <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600">
+                              <Calendar className="h-4 w-4" />
+                            </div>
+                            <span className="font-medium">Versione sistema</span>
+                          </div>
+                          <div className="px-3 py-1 rounded-md bg-indigo-50 text-indigo-700 font-medium">
+                            1.0.0
+                          </div>
+                        </div>
+                        
+                        <div className="flex justify-between items-center px-4 py-3">
+                          <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center text-purple-600">
+                              <RefreshCw className="h-4 w-4" />
+                            </div>
+                            <span className="font-medium">Ultimo aggiornamento</span>
+                          </div>
+                          <div className="px-3 py-1 rounded-md bg-purple-50 text-purple-700 font-medium">
+                            {new Date().toLocaleDateString()}
+                          </div>
+                        </div>
+                        
+                        <div className="flex justify-between items-center px-4 py-3">
+                          <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center text-green-600">
+                              <span className="relative flex h-3 w-3">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+                              </span>
+                            </div>
+                            <span className="font-medium">Stato database</span>
+                          </div>
+                          <div className="px-3 py-1 rounded-md bg-green-50 text-green-700 font-medium border border-green-200">
+                            Operativo
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <Button 
+                      className="w-full justify-between h-auto py-3" 
+                      variant="outline" 
+                      onClick={() => navigate("/admin/notifications")}
+                    >
+                      <span className="font-medium flex items-center gap-2">
+                        <Bell className="h-5 w-5" />
+                        Gestione Notifiche
+                      </span>
+                      <span className="text-lg">→</span>
+                    </Button>
                   </div>
-                  <div className="flex justify-between px-4 py-3 bg-muted/50 rounded-lg">
-                    <span className="font-medium">Ultimo aggiornamento</span>
-                    <span>{new Date().toLocaleDateString()}</span>
+                  
+                  <div className="rounded-lg border overflow-hidden">
+                    <div className="bg-muted/50 px-4 py-2 font-medium text-sm">
+                      Statistiche di Utilizzo
+                    </div>
+                    <div className="p-5 text-center">
+                      <div className="w-24 h-24 mx-auto rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 flex items-center justify-center text-white mb-4">
+                        <Info className="h-10 w-10" />
+                      </div>
+                      <h3 className="text-lg font-medium mb-1">Sistema in Esecuzione</h3>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Il sistema è operativo e funzionante.
+                      </p>
+                      <div className="grid grid-cols-2 gap-3 max-w-xs mx-auto">
+                        <div className="rounded-md bg-muted/50 p-3">
+                          <p className="text-2xl font-bold text-indigo-600">{barbers?.length || 0}</p>
+                          <p className="text-xs text-muted-foreground">Barbieri</p>
+                        </div>
+                        <div className="rounded-md bg-muted/50 p-3">
+                          <p className="text-2xl font-bold text-purple-600">{clients?.length || 0}</p>
+                          <p className="text-xs text-muted-foreground">Clienti</p>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex justify-between px-4 py-3 bg-muted/50 rounded-lg">
-                    <span className="font-medium">Stato database</span>
-                    <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                      Operativo
-                    </Badge>
-                  </div>
-                  <Button 
-                    className="w-full justify-between" 
-                    variant="outline" 
-                    onClick={() => navigate("/admin/notifications")}
-                  >
-                    <span className="font-medium flex items-center gap-2">
-                      <Bell className="h-4 w-4" />
-                      Gestione Notifiche
-                    </span>
-                    <span>→</span>
-                  </Button>
                 </div>
               </CardContent>
             </Card>
