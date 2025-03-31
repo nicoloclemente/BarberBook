@@ -89,7 +89,8 @@ export default function ProfilePage() {
       }
       
       console.log("Updating user:", userInfo.id, data);
-      return await apiRequest<User>('PATCH', `/api/users/${userInfo.id}`, data);
+      // Usiamo l'endpoint /api/me per aggiornare l'utente corrente
+      return await apiRequest<User>('PATCH', `/api/me`, data);
     },
     onSuccess: (updatedUser: User) => {
       console.log("User updated successfully:", updatedUser);

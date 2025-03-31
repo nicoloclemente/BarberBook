@@ -44,8 +44,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isLoading,
   } = useQuery<SelectUser | null, Error>({
     queryKey: ["/api/user"],
-    // Non serve più usare on401 perché l'endpoint /api/user restituirà null e non un 401
+    queryFn: getQueryFn({ on401: "returnNull" }), // Usiamo returnNull per non generare errori 401
     staleTime: 10 * 60 * 1000, // 10 minuti di cache
+    retry: 1, // Riprova una volta in caso di errore
   });
 
   const loginMutation = useMutation({
