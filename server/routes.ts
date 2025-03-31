@@ -537,13 +537,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get all barbers
-  app.get("/api/barbers", async (req, res) => {
-    const barbers = await storage.getAllBarbers();
-    res.json(barbers);
-  });
-
-
   // Get all clients
   app.get("/api/clients", async (req, res) => {
     if (!req.isAuthenticated()) {
@@ -734,7 +727,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Filtra le informazioni sensibili per l'uso pubblico
       const publicBarbers = approvedBarbers.map(barber => {
-        const { password, ...publicInfo } = barber;
+        const { password, phone, ...publicInfo } = barber;
         return publicInfo;
       });
       
