@@ -148,8 +148,11 @@ export function setupAuth(app: Express) {
   });
 
   app.get("/api/user", (req, res) => {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ error: "Not authenticated" });
+    // Modifica: ritorniamo null invece di un errore 401 se l'utente non è autenticato
+    // Questo facilita la gestione nel frontend
+    if (!req.isAuthenticated() || !req.user) {
+      // Ritorna un 200 con dati vuoti invece di un 401
+      return res.json(null);
     }
     
     // Remove password from response

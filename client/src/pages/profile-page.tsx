@@ -39,7 +39,7 @@ export default function ProfilePage() {
   // Utilizziamo la query per assicurarci di ottenere i dati utente più aggiornati
   const { data: userData, isLoading, isError } = useQuery<User | null>({
     queryKey: ['/api/user'],
-    queryFn: getQueryFn({ on401: "returnNull" }),
+    // Non serve più usare on401 perché l'API ora restituisce null e non un 401
     retry: 2, 
     staleTime: 30000
   });
