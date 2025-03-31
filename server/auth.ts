@@ -8,6 +8,7 @@ import { storage } from "./storage";
 import { User as SelectUser, insertUserSchema } from "@shared/schema";
 import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
+import bcrypt from "bcryptjs";
 
 declare global {
   namespace Express {
@@ -24,10 +25,21 @@ async function hashPassword(password: string) {
 }
 
 async function comparePasswords(supplied: string, stored: string) {
-  const [hashed, salt] = stored.split(".");
-  const hashedBuf = Buffer.from(hashed, "hex");
-  const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
-  return timingSafeEqual(hashedBuf, suppliedBuf);
+  // Verifica se la password è in formato bcrypt (inizia con $2a$, $2b$ o $2y$)
+  if (stored.startsWith('$2a$') || stored.startsWith('$2b$') || stored.startsWith('$2y$')) {
+    // Usa bcrypt per confrontare
+    return bcrypt.compare(supplied, stored);
+  } else {
+    // Controlla se la password è nel formato di scrypt (hash.salt)
+    if (stored.includes('.')) {
+      const [hashed, salt] = stored.split(".");
+      const hashedBuf = Buffer.from(hashed, "hex");
+      const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
+      return timingSafeEqual(hashedBuf, suppliedBuf);
+    }
+    // Se non è né bcrypt né scrypt, la password non può essere verificata
+    throw new Error("Unsupported password format");
+  }
 }
 
 export function setupAuth(app: Express) {
