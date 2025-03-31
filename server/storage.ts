@@ -16,7 +16,7 @@ import createMemoryStore from "memorystore";
 import connectPg from "connect-pg-simple";
 import session from "express-session";
 import { db, pool } from "./db";
-import { eq, and, or, between, desc, sql, asc, isNull, lt, gt } from "drizzle-orm";
+import { eq, and, or, between, desc, sql, asc, isNull, lt, gt, ne as neq } from "drizzle-orm";
 import { cache } from "./cache";
 
 export interface IStorage {
@@ -624,7 +624,7 @@ export class DatabaseStorage implements IStorage {
               eq(users.role, role),
               and(
                 eq(users.isBarber, true),
-                not(eq(users.role, 'admin')) // Esclude gli admin
+                neq(users.role, 'admin') // Esclude gli admin
               )
             )
           )
