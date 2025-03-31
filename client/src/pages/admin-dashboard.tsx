@@ -92,6 +92,28 @@ export default function AdminDashboard() {
       });
     }
   });
+  
+  // Mutation per rimuovere l'approvazione di un barbiere
+  const removeApprovalMutation = useMutation({
+    mutationFn: async (barberId: number) => {
+      const res = await apiRequest("PUT", `/api/admin/remove-barber-approval/${barberId}`);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/barbers"] });
+      toast({
+        title: "Approvazione rimossa",
+        description: "L'approvazione del barbiere è stata rimossa con successo"
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Errore",
+        description: `Impossibile rimuovere l'approvazione del barbiere: ${error.message}`,
+        variant: "destructive"
+      });
+    }
+  });
 
   if (!user || user.role !== "admin") {
     return null;
@@ -188,6 +210,21 @@ export default function AdminDashboard() {
                               <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
                                 Approvato
                               </Badge>
+                              <Button 
+                                size="sm"
+                                variant="outline"
+                                onClick={() => removeApprovalMutation.mutate(barber.id)} 
+                                disabled={removeApprovalMutation.isPending}
+                              >
+                                {removeApprovalMutation.isPending ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <>
+                                    <UserX className="h-4 w-4 mr-2" />
+                                    Rimuovi Approvazione
+                                  </>
+                                )}
+                              </Button>
                               <DeleteAccountDialog userId={barber.id} isAdmin={true} />
                             </>
                           ) : (

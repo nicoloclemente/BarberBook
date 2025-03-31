@@ -950,6 +950,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     res.json(barber);
   });
+  
+  app.put("/api/admin/remove-barber-approval/:id", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    
+    const user = req.user!;
+    if (user.role !== 'admin') {
+      return res.status(403).json({ error: "Only admins can access this endpoint" });
+    }
+    
+    const barberId = parseInt(req.params.id);
+    if (isNaN(barberId)) {
+      return res.status(400).json({ error: "Invalid barber ID" });
+    }
+    
+    const barber = await storage.removeBarberApproval(barberId);
+    if (!barber) {
+      return res.status(404).json({ error: "Barber not found" });
+    }
+    
+    res.json(barber);
+  });
 
   // Create HTTP server
   const httpServer = createServer(app);

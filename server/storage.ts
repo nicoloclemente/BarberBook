@@ -674,6 +674,24 @@ export class DatabaseStorage implements IStorage {
     
     return user;
   }
+  
+  async removeBarberApproval(id: number): Promise<User | undefined> {
+    const [user] = await db
+      .update(users)
+      .set({ isApproved: false })
+      .where(eq(users.id, id))
+      .returning();
+    
+    if (user) {
+      // Invalidiamo le cache relative all'utente
+      cache.delete(`user:${id}`);
+      cache.delete(`user:username:${user.username}`);
+      cache.delete('users:barbers');
+      cache.delete(`users:role:${UserRole.BARBER}`);
+    }
+    
+    return user;
+  }
 
   // Service related methods
   async getService(id: number): Promise<Service | undefined> {
