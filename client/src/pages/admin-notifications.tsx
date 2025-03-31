@@ -28,7 +28,8 @@ import { useAuth } from "@/hooks/use-auth";
 import { 
   Calendar, 
   UserCog, 
-  ArrowLeft
+  ArrowLeft,
+  ShieldCheck
 } from "lucide-react";
 
 export default function AdminNotificationsPage() {
