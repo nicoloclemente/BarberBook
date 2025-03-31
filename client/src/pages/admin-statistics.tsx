@@ -108,6 +108,10 @@ interface SystemStats {
       estimatedRequests: number;
       activeConnections: number;
       messageCount: number;
+      clientActivity?: {
+        requests: number;
+        messages: number;
+      };
       impactPercentage: string;
     }
   }>;
@@ -541,47 +545,74 @@ export default function AdminStatisticsPage() {
             <CardHeader>
               <CardTitle className="flex items-center">
                 <Cpu className="mr-2 h-5 w-5" />
-                Impatto sul Server per Barbiere
+                Impatto sul Server per Barbiere (inclusa attività dei clienti)
               </CardTitle>
               <CardDescription>
-                Analisi dell'impatto di ciascun barbiere sull'utilizzo delle risorse del server
+                Analisi dell'impatto complessivo di ciascun barbiere e dei suoi clienti sull'utilizzo delle risorse del server
               </CardDescription>
             </CardHeader>
             <CardContent>
               {systemStats ? (
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Barbiere</TableHead>
-                        <TableHead>Richieste Stimate</TableHead>
-                        <TableHead>Connessioni Attive</TableHead>
-                        <TableHead>Messaggi</TableHead>
-                        <TableHead>Impatto sul Server</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {systemStats.clientsPerBarber.map(barber => (
-                        <TableRow key={barber.barberId}>
-                          <TableCell className="font-medium">{barber.barberName}</TableCell>
-                          <TableCell>{barber.serverUsage.estimatedRequests}</TableCell>
-                          <TableCell>{barber.serverUsage.activeConnections}</TableCell>
-                          <TableCell>{barber.serverUsage.messageCount}</TableCell>
-                          <TableCell>
-                            <div className="flex items-center">
-                              <div className="w-full bg-gray-200 rounded-full h-2.5 mr-2">
-                                <div 
-                                  className="bg-primary h-2.5 rounded-full" 
-                                  style={{ width: barber.serverUsage.impactPercentage }}
-                                ></div>
-                              </div>
-                              <span className="whitespace-nowrap">{barber.serverUsage.impactPercentage}</span>
-                            </div>
-                          </TableCell>
+                <div className="space-y-4">
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Barbiere</TableHead>
+                          <TableHead>Richieste Totali</TableHead>
+                          <TableHead>Connessioni Attive</TableHead>
+                          <TableHead>Messaggi Totali</TableHead>
+                          <TableHead>Impatto sul Server</TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
+                      </TableHeader>
+                      <TableBody>
+                        {systemStats.clientsPerBarber.map(barber => (
+                          <TableRow key={barber.barberId}>
+                            <TableCell className="font-medium">{barber.barberName}</TableCell>
+                            <TableCell>
+                              {barber.serverUsage.estimatedRequests}
+                              {barber.serverUsage.clientActivity && (
+                                <span className="text-xs ml-1 text-muted-foreground">
+                                  (di cui {barber.serverUsage.clientActivity.requests} dai clienti)
+                                </span>
+                              )}
+                            </TableCell>
+                            <TableCell>{barber.serverUsage.activeConnections}</TableCell>
+                            <TableCell>
+                              {barber.serverUsage.messageCount}
+                              {barber.serverUsage.clientActivity && (
+                                <span className="text-xs ml-1 text-muted-foreground">
+                                  (di cui {barber.serverUsage.clientActivity.messages} dai clienti)
+                                </span>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center">
+                                <div className="w-full bg-gray-200 rounded-full h-2.5 mr-2">
+                                  <div 
+                                    className="bg-primary h-2.5 rounded-full" 
+                                    style={{ width: barber.serverUsage.impactPercentage }}
+                                  ></div>
+                                </div>
+                                <span className="whitespace-nowrap">{barber.serverUsage.impactPercentage}</span>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                  </TableBody>
                   </Table>
+                  </div>
+                  
+                  <div className="text-sm border rounded-md p-3 bg-muted/30">
+                    <h4 className="font-medium mb-1">Come viene calcolato l'impatto:</h4>
+                    <ul className="list-disc pl-5 space-y-1 text-xs">
+                      <li>Include tutte le attività dirette del barbiere (richieste API, messaggi, connessioni)</li>
+                      <li>Include le attività di tutti i clienti associati al barbiere</li>
+                      <li>Tiene conto del numero di messaggi scambiati tra barbiere e clienti</li>
+                      <li>Considera le connessioni attive sia del barbiere che dei suoi clienti</li>
+                      <li>Calcola l'impatto percentuale rispetto all'utilizzo totale del server</li>
+                    </ul>
+                  </div>
                 </div>
               ) : (
                 <div className="text-center py-4 text-muted-foreground">

@@ -1099,27 +1099,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const requestsPerBarber = new Map();
     const activeSessionsPerBarber = new Map();
     const messagesPerBarber = new Map();
+    const clientRequestsPerBarber = new Map();
+    const clientMessagesPerBarber = new Map();
       
     // Recupera anche tutti i messaggi per calcolare il volume di comunicazione
     const messages = await storage.getAllMessages();
       
-    // Calcola l'utilizzo del server per ogni barbiere
+    // Calcola l'utilizzo del server per ogni barbiere (inclusi i loro clienti)
     for (const barber of barbers) {
       // Inizializza i contatori
       requestsPerBarber.set(barber.id, 0);
       activeSessionsPerBarber.set(barber.id, 0);
       messagesPerBarber.set(barber.id, 0);
+      clientRequestsPerBarber.set(barber.id, 0);
+      clientMessagesPerBarber.set(barber.id, 0);
         
-      // Conta i messaggi inviati/ricevuti da questo barbiere
+      // Conta i messaggi inviati/ricevuti direttamente da questo barbiere
       const barberMessages = messages.filter(m => 
-        m.fromUserId === barber.id || m.toUserId === barber.id
+        m.senderId === barber.id || m.receiverId === barber.id
       );
       messagesPerBarber.set(barber.id, barberMessages.length);
         
       // Analizza gli appuntamenti di questo barbiere
       const barberAppointments = appointments.filter(a => a.barberId === barber.id);
       const uniqueClientIds = new Set(barberAppointments.map(a => a.clientId));
-        
+      
       // Conta le sessioni attive (connessioni WebSocket) per questo barbiere
       // e per i suoi clienti
       let activeSessions = 0;
@@ -1127,22 +1131,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
         activeSessions++;
       }
         
-      // Conta anche le sessioni attive dei suoi clienti
+      // Conta anche le sessioni attive dei suoi clienti e i loro messaggi
+      let clientMessagesCount = 0;
       for (const clientId of uniqueClientIds) {
+        // Conta connessioni attive dei clienti
         if (onlineUsers.has(clientId)) {
           activeSessions++;
         }
+        
+        // Conta i messaggi inviati dai clienti di questo barbiere a chiunque
+        // (esclusi quelli già contati nella conversazione col barbiere stesso)
+        const clientMessages = messages.filter(m => 
+          (m.senderId === clientId && m.receiverId !== barber.id) || 
+          (m.receiverId === clientId && m.senderId !== barber.id)
+        );
+        clientMessagesCount += clientMessages.length;
       }
       activeSessionsPerBarber.set(barber.id, activeSessions);
+      clientMessagesPerBarber.set(barber.id, clientMessagesCount);
+      
+      // Calcola anche le richieste generate dai clienti del barbiere
+      // (stima semplificata: ogni cliente genera richieste aggiuntive)
+      const clientRequests = uniqueClientIds.size * 10; // media di 10 richieste per cliente
+      clientRequestsPerBarber.set(barber.id, clientRequests);
         
       // Stima il numero di richieste basato sul numero di appuntamenti e messaggi
       // (è una stima semplificata: ogni appuntamento genera ~5 richieste, ogni msg ~2)
-      const estimatedRequests = barberAppointments.length * 5 + barberMessages.length * 2;
-      requestsPerBarber.set(barber.id, estimatedRequests);
+      const barberDirectRequests = barberAppointments.length * 5 + barberMessages.length * 2;
+      const clientIndirectRequests = clientRequests + clientMessagesCount * 2;
+      const totalRequests = barberDirectRequests + clientIndirectRequests;
+      requestsPerBarber.set(barber.id, totalRequests);
         
       // Calcola l'impatto relativo sul server (% del totale delle richieste)
+      // Incluso l'impatto generato dai clienti di questo barbiere
       const impactPercentage = appointments.length > 0 && messages.length > 0 
-        ? (estimatedRequests / ((appointments.length * 5) + (messages.length * 2)) * 100).toFixed(2)
+        ? (totalRequests / ((appointments.length * 5) + (messages.length * 2) + (allClients.length * 10)) * 100).toFixed(2)
         : 0;
         
       clientsPerBarber.push({
@@ -1154,11 +1177,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         confirmedCount: barberAppointments.filter(a => a.status === 'confirmed').length,
         cancelledCount: barberAppointments.filter(a => a.status === 'cancelled').length,
         completedCount: barberAppointments.filter(a => a.status === 'completed').length,
-        // Aggiungi metriche di utilizzo del server
+        // Aggiungi metriche di utilizzo del server (incluso l'impatto dei clienti)
         serverUsage: {
-          estimatedRequests,
+          estimatedRequests: totalRequests,
           activeConnections: activeSessions,
-          messageCount: barberMessages.length,
+          messageCount: barberMessages.length + clientMessagesCount,
+          clientActivity: {
+            requests: clientIndirectRequests,
+            messages: clientMessagesCount
+          },
           impactPercentage: `${impactPercentage}%`
         }
       });
