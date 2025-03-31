@@ -7,7 +7,8 @@ import {
   Sparkles,
   BarChart,
   UserCog,
-  ShieldCheck
+  ShieldCheck,
+  Bell
 } from "lucide-react";
 
 export default function NavigationTabs() {
@@ -24,6 +25,60 @@ export default function NavigationTabs() {
   const isBarber = user?.isBarber || user?.role === 'barber';
   const isClient = !isBarber && !isAdmin;
 
+  // Navigazione per l'amministratore
+  if (isAdmin) {
+    return (
+      <nav className="hidden md:flex bg-white border-b border-neutral-200 shadow-sm overflow-x-auto">
+        <div className="container mx-auto flex">
+          <div className={`nav-item py-4 px-6 font-medium text-center ${
+            isActive("/") ? "active" : "text-neutral-700 hover:text-primary transition-colors"
+          }`}>
+            <Link href="/">
+              <div className="flex flex-col items-center cursor-pointer">
+                <Calendar className="h-5 w-5 mb-1" />
+                <span>Dashboard</span>
+              </div>
+            </Link>
+          </div>
+          
+          <div className={`nav-item py-4 px-6 font-medium text-center ${
+            isActive("/admin") ? "active" : "text-neutral-700 hover:text-primary transition-colors"
+          }`}>
+            <Link href="/admin">
+              <div className="flex flex-col items-center cursor-pointer">
+                <ShieldCheck className="h-5 w-5 mb-1" />
+                <span>Admin</span>
+              </div>
+            </Link>
+          </div>
+          
+          <div className={`nav-item py-4 px-6 font-medium text-center ${
+            isActive("/admin/notifications") ? "active" : "text-neutral-700 hover:text-primary transition-colors"
+          }`}>
+            <Link href="/admin/notifications">
+              <div className="flex flex-col items-center cursor-pointer">
+                <Bell className="h-5 w-5 mb-1" />
+                <span>Notifiche</span>
+              </div>
+            </Link>
+          </div>
+          
+          <div className={`nav-item py-4 px-6 font-medium text-center ${
+            isActive("/profile") ? "active" : "text-neutral-700 hover:text-primary transition-colors"
+          }`}>
+            <Link href="/profile">
+              <div className="flex flex-col items-center cursor-pointer">
+                <UserCog className="h-5 w-5 mb-1" />
+                <span>Profilo</span>
+              </div>
+            </Link>
+          </div>
+        </div>
+      </nav>
+    );
+  }
+
+  // Navigazione standard per barbieri e clienti
   return (
     <nav className="hidden md:flex bg-white border-b border-neutral-200 shadow-sm overflow-x-auto">
       <div className="flex justify-around">
@@ -39,8 +94,8 @@ export default function NavigationTabs() {
           </Link>
         </div>
         
-        {/* Solo barbieri e admin vedono la lista dei clienti */}
-        {(isBarber || isAdmin) && (
+        {/* Solo barbieri vedono la lista dei clienti */}
+        {isBarber && (
           <div className={`nav-item py-4 px-6 font-medium text-center ${
             isActive("/clients") ? "active" : "text-neutral-700 hover:text-primary transition-colors"
           }`}>
@@ -65,8 +120,8 @@ export default function NavigationTabs() {
           </Link>
         </div>
         
-        {/* Solo barbieri e admin vedono i servizi */}
-        {(isBarber || isAdmin) && (
+        {/* Solo barbieri vedono i servizi */}
+        {isBarber && (
           <div className={`nav-item py-4 px-6 font-medium text-center ${
             isActive("/services") ? "active" : "text-neutral-700 hover:text-primary transition-colors"
           }`}>
@@ -88,20 +143,6 @@ export default function NavigationTabs() {
               <div className="flex flex-col items-center cursor-pointer">
                 <BarChart className="h-5 w-5 mb-1" />
                 <span>Statistiche</span>
-              </div>
-            </Link>
-          </div>
-        )}
-        
-        {/* Solo gli admin vedono la dashboard amministrativa */}
-        {isAdmin && (
-          <div className={`nav-item py-4 px-6 font-medium text-center ${
-            isActive("/admin") ? "active" : "text-neutral-700 hover:text-primary transition-colors"
-          }`}>
-            <Link href="/admin">
-              <div className="flex flex-col items-center cursor-pointer">
-                <ShieldCheck className="h-5 w-5 mb-1" />
-                <span>Admin</span>
               </div>
             </Link>
           </div>

@@ -7,7 +7,8 @@ import {
   Sparkles,
   UserCog,
   BarChart,
-  ShieldCheck
+  ShieldCheck,
+  Bell
 } from "lucide-react";
 
 export default function MobileNavigation() {
@@ -18,16 +19,64 @@ export default function MobileNavigation() {
   const isBarber = user?.isBarber || user?.role === 'barber';
   const isClient = !isBarber && !isAdmin;
   
-  // Non mostrare la navigazione mobile per l'amministratore
-  if (isAdmin) {
-    return null;
-  }
-
   const isActive = (path: string) => {
     if (path === "/" && location === "/") return true;
     if (path !== "/" && location.startsWith(path)) return true;
     return false;
   };
+  
+  // Navigazione mobile per l'amministratore
+  if (isAdmin) {
+    return (
+      <nav className="md:hidden bg-white border-t border-neutral-200 shadow-t">
+        <div className="flex justify-around">
+          <div className={`py-3 px-2 font-medium focus:outline-none ${
+            isActive("/") ? "text-primary" : "text-neutral-700"
+          }`}>
+            <Link href="/">
+              <div className="flex flex-col items-center cursor-pointer">
+                <Calendar className="h-5 w-5" />
+                <span className="text-xs mt-1">Dashboard</span>
+              </div>
+            </Link>
+          </div>
+          
+          <div className={`py-3 px-2 font-medium focus:outline-none ${
+            isActive("/admin") ? "text-primary" : "text-neutral-700"
+          }`}>
+            <Link href="/admin">
+              <div className="flex flex-col items-center cursor-pointer">
+                <ShieldCheck className="h-5 w-5" />
+                <span className="text-xs mt-1">Admin</span>
+              </div>
+            </Link>
+          </div>
+          
+          <div className={`py-3 px-2 font-medium focus:outline-none ${
+            isActive("/admin/notifications") ? "text-primary" : "text-neutral-700"
+          }`}>
+            <Link href="/admin/notifications">
+              <div className="flex flex-col items-center cursor-pointer">
+                <Bell className="h-5 w-5" />
+                <span className="text-xs mt-1">Notifiche</span>
+              </div>
+            </Link>
+          </div>
+          
+          <div className={`py-3 px-2 font-medium focus:outline-none ${
+            isActive("/profile") ? "text-primary" : "text-neutral-700"
+          }`}>
+            <Link href="/profile">
+              <div className="flex flex-col items-center cursor-pointer">
+                <UserCog className="h-5 w-5" />
+                <span className="text-xs mt-1">Profilo</span>
+              </div>
+            </Link>
+          </div>
+        </div>
+      </nav>
+    );
+  }
 
   return (
     <nav className="md:hidden bg-white border-t border-neutral-200 shadow-t">

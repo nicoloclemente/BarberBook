@@ -46,7 +46,7 @@ export default function AdminNotificationsPage() {
   }, [isAuthLoading, user]);
 
   // Carica tutte le notifiche (solo per admin)
-  const { data: notifications, isLoading, refetch } = useQuery({
+  const { data: notifications, isLoading, refetch } = useQuery<any[]>({
     queryKey: ['/api/notifications/all'],
     enabled: user?.role === 'admin',
   });
