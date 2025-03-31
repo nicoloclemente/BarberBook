@@ -108,37 +108,37 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex flex-col lg:flex-row overflow-hidden">
+    <div className="min-h-screen bg-white flex flex-col lg:flex-row">
       {/* Hero section */}
-      <div className="bg-gradient-to-br from-primary to-primary/90 text-white py-12 px-8 flex flex-col justify-center lg:w-1/2 relative overflow-hidden">
+      <div className="bg-primary text-white py-10 px-6 flex flex-col justify-center lg:w-1/2 relative">
         {/* Decorative elements */}
-        <div className="absolute top-0 left-0 w-full h-full">
-          <div className="absolute top-10 left-10 w-64 h-64 rounded-full bg-white/5 blur-3xl"></div>
-          <div className="absolute bottom-20 right-20 w-80 h-80 rounded-full bg-white/5 blur-3xl"></div>
+        <div className="absolute top-0 left-0 w-full h-full opacity-10">
+          <div className="absolute top-10 left-10 w-64 h-64 rounded-full bg-white blur-3xl"></div>
+          <div className="absolute bottom-20 right-20 w-80 h-80 rounded-full bg-white blur-3xl"></div>
         </div>
         
         <div className="relative z-10 max-w-xl mx-auto">
           <div className="flex items-center space-x-3 mb-8">
-            <div className="p-2.5 bg-white/10 rounded-full">
+            <div className="p-2.5 bg-white/20 rounded-full">
               <Scissors className="h-7 w-7" />
             </div>
             <h1 className="text-3xl font-semibold tracking-tight">BarberBook</h1>
           </div>
           
-          <h2 className="text-4xl font-bold mb-5 leading-tight">
+          <h2 className="text-3xl font-bold mb-5 leading-tight">
             Gestisci il tuo salone da barbiere con eleganza
           </h2>
           
-          <p className="text-xl opacity-90 mb-10 leading-relaxed">
+          <p className="text-lg font-medium text-white mb-10">
             La piattaforma professionale per organizzare appuntamenti, gestire clienti 
             e far crescere la tua attività.
           </p>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-10">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
             {mounted && (
               <>
                 <motion.div 
-                  className="bg-white/10 backdrop-blur-sm p-6 rounded-xl shadow-lg border border-white/20"
+                  className="bg-white/20 p-6 rounded-xl shadow-lg"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5 }}
@@ -153,13 +153,13 @@ export default function AuthPage() {
                     {["Gestione calendario", "Inserimento clienti", "Chat con i clienti", "Statistiche e analisi"].map((item, i) => (
                       <motion.li 
                         key={item}
-                        className="flex items-center text-white/90 hover:text-white"
+                        className="flex items-center text-white"
                         custom={i}
                         initial="hidden"
                         animate="visible"
                         variants={featureItemVariants}
                       >
-                        <CheckCircle2 className="mr-3 h-5 w-5 text-white/80" />
+                        <CheckCircle2 className="mr-3 h-5 w-5 text-white" />
                         {item}
                       </motion.li>
                     ))}
@@ -167,7 +167,7 @@ export default function AuthPage() {
                 </motion.div>
                 
                 <motion.div 
-                  className="bg-white/10 backdrop-blur-sm p-6 rounded-xl shadow-lg border border-white/20"
+                  className="bg-white/20 p-6 rounded-xl shadow-lg"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: 0.2 }}
@@ -182,13 +182,13 @@ export default function AuthPage() {
                     {["Prenotazione semplice", "Notifiche appuntamenti", "Comunicazione diretta", "Storia trattamenti"].map((item, i) => (
                       <motion.li 
                         key={item}
-                        className="flex items-center text-white/90 hover:text-white"
+                        className="flex items-center text-white"
                         custom={i}
                         initial="hidden"
                         animate="visible"
                         variants={featureItemVariants}
                       >
-                        <CheckCircle2 className="mr-3 h-5 w-5 text-white/80" />
+                        <CheckCircle2 className="mr-3 h-5 w-5 text-white" />
                         {item}
                       </motion.li>
                     ))}
@@ -198,16 +198,16 @@ export default function AuthPage() {
             )}
           </div>
           
-          <div className="mt-12 flex flex-wrap items-center gap-2 text-sm text-white/70">
-            <span className="flex items-center mr-4"><Clock className="h-4 w-4 mr-1" /> Risparmia tempo</span>
-            <span className="flex items-center mr-4"><MessageSquare className="h-4 w-4 mr-1" /> Migliora comunicazione</span>
-            <span className="flex items-center"><Bell className="h-4 w-4 mr-1" /> Riduci assenze</span>
+          <div className="mt-10 flex flex-wrap items-center gap-4 text-base text-white">
+            <span className="flex items-center"><Clock className="h-4 w-4 mr-2" /> Risparmia tempo</span>
+            <span className="flex items-center"><MessageSquare className="h-4 w-4 mr-2" /> Migliora comunicazione</span>
+            <span className="flex items-center"><Bell className="h-4 w-4 mr-2" /> Riduci assenze</span>
           </div>
         </div>
       </div>
 
       {/* Auth forms */}
-      <div className="flex items-center justify-center p-6 lg:p-12 lg:w-1/2 relative">
+      <div className="flex items-center justify-center p-6 py-10 bg-gray-50 lg:w-1/2">
         {mounted && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
@@ -215,25 +215,25 @@ export default function AuthPage() {
             transition={{ duration: 0.5 }}
             className="w-full max-w-md"
           >
-            <Card className="border-0 shadow-xl rounded-xl overflow-hidden bg-white/80 backdrop-blur-sm">
-              <CardHeader className="pt-8 pb-2">
-                <CardTitle className="text-2xl font-bold text-center text-primary">
+            <Card className="border border-gray-200 shadow-lg rounded-xl overflow-hidden bg-white">
+              <CardHeader className="pt-8 pb-4 border-b bg-gray-50">
+                <CardTitle className="text-2xl font-bold text-center text-gray-800">
                   Benvenuto su BarberBook
                 </CardTitle>
-                <CardDescription className="text-center text-base pt-2">
+                <CardDescription className="text-center text-base pt-2 text-gray-600">
                   {activeTab === "login" 
                     ? "Accedi per gestire i tuoi appuntamenti"
                     : "Crea un account per iniziare"}
                 </CardDescription>
               </CardHeader>
               
-              <CardContent className="px-6 pt-4 pb-2">
+              <CardContent className="px-6 pt-6 pb-2">
                 <Tabs defaultValue="login" value={activeTab} onValueChange={handleTabChange} className="w-full">
                   <TabsList className="grid w-full grid-cols-2 mb-6 rounded-lg p-1">
-                    <TabsTrigger value="login" className="rounded-md py-2.5 data-[state=active]:shadow-md">
+                    <TabsTrigger value="login" className="rounded-md py-2.5 data-[state=active]:shadow-md font-medium">
                       Accedi
                     </TabsTrigger>
-                    <TabsTrigger value="register" className="rounded-md py-2.5 data-[state=active]:shadow-md">
+                    <TabsTrigger value="register" className="rounded-md py-2.5 data-[state=active]:shadow-md font-medium">
                       Registrati
                     </TabsTrigger>
                   </TabsList>
@@ -337,12 +337,15 @@ export default function AuthPage() {
                               <FormItem>
                                 <FormLabel className="text-sm font-medium text-gray-700">Username</FormLabel>
                                 <FormControl>
-                                  <Input 
-                                    className="h-11 bg-white shadow-sm border-gray-200 focus:border-primary focus:ring-1 focus:ring-primary rounded-lg"
-                                    placeholder="Crea un username" 
-                                    {...field}
-                                    disabled={registerMutation.isPending}
-                                  />
+                                  <div className="relative">
+                                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                                    <Input 
+                                      className="h-11 pl-10 bg-white shadow-sm border-gray-200 focus:border-primary focus:ring-1 focus:ring-primary rounded-lg"
+                                      placeholder="Crea un username" 
+                                      {...field}
+                                      disabled={registerMutation.isPending}
+                                    />
+                                  </div>
                                 </FormControl>
                                 <FormMessage className="text-xs font-medium" />
                               </FormItem>
@@ -426,7 +429,7 @@ export default function AuthPage() {
                           control={registerForm.control}
                           name="isBarber"
                           render={({ field }) => (
-                            <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-lg border border-gray-200 bg-white/80 p-4 shadow-sm">
+                            <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
                               <FormControl>
                                 <Checkbox
                                   checked={field.value}
@@ -436,9 +439,9 @@ export default function AuthPage() {
                                 />
                               </FormControl>
                               <div className="space-y-1 leading-none">
-                                <FormLabel className="text-sm font-medium">Sono un barbiere</FormLabel>
-                                <FormDescription className="text-xs text-gray-500">
-                                  Seleziona questa opzione se vuoi gestire un salone e avere accesso alle funzionalità avanzate
+                                <FormLabel className="text-sm font-medium text-gray-700">Sono un barbiere</FormLabel>
+                                <FormDescription className="text-xs text-gray-600">
+                                  Seleziona questa opzione se vuoi gestire un salone
                                 </FormDescription>
                               </div>
                             </FormItem>
@@ -463,7 +466,7 @@ export default function AuthPage() {
                 </Tabs>
               </CardContent>
               
-              <CardFooter className="flex justify-center pt-2 pb-8">
+              <CardFooter className="flex justify-center py-4 border-t bg-gray-50">
                 <p className="text-sm text-center text-gray-600">
                   {activeTab === "login" ? (
                     <>
