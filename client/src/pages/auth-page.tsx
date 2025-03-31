@@ -119,17 +119,17 @@ export default function AuthPage() {
         
         <div className="relative z-10 max-w-xl mx-auto">
           <div className="flex items-center space-x-3 mb-8">
-            <div className="p-2.5 bg-white/20 rounded-full">
+            <div className="p-2.5 bg-white/30 rounded-full">
               <Scissors className="h-7 w-7" />
             </div>
-            <h1 className="text-3xl font-semibold tracking-tight">BarberBook</h1>
+            <h1 className="text-3xl font-bold tracking-tight">BarberBook</h1>
           </div>
           
-          <h2 className="text-3xl font-bold mb-5 leading-tight">
+          <h2 className="text-3xl font-bold mb-6 leading-tight">
             Gestisci il tuo salone da barbiere con eleganza
           </h2>
           
-          <p className="text-lg font-medium text-white mb-10">
+          <p className="text-xl font-medium text-white mb-10 leading-relaxed">
             La piattaforma professionale per organizzare appuntamenti, gestire clienti 
             e far crescere la tua attività.
           </p>
@@ -138,12 +138,12 @@ export default function AuthPage() {
             {mounted && (
               <>
                 <motion.div 
-                  className="bg-white/20 p-6 rounded-xl shadow-lg"
+                  className="bg-white/30 p-6 rounded-xl shadow-lg"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5 }}
                 >
-                  <h3 className="font-semibold text-xl mb-4 flex items-center">
+                  <h3 className="font-bold text-xl mb-4 flex items-center">
                     <span className="p-2 bg-white/20 rounded-lg mr-3">
                       <User className="h-5 w-5" />
                     </span>
@@ -160,19 +160,19 @@ export default function AuthPage() {
                         variants={featureItemVariants}
                       >
                         <CheckCircle2 className="mr-3 h-5 w-5 text-white" />
-                        {item}
+                        <span className="font-medium">{item}</span>
                       </motion.li>
                     ))}
                   </ul>
                 </motion.div>
                 
                 <motion.div 
-                  className="bg-white/20 p-6 rounded-xl shadow-lg"
+                  className="bg-white/30 p-6 rounded-xl shadow-lg"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: 0.2 }}
                 >
-                  <h3 className="font-semibold text-xl mb-4 flex items-center">
+                  <h3 className="font-bold text-xl mb-4 flex items-center">
                     <span className="p-2 bg-white/20 rounded-lg mr-3">
                       <Calendar className="h-5 w-5" />
                     </span>
@@ -189,7 +189,7 @@ export default function AuthPage() {
                         variants={featureItemVariants}
                       >
                         <CheckCircle2 className="mr-3 h-5 w-5 text-white" />
-                        {item}
+                        <span className="font-medium">{item}</span>
                       </motion.li>
                     ))}
                   </ul>
@@ -198,16 +198,16 @@ export default function AuthPage() {
             )}
           </div>
           
-          <div className="mt-10 flex flex-wrap items-center gap-4 text-base text-white">
-            <span className="flex items-center"><Clock className="h-4 w-4 mr-2" /> Risparmia tempo</span>
-            <span className="flex items-center"><MessageSquare className="h-4 w-4 mr-2" /> Migliora comunicazione</span>
-            <span className="flex items-center"><Bell className="h-4 w-4 mr-2" /> Riduci assenze</span>
+          <div className="mt-10 flex flex-wrap items-center gap-4 text-lg font-medium text-white">
+            <span className="flex items-center"><Clock className="h-5 w-5 mr-2" /> Risparmia tempo</span>
+            <span className="flex items-center"><MessageSquare className="h-5 w-5 mr-2" /> Migliora comunicazione</span>
+            <span className="flex items-center"><Bell className="h-5 w-5 mr-2" /> Riduci assenze</span>
           </div>
         </div>
       </div>
 
       {/* Auth forms */}
-      <div className="flex items-center justify-center p-6 py-10 bg-gray-50 lg:w-1/2">
+      <div className="flex items-center justify-center p-6 py-10 bg-slate-100 lg:w-1/2">
         {mounted && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
@@ -215,25 +215,31 @@ export default function AuthPage() {
             transition={{ duration: 0.5 }}
             className="w-full max-w-md"
           >
-            <Card className="border border-gray-200 shadow-lg rounded-xl overflow-hidden bg-white">
-              <CardHeader className="pt-8 pb-4 border-b bg-gray-50">
+            <Card className="border-0 shadow-xl rounded-xl overflow-hidden bg-white">
+              <CardHeader className="pt-8 pb-6 bg-white border-b">
                 <CardTitle className="text-2xl font-bold text-center text-gray-800">
                   Benvenuto su BarberBook
                 </CardTitle>
-                <CardDescription className="text-center text-base pt-2 text-gray-600">
+                <CardDescription className="text-center text-lg pt-2 text-gray-700">
                   {activeTab === "login" 
                     ? "Accedi per gestire i tuoi appuntamenti"
                     : "Crea un account per iniziare"}
                 </CardDescription>
               </CardHeader>
               
-              <CardContent className="px-6 pt-6 pb-2">
+              <CardContent className="px-8 pt-8 pb-2">
                 <Tabs defaultValue="login" value={activeTab} onValueChange={handleTabChange} className="w-full">
-                  <TabsList className="grid w-full grid-cols-2 mb-6 rounded-lg p-1">
-                    <TabsTrigger value="login" className="rounded-md py-2.5 data-[state=active]:shadow-md font-medium">
+                  <TabsList className="grid w-full grid-cols-2 mb-8 rounded-lg p-1.5 bg-slate-100">
+                    <TabsTrigger 
+                      value="login" 
+                      className="rounded-md py-3 text-base font-medium data-[state=active]:bg-white data-[state=active]:shadow-md data-[state=active]:text-primary"
+                    >
                       Accedi
                     </TabsTrigger>
-                    <TabsTrigger value="register" className="rounded-md py-2.5 data-[state=active]:shadow-md font-medium">
+                    <TabsTrigger 
+                      value="register" 
+                      className="rounded-md py-3 text-base font-medium data-[state=active]:bg-white data-[state=active]:shadow-md data-[state=active]:text-primary"
+                    >
                       Registrati
                     </TabsTrigger>
                   </TabsList>
@@ -246,7 +252,7 @@ export default function AuthPage() {
                           name="username"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel className="text-sm font-medium text-gray-700">Username</FormLabel>
+                              <FormLabel className="text-sm font-semibold text-gray-800">Username</FormLabel>
                               <FormControl>
                                 <div className="relative">
                                   <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -258,7 +264,7 @@ export default function AuthPage() {
                                   />
                                 </div>
                               </FormControl>
-                              <FormMessage className="text-xs font-medium" />
+                              <FormMessage className="text-sm font-semibold text-rose-600" />
                             </FormItem>
                           )}
                         />
@@ -268,8 +274,8 @@ export default function AuthPage() {
                           render={({ field }) => (
                             <FormItem>
                               <div className="flex justify-between items-center">
-                                <FormLabel className="text-sm font-medium text-gray-700">Password</FormLabel>
-                                <a href="#" className="text-xs font-medium text-primary hover:text-primary/80 transition-colors">
+                                <FormLabel className="text-sm font-semibold text-gray-800">Password</FormLabel>
+                                <a href="#" className="text-sm font-medium text-primary hover:text-primary/80 transition-colors">
                                   Password dimenticata?
                                 </a>
                               </div>
@@ -285,13 +291,13 @@ export default function AuthPage() {
                                   />
                                 </div>
                               </FormControl>
-                              <FormMessage className="text-xs font-medium" />
+                              <FormMessage className="text-sm font-semibold text-rose-600" />
                             </FormItem>
                           )}
                         />
                         <Button 
                           type="submit" 
-                          className="w-full mt-6 h-12 rounded-lg text-base font-medium transition-all shadow-md hover:shadow-lg"
+                          className="w-full mt-6 h-12 rounded-lg text-lg font-semibold transition-all shadow-md hover:shadow-lg"
                           disabled={loginMutation.isPending}
                         >
                           {loginMutation.isPending ? (
@@ -314,7 +320,7 @@ export default function AuthPage() {
                             name="name"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel className="text-sm font-medium text-gray-700">Nome Completo</FormLabel>
+                                <FormLabel className="text-sm font-semibold text-gray-800">Nome Completo</FormLabel>
                                 <FormControl>
                                   <div className="relative">
                                     <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -326,7 +332,7 @@ export default function AuthPage() {
                                     />
                                   </div>
                                 </FormControl>
-                                <FormMessage className="text-xs font-medium" />
+                                <FormMessage className="text-sm font-semibold text-rose-600" />
                               </FormItem>
                             )}
                           />
@@ -335,7 +341,7 @@ export default function AuthPage() {
                             name="username"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel className="text-sm font-medium text-gray-700">Username</FormLabel>
+                                <FormLabel className="text-sm font-semibold text-gray-800">Username</FormLabel>
                                 <FormControl>
                                   <div className="relative">
                                     <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -347,7 +353,7 @@ export default function AuthPage() {
                                     />
                                   </div>
                                 </FormControl>
-                                <FormMessage className="text-xs font-medium" />
+                                <FormMessage className="text-sm font-semibold text-rose-600" />
                               </FormItem>
                             )}
                           />
@@ -358,7 +364,7 @@ export default function AuthPage() {
                           name="phone"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel className="text-sm font-medium text-gray-700">Telefono</FormLabel>
+                              <FormLabel className="text-sm font-semibold text-gray-800">Telefono</FormLabel>
                               <FormControl>
                                 <div className="relative">
                                   <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -370,10 +376,10 @@ export default function AuthPage() {
                                   />
                                 </div>
                               </FormControl>
-                              <FormDescription className="text-xs font-normal text-gray-500 mt-1">
+                              <FormDescription className="text-sm text-gray-700 mt-1">
                                 Per ricevere notifiche sugli appuntamenti
                               </FormDescription>
-                              <FormMessage className="text-xs font-medium" />
+                              <FormMessage className="text-sm font-semibold text-rose-600" />
                             </FormItem>
                           )}
                         />
@@ -384,7 +390,7 @@ export default function AuthPage() {
                             name="password"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel className="text-sm font-medium text-gray-700">Password</FormLabel>
+                                <FormLabel className="text-sm font-semibold text-gray-800">Password</FormLabel>
                                 <FormControl>
                                   <div className="relative">
                                     <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -397,7 +403,7 @@ export default function AuthPage() {
                                     />
                                   </div>
                                 </FormControl>
-                                <FormMessage className="text-xs font-medium" />
+                                <FormMessage className="text-sm font-semibold text-rose-600" />
                               </FormItem>
                             )}
                           />
@@ -406,7 +412,7 @@ export default function AuthPage() {
                             name="confirmPassword"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel className="text-sm font-medium text-gray-700">Conferma Password</FormLabel>
+                                <FormLabel className="text-sm font-semibold text-gray-800">Conferma Password</FormLabel>
                                 <FormControl>
                                   <div className="relative">
                                     <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -419,7 +425,7 @@ export default function AuthPage() {
                                     />
                                   </div>
                                 </FormControl>
-                                <FormMessage className="text-xs font-medium" />
+                                <FormMessage className="text-sm font-semibold text-rose-600" />
                               </FormItem>
                             )}
                           />
@@ -439,8 +445,8 @@ export default function AuthPage() {
                                 />
                               </FormControl>
                               <div className="space-y-1 leading-none">
-                                <FormLabel className="text-sm font-medium text-gray-700">Sono un barbiere</FormLabel>
-                                <FormDescription className="text-xs text-gray-600">
+                                <FormLabel className="text-sm font-bold text-gray-800">Sono un barbiere</FormLabel>
+                                <FormDescription className="text-sm text-gray-700">
                                   Seleziona questa opzione se vuoi gestire un salone
                                 </FormDescription>
                               </div>
@@ -450,7 +456,7 @@ export default function AuthPage() {
                         
                         <Button 
                           type="submit" 
-                          className="w-full mt-5 h-12 rounded-lg text-base font-medium transition-all shadow-md hover:shadow-lg"
+                          className="w-full mt-6 h-12 rounded-lg text-lg font-semibold transition-all shadow-md hover:shadow-lg"
                           disabled={registerMutation.isPending}
                         >
                           {registerMutation.isPending ? (
