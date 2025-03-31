@@ -133,8 +133,7 @@ export default function WorkingHoursForm() {
 
   const updateScheduleMutation = useMutation({
     mutationFn: async (data: ScheduleFormValues) => {
-      const res = await apiRequest("PATCH", `/api/users/${user?.id}`, data);
-      return await res.json();
+      return await apiRequest("PATCH", `/api/users/${user?.id}`, data);
     },
     onSuccess: (updatedUser: User) => {
       queryClient.setQueryData(["/api/user"], updatedUser);

@@ -63,19 +63,34 @@ export default function MainLayout({ children }: MainLayoutProps) {
     return 'BarberBook';
   };
 
+  // Se l'utente non è autenticato, mostriamo la pagina di login
   if (!user) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-gradient-to-b from-background to-muted/40">
-        <div className="w-full max-w-md rounded-xl border bg-card p-6 shadow-lg">
-          <div className="text-center mb-6">
-            <div className="inline-flex items-center justify-center h-12 w-12 rounded-full bg-primary/10 mb-4">
-              <Scissors className="h-6 w-6 text-primary" />
+    // Se è la pagina di login, renderizziamo il contenuto
+    if (location === '/') {
+      return (
+        <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-gradient-to-b from-background to-muted/40">
+          <div className="w-full max-w-md rounded-xl border bg-card p-6 shadow-lg">
+            <div className="text-center mb-6">
+              <div className="inline-flex items-center justify-center h-12 w-12 rounded-full bg-primary/10 mb-4">
+                <Scissors className="h-6 w-6 text-primary" />
+              </div>
+              <h1 className="text-2xl font-bold">BarberBook</h1>
+              <p className="text-sm text-muted-foreground mt-1">Gestione barbieri professionale</p>
             </div>
-            <h1 className="text-2xl font-bold">BarberBook</h1>
-            <p className="text-sm text-muted-foreground mt-1">Gestione barbieri professionale</p>
+            <Separator className="my-4" />
+            {children}
           </div>
-          <Separator className="my-4" />
-          {children}
+        </div>
+      );
+    }
+    
+    // Altrimenti reindirizziamo alla pagina di login
+    navigate('/');
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center p-6">
+        <div className="flex items-center flex-col gap-2">
+          <Scissors className="h-10 w-10 text-primary animate-pulse" />
+          <p className="text-muted-foreground">Reindirizzamento...</p>
         </div>
       </div>
     );
