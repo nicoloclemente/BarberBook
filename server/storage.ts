@@ -615,12 +615,29 @@ export class DatabaseStorage implements IStorage {
   async getUsersByRole(role: string): Promise<User[]> {
     // Memorizziamo la lista degli utenti per ruolo in cache per 10 minuti
     return cache.getOrSet(`users:role:${role}`, async () => {
-      return db.select().from(users).where(
-        and(
-          eq(users.isActive, true),
-          eq(users.role, role)
-        )
-      );
+      if (role === 'barber') {
+        // Per i barbieri, include sia gli utenti con role=barber che quelli con isBarber=true
+        return db.select().from(users).where(
+          and(
+            eq(users.isActive, true),
+            or(
+              eq(users.role, role),
+              and(
+                eq(users.isBarber, true),
+                not(eq(users.role, 'admin')) // Esclude gli admin
+              )
+            )
+          )
+        );
+      } else {
+        // Per gli altri ruoli, comportamento normale
+        return db.select().from(users).where(
+          and(
+            eq(users.isActive, true),
+            eq(users.role, role)
+          )
+        );
+      }
     }, 10 * 60 * 1000); // 10 minuti
   }
   

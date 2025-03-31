@@ -915,6 +915,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(403).json({ error: "Only admins can access this endpoint" });
     }
     
+    // Forza la pulizia della cache prima di eseguire la query
+    cache.delete('users:role:barber');
+    
     const barbers = await storage.getUsersByRole('barber');
     res.json(barbers);
   });
