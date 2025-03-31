@@ -159,4 +159,36 @@ export function setupAuth(app: Express) {
     const { password, ...userWithoutPassword } = req.user!;
     res.json(userWithoutPassword);
   });
+  
+  // Aggiungiamo un endpoint alias per /api/me che fa la stessa cosa di /api/user
+  // Questo è necessario perché alcune pagine usano /api/me e altre /api/user
+  app.get("/api/me", (req, res) => {
+    // Stesso comportamento di /api/user
+    if (!req.isAuthenticated() || !req.user) {
+      return res.json(null);
+    }
+    
+    // Remove password from response
+    const { password, ...userWithoutPassword } = req.user!;
+    res.json(userWithoutPassword);
+  });
+  
+  // Aggiungiamo anche PUT /api/me per aggiornare i dati utente
+  app.put("/api/me", async (req, res) => {
+    if (!req.isAuthenticated() || !req.user) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    
+    try {
+      // Aggiorniamo i dati dell'utente corrente
+      const updatedUser = await storage.updateUser(req.user!.id, req.body);
+      
+      // Rimuovi la password prima di ritornare
+      const { password, ...userWithoutPassword } = updatedUser;
+      res.json(userWithoutPassword);
+    } catch (error) {
+      console.error("Error updating user:", error);
+      res.status(500).json({ error: "Failed to update user" });
+    }
+  });
 }
