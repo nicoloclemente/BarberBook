@@ -3,7 +3,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import MainLayout from "@/components/main-layout";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { apiRequest, queryClient, getQueryFn } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -37,8 +37,9 @@ export default function ProfilePage() {
   const [error, setError] = useState<string | null>(null);
 
   // Utilizziamo la query per assicurarci di ottenere i dati utente più aggiornati
-  const { data: userData, isLoading, isError } = useQuery<User>({
+  const { data: userData, isLoading, isError } = useQuery<User | null>({
     queryKey: ['/api/user'],
+    queryFn: getQueryFn({ on401: "returnNull" }),
     retry: 2, 
     staleTime: 30000
   });
