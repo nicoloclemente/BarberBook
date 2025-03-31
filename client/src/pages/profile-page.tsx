@@ -7,6 +7,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import type { InputProps } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
@@ -54,13 +55,24 @@ export default function ProfilePage() {
     }
   }, [user, form]);
 
-  // Non abbiamo più bisogno dell'elenco dei barbieri poiché utilizziamo il codice barbiere
+  // Aggiungiamo un controllo per assicurare che l'utente sia caricato
+  useEffect(() => {
+    if (!user) {
+      console.log("User not loaded yet");
+    }
+  }, [user]);
 
   const updateProfileMutation = useMutation({
     mutationFn: async (data: ProfileFormValues) => {
-      return await apiRequest<User>('PATCH', `/api/users/${user?.id}`, data);
+      if (!user?.id) {
+        throw new Error("Utente non disponibile");
+      }
+      
+      console.log("Updating user:", user.id, data);
+      return await apiRequest<User>('PATCH', `/api/users/${user.id}`, data);
     },
     onSuccess: (updatedUser: User) => {
+      console.log("User updated successfully:", updatedUser);
       queryClient.setQueryData(['/api/user'], updatedUser);
       toast({
         title: "Profilo aggiornato",
@@ -69,6 +81,7 @@ export default function ProfilePage() {
       setIsUpdating(false);
     },
     onError: (error: Error) => {
+      console.error("Error updating profile:", error);
       toast({
         title: "Errore",
         description: "Non è stato possibile aggiornare il profilo: " + error.message,
@@ -125,7 +138,7 @@ export default function ProfilePage() {
                       <FormItem>
                         <FormLabel>Telefono</FormLabel>
                         <FormControl>
-                          <Input {...field} placeholder="Numero di telefono" />
+                          <Input {...field} placeholder="Numero di telefono" value={field.value || ""} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -139,7 +152,7 @@ export default function ProfilePage() {
                       <FormItem>
                         <FormLabel>URL Immagine profilo</FormLabel>
                         <FormControl>
-                          <Input {...field} placeholder="URL della tua immagine profilo" />
+                          <Input {...field} placeholder="URL della tua immagine profilo" value={field.value || ""} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
