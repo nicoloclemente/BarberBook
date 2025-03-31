@@ -279,18 +279,10 @@ export default function NavigationTabs({ orientation = "vertical", onItemClick }
           <>
             <NavSection title={collapsed ? "" : "Amministrazione"}>
               <NavItem
-                icon={<LayoutDashboard className="h-5 w-5" />}
-                label={collapsed ? "" : "Dashboard"}
-                href="/admin/dashboard"
-                isActive={isActive("/admin/dashboard") || isActive("/")}
-                tooltip={collapsed ? "Dashboard" : undefined}
-                onClick={handleItemClick}
-              />
-              <NavItem
                 icon={<ShieldCheck className="h-5 w-5" />}
                 label={collapsed ? "" : "Gestione"}
                 href="/admin"
-                isActive={isActive("/admin") && !isActive("/admin/dashboard") && !isActive("/admin/notifications")}
+                isActive={isActive("/admin") || isActive("/")}
                 tooltip={collapsed ? "Gestione" : undefined}
                 onClick={handleItemClick}
               />

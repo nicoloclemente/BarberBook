@@ -97,17 +97,10 @@ export default function MobileNavigation() {
     return (
       <nav className="fixed bottom-0 left-0 right-0 z-40 flex justify-around h-16 px-2 bg-background border-t md:hidden">
         <NavItem 
-          icon={<LayoutDashboard className="h-5 w-5" />} 
-          label="Dashboard" 
-          href="/admin/dashboard" 
-          isActive={isActive("/admin/dashboard") || isActive("/")} 
-        />
-        
-        <NavItem 
           icon={<ShieldCheck className="h-5 w-5" />} 
           label="Admin" 
           href="/admin" 
-          isActive={isActive("/admin") && !isActive("/admin/dashboard") && !isActive("/admin/notifications")} 
+          isActive={isActive("/admin") || isActive("/")} 
         />
         
         <NavItem 

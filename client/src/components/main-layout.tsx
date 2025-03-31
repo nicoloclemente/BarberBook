@@ -94,7 +94,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
             <div className="flex items-center gap-2">
               <div 
                 className="flex items-center gap-2 cursor-pointer" 
-                onClick={() => navigate(user.role === 'admin' ? '/admin/dashboard' : '/dashboard')}
+                onClick={() => navigate(user.role === 'admin' ? '/admin' : '/dashboard')}
               >
                 <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10">
                   <Scissors className="h-5 w-5 text-primary" />
