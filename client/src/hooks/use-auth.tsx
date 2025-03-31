@@ -54,6 +54,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     onSuccess: (user) => {
       queryClient.setQueryData(["/api/user"], user);
+      
+      // Reindirizza gli admin alla dashboard di amministrazione
+      if (user.role === 'admin') {
+        window.location.href = '/admin';
+      }
+      
       toast({
         title: "Login successful",
         description: `Welcome back, ${user.name}!`,

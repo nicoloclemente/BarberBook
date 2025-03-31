@@ -16,8 +16,14 @@ export function ProtectedRoute({
   useEffect(() => {
     if (!isLoading && !user) {
       setLocation("/auth");
+    } else if (!isLoading && user) {
+      // Reindirizza gli admin alla dashboard di amministrazione quando tentano di accedere
+      // alla route principale "/"
+      if (path === "/" && user.role === "admin") {
+        setLocation("/admin");
+      }
     }
-  }, [isLoading, user, setLocation]);
+  }, [isLoading, user, setLocation, path]);
 
   return (
     <Route path={path}>
