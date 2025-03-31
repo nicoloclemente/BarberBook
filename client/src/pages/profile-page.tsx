@@ -36,19 +36,14 @@ export default function ProfilePage() {
   const [isUpdating, setIsUpdating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Utilizziamo la query per assicurarci di ottenere i dati utente più aggiornati
-  const { data: userData, isLoading, isError } = useQuery<User | null>({
-    queryKey: ['/api/user'],
-    // Non serve più usare on401 perché l'API ora restituisce null e non un 401
-    retry: 2, 
-    staleTime: 30000
-  });
-
-  // Utilizziamo i dati dalla query o quelli dall'hook di autenticazione
-  const userInfo = userData || user || undefined;
+  // Utilizziamo solo i dati dall'hook di autenticazione, che già fa la query a /api/user
+  // Questo evita di fare due richieste parallele che potrebbero causare problemi
+  const userInfo = user;
+  const isLoading = false; // Non abbiamo più la query, quindi non è in caricamento
+  const isError = false;   // Non c'è query, quindi non ci sono errori
   
   // Debug logs
-  console.log("Profile Page rendering, user:", userInfo ? "User loaded" : "No user", "Loading:", isLoading);
+  console.log("Profile Page rendering, user:", userInfo ? "User loaded" : "No user");
   
   // Creiamo il form all'inizio
   const form = useForm<ProfileFormValues>({
@@ -78,19 +73,14 @@ export default function ProfilePage() {
     }
   }, [userInfo, form]);
 
-  // Aggiungiamo un controllo per lo stato di caricamento
+  // Con l'approccio modificato, non abbiamo più bisogno di questo controllo
   useEffect(() => {
-    if (isLoading) {
-      console.log("Loading user data...");
-    } else if (isError) {
-      console.log("Error loading user data");
-      setError("Errore nel caricamento dei dati utente. Ricarica la pagina.");
-    } else if (!userInfo) {
+    if (!userInfo) {
       console.log("User not loaded yet");
     } else {
       console.log("User data loaded successfully");
     }
-  }, [userInfo, isLoading, isError]);
+  }, [userInfo]);
 
   const updateProfileMutation = useMutation({
     mutationFn: async (data: ProfileFormValues) => {
@@ -134,7 +124,7 @@ export default function ProfilePage() {
   const isAdmin = userInfo && userInfo.role === UserRole.ADMIN;
 
   // Mostriamo un indicatore di caricamento se l'utente non è ancora disponibile
-  if (isLoading || !userInfo) {
+  if (!userInfo) {
     return (
       <MainLayout>
         <div className="container mx-auto py-8">
