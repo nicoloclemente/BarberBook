@@ -140,8 +140,11 @@ export default function BarberDetailPage() {
                       className="w-full"
                       onClick={() => {
                         if (user) {
-                          // Navigazione alla pagina di prenotazione
-                          window.location.href = "/appointments/new?barberId=" + barberId;
+                          // Mostra un messaggio informativo in assenza della pagina di prenotazione
+                          toast({
+                            title: "Funzionalità in arrivo",
+                            description: "La prenotazione online degli appuntamenti sarà disponibile a breve",
+                          });
                         } else {
                           toast({
                             title: "Accesso richiesto",
@@ -250,7 +253,11 @@ export default function BarberDetailPage() {
                             service={service} 
                             onBook={() => {
                               if (user) {
-                                window.location.href = `/appointments/new?barberId=${barberId}&serviceId=${service.id}`;
+                                // Mostra un messaggio informativo in assenza della pagina di prenotazione
+                                toast({
+                                  title: "Funzionalità in arrivo",
+                                  description: "La prenotazione online degli appuntamenti sarà disponibile a breve",
+                                });
                               } else {
                                 toast({
                                   title: "Accesso richiesto",

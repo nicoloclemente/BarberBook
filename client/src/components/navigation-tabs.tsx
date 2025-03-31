@@ -219,6 +219,13 @@ export default function NavigationTabs({ orientation = "vertical", onItemClick }
                 onClick={handleItemClick}
               />
               <NavItem
+                icon={<Scissors className="h-4 w-4" />}
+                label="Barbieri"
+                href="/barbers"
+                isActive={isActive("/barbers")}
+                onClick={handleItemClick}
+              />
+              <NavItem
                 icon={<Calendar className="h-4 w-4" />}
                 label="Appuntamenti"
                 href="/appointments"
@@ -387,6 +394,14 @@ export default function NavigationTabs({ orientation = "vertical", onItemClick }
                 href="/"
                 isActive={isActive("/")}
                 tooltip={collapsed ? "Home" : undefined}
+                onClick={handleItemClick}
+              />
+              <NavItem
+                icon={<Scissors className="h-5 w-5" />}
+                label={collapsed ? "" : "Barbieri"}
+                href="/barbers"
+                isActive={isActive("/barbers")}
+                tooltip={collapsed ? "Barbieri" : undefined}
                 onClick={handleItemClick}
               />
               <NavItem

@@ -102,7 +102,23 @@ export default function BarberScheduleView({ barberId, barberName }: BarberSched
     if (!barber?.workingHours) return [];
     
     const dayName = getDayName(date);
-    return barber.workingHours[dayName as keyof typeof barber.workingHours] || [];
+    const dayData = barber.workingHours[dayName as keyof typeof barber.workingHours];
+    
+    // Se i dati sono in formato array, restituiscili direttamente
+    if (Array.isArray(dayData)) {
+      return dayData;
+    }
+    
+    // Se i dati sono in formato { start, end }, convertili in array di TimeSlot
+    if (dayData && typeof dayData === 'object' && 'start' in dayData && 'end' in dayData) {
+      return [{
+        start: dayData.start as string,
+        end: dayData.end as string,
+        enabled: true
+      }];
+    }
+    
+    return [];
   };
 
   // Controlla se la data è nel passato
@@ -236,14 +252,35 @@ export default function BarberScheduleView({ barberId, barberName }: BarberSched
       <div className="space-y-6">
         <div className="grid gap-4">
           {weekDays.map((day) => {
-            const workingHours = barber?.workingHours?.[day.key as keyof typeof barber.workingHours] || [];
-            const hasSchedule = workingHours.some(slot => slot.enabled);
+            const dayKey = day.key as keyof typeof barber.workingHours;
+            const dayData = barber?.workingHours?.[dayKey];
+            
+            // Determina gli orari di lavoro in base al formato dei dati
+            let slots: TimeSlot[] = [];
+            let isOpen = false;
+            
+            if (Array.isArray(dayData)) {
+              // Formato array di slot
+              slots = dayData;
+              isOpen = slots.some(slot => slot.enabled);
+            } else if (dayData && typeof dayData === 'object' && 'start' in dayData && 'end' in dayData) {
+              // Formato { start, end }
+              slots = [{
+                start: dayData.start as string,
+                end: dayData.end as string,
+                enabled: true
+              }];
+              isOpen = true;
+            } else if (dayData === null) {
+              // Giorno chiuso esplicitamente impostato come null
+              isOpen = false;
+            }
             
             return (
               <div key={day.key} className="border rounded-md p-4">
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="font-medium">{day.label}</h3>
-                  {hasSchedule ? (
+                  {isOpen ? (
                     <Badge variant="outline" className="bg-green-50 border-green-200 text-green-700">
                       <CheckCircle2 className="h-3 w-3 mr-1" />
                       Aperto
@@ -255,10 +292,10 @@ export default function BarberScheduleView({ barberId, barberName }: BarberSched
                   )}
                 </div>
                 
-                {hasSchedule ? (
+                {isOpen ? (
                   <div className="space-y-2">
-                    {workingHours
-                      .filter(slot => slot.enabled)
+                    {slots
+                      .filter(slot => slot.enabled !== false) // Considera enabled=true o undefined
                       .map((slot, index) => (
                         <div key={index} className="flex items-center text-sm">
                           <Clock className="h-4 w-4 mr-2 text-primary" />

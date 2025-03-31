@@ -725,6 +725,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Endpoint per ottenere le informazioni pubbliche di un barbiere
+  // Endpoint per ottenere l'elenco dei barbieri
+  app.get("/api/barbers", async (req, res) => {
+    try {
+      // Ottieni tutti gli utenti con ruolo barbiere e approvati
+      const barbers = await storage.getUsersByRole("barber");
+      const approvedBarbers = barbers.filter(barber => barber.isApproved && barber.isActive);
+      
+      // Filtra le informazioni sensibili per l'uso pubblico
+      const publicBarbers = approvedBarbers.map(barber => {
+        const { password, ...publicInfo } = barber;
+        return publicInfo;
+      });
+      
+      res.json(publicBarbers);
+    } catch (error) {
+      console.error("Error fetching barbers:", error);
+      res.status(500).json({ error: "Failed to fetch barbers list" });
+    }
+  });
+
+  // Endpoint per ottenere i dettagli di un singolo barbiere
   app.get("/api/barbers/:id", async (req, res) => {
     const id = parseInt(req.params.id);
     if (isNaN(id)) {
