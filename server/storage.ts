@@ -551,9 +551,9 @@ export class DatabaseStorage implements IStorage {
     // Assicuriamoci che il ruolo e isBarber siano consistenti
     let userToInsert = { ...insertUser };
     
-    if (userToInsert.role === UserRole.BARBER) {
+    if (userToInsert.role === 'barber') {
       userToInsert.isBarber = true;
-    } else if (userToInsert.role === UserRole.CLIENT) {
+    } else if (userToInsert.role === 'client') {
       userToInsert.isBarber = false;
     }
     
@@ -574,7 +574,7 @@ export class DatabaseStorage implements IStorage {
           eq(users.isActive, true),
           or(
             eq(users.isBarber, true),
-            eq(users.role, UserRole.BARBER)
+            eq(users.role, 'barber')
           )
         )
       );
@@ -589,7 +589,7 @@ export class DatabaseStorage implements IStorage {
           eq(users.isActive, true),
           or(
             eq(users.isBarber, false),
-            eq(users.role, UserRole.CLIENT)
+            eq(users.role, 'client')
           )
         )
       );
@@ -604,7 +604,7 @@ export class DatabaseStorage implements IStorage {
           eq(users.isActive, true),
           or(
             eq(users.isBarber, false),
-            eq(users.role, UserRole.CLIENT)
+            eq(users.role, 'client')
           ),
           eq(users.barberCode, barberCode)
         )
@@ -691,7 +691,7 @@ export class DatabaseStorage implements IStorage {
       cache.delete(`user:${id}`);
       cache.delete(`user:username:${user.username}`);
       cache.delete('users:barbers');
-      cache.delete(`users:role:${UserRole.BARBER}`);
+      cache.delete(`users:role:barber`);
     }
     
     return user;
@@ -709,7 +709,7 @@ export class DatabaseStorage implements IStorage {
       cache.delete(`user:${id}`);
       cache.delete(`user:username:${user.username}`);
       cache.delete('users:barbers');
-      cache.delete(`users:role:${UserRole.BARBER}`);
+      cache.delete(`users:role:barber`);
     }
     
     return user;
@@ -1087,7 +1087,7 @@ export class DatabaseStorage implements IStorage {
         cache.delete(`users:role:${user.role}`);
         
         // Invalidate appointment caches if user is barber
-        if (user.isBarber || user.role === UserRole.BARBER) {
+        if (user.isBarber || user.role === 'barber') {
           // Clear all date-specific appointment caches for this barber
           // Non possiamo sapere tutte le date, ma invalidiamo la cache completa
           cache.invalidateByTag('appointments');
@@ -1099,7 +1099,7 @@ export class DatabaseStorage implements IStorage {
         }
         
         // Se è un cliente con barberCode, invalidiamo la cache relativa
-        if ((!user.isBarber || user.role === UserRole.CLIENT) && user.barberCode) {
+        if ((!user.isBarber || user.role === 'client') && user.barberCode) {
           cache.delete(`users:clients:barberCode:${user.barberCode}`);
         }
       }
