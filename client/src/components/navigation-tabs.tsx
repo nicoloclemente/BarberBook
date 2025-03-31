@@ -29,20 +29,9 @@ export default function NavigationTabs() {
   if (isAdmin) {
     return (
       <nav className="hidden md:flex bg-white border-b border-neutral-200 shadow-sm overflow-x-auto">
-        <div className="container mx-auto flex">
+        <div className="container mx-auto flex">          
           <div className={`nav-item py-4 px-6 font-medium text-center ${
-            isActive("/") ? "active" : "text-neutral-700 hover:text-primary transition-colors"
-          }`}>
-            <Link href="/">
-              <div className="flex flex-col items-center cursor-pointer">
-                <Calendar className="h-5 w-5 mb-1" />
-                <span>Dashboard</span>
-              </div>
-            </Link>
-          </div>
-          
-          <div className={`nav-item py-4 px-6 font-medium text-center ${
-            isActive("/admin") ? "active" : "text-neutral-700 hover:text-primary transition-colors"
+            isActive("/admin") || isActive("/") ? "active" : "text-neutral-700 hover:text-primary transition-colors"
           }`}>
             <Link href="/admin">
               <div className="flex flex-col items-center cursor-pointer">

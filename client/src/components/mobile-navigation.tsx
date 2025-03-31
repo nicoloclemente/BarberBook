@@ -31,18 +31,7 @@ export default function MobileNavigation() {
       <nav className="md:hidden bg-white border-t border-neutral-200 shadow-t">
         <div className="flex justify-around">
           <div className={`py-3 px-2 font-medium focus:outline-none ${
-            isActive("/") ? "text-primary" : "text-neutral-700"
-          }`}>
-            <Link href="/">
-              <div className="flex flex-col items-center cursor-pointer">
-                <Calendar className="h-5 w-5" />
-                <span className="text-xs mt-1">Dashboard</span>
-              </div>
-            </Link>
-          </div>
-          
-          <div className={`py-3 px-2 font-medium focus:outline-none ${
-            isActive("/admin") ? "text-primary" : "text-neutral-700"
+            isActive("/admin") || isActive("/") ? "text-primary" : "text-neutral-700"
           }`}>
             <Link href="/admin">
               <div className="flex flex-col items-center cursor-pointer">
