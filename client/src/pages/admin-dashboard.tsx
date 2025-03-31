@@ -108,19 +108,19 @@ export default function AdminDashboard() {
           <div className="flex items-center space-x-4">
             <Button 
               variant="outline" 
-              onClick={() => navigate("/")}
-              className="flex items-center gap-2"
-            >
-              <Calendar className="h-4 w-4" />
-              Dashboard
-            </Button>
-            <Button 
-              variant="outline" 
               onClick={() => navigate("/profile")}
               className="flex items-center gap-2"
             >
               <UserCog className="h-4 w-4" />
               Profilo
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={() => navigate("/admin/notifications")}
+              className="flex items-center gap-2"
+            >
+              <Bell className="h-4 w-4" />
+              Notifiche
             </Button>
           </div>
         </div>

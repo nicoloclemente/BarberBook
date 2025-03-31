@@ -112,11 +112,11 @@ export default function AdminNotificationsPage() {
           <div className="flex items-center space-x-4">
             <Button 
               variant="outline" 
-              onClick={() => navigate("/")}
+              onClick={() => navigate("/admin")}
               className="flex items-center gap-2"
             >
-              <Calendar className="h-4 w-4" />
-              Dashboard
+              <ShieldCheck className="h-4 w-4" />
+              Admin
             </Button>
             <Button 
               variant="outline" 
@@ -125,14 +125,6 @@ export default function AdminNotificationsPage() {
             >
               <UserCog className="h-4 w-4" />
               Profilo
-            </Button>
-            <Button 
-              variant="outline" 
-              onClick={() => navigate("/admin")}
-              className="flex items-center gap-2"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Admin
             </Button>
           </div>
         </div>
