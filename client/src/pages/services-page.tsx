@@ -67,8 +67,8 @@ export default function ServicesPage() {
 
   const createServiceMutation = useMutation({
     mutationFn: async (service: InsertService) => {
-      const res = await apiRequest("POST", "/api/services", service);
-      return await res.json();
+      // apiRequest già gestisce il parsing della risposta JSON e gli errori
+      return await apiRequest("POST", "/api/services", service);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/services'] });
@@ -90,8 +90,8 @@ export default function ServicesPage() {
 
   const updateServiceMutation = useMutation({
     mutationFn: async ({ id, service }: { id: number; service: Partial<InsertService> }) => {
-      const res = await apiRequest("PUT", `/api/services/${id}`, service);
-      return await res.json();
+      // apiRequest già gestisce il parsing della risposta JSON e gli errori
+      return await apiRequest("PUT", `/api/services/${id}`, service);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/services'] });
