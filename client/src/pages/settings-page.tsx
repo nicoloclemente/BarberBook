@@ -71,13 +71,18 @@ export default function SettingsPage() {
   return (
     <MainLayout>
       <div className="container mx-auto py-8">
-        <div className="flex items-center gap-3 mb-6">
-          <Shield className="h-8 w-8 text-primary" />
-          <h1 className="text-3xl font-bold text-gradient">Impostazioni</h1>
+        <div className="flex items-center gap-3 mb-8">
+          <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+            <Shield className="h-7 w-7 text-primary" />
+          </div>
+          <div>
+            <h1 className="text-3xl font-bold text-gradient">Impostazioni</h1>
+            <p className="text-muted-foreground">Personalizza la tua esperienza nell'applicazione</p>
+          </div>
         </div>
 
-        <Tabs defaultValue="notifications" className="w-full">
-          <TabsList className="mb-6">
+        <Tabs defaultValue="notifications" className="w-full space-y-4">
+          <TabsList className="mb-6 rounded-lg bg-gradient-to-r from-muted/60 to-muted/30 p-1">
             <TabsTrigger value="notifications">
               <Bell className="h-4 w-4 mr-2" />
               Notifiche
@@ -95,14 +100,14 @@ export default function SettingsPage() {
           </TabsList>
 
           <TabsContent value="notifications">
-            <Card>
-              <CardHeader>
-                <CardTitle>Preferenze di Notifica</CardTitle>
+            <Card className="shadow-elegant border-0">
+              <CardHeader className="bg-primary/5 rounded-t-xl">
+                <CardTitle className="text-gradient">Preferenze di Notifica</CardTitle>
                 <CardDescription>
                   Gestisci come e quando ricevere notifiche dall'applicazione
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-6">
+              <CardContent className="space-y-6 p-6">
                 <div className="grid gap-4">
                   <div className="flex items-center justify-between">
                     <div>
@@ -182,14 +187,14 @@ export default function SettingsPage() {
           </TabsContent>
 
           <TabsContent value="appearance">
-            <Card>
-              <CardHeader>
-                <CardTitle>Aspetto</CardTitle>
+            <Card className="shadow-elegant border-0">
+              <CardHeader className="bg-primary/5 rounded-t-xl">
+                <CardTitle className="text-gradient">Aspetto</CardTitle>
                 <CardDescription>
                   Personalizza l'aspetto dell'applicazione
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-6">
+              <CardContent className="space-y-6 p-6">
                 <div className="grid gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="theme" className="font-medium">Tema</Label>
@@ -276,14 +281,14 @@ export default function SettingsPage() {
 
           {isBarber && (
             <TabsContent value="privacy">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Privacy e Visibilità</CardTitle>
+              <Card className="shadow-elegant border-0">
+                <CardHeader className="bg-primary/5 rounded-t-xl">
+                  <CardTitle className="text-gradient">Privacy e Visibilità</CardTitle>
                   <CardDescription>
                     Gestisci chi può vedere il tuo profilo e le tue informazioni
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-6">
+                <CardContent className="space-y-6 p-6">
                   <div className="grid gap-4">
                     <div className="flex items-center justify-between">
                       <div>
