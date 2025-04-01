@@ -109,65 +109,56 @@ export function createSafeWebSocket(): WebSocket | null {
     // Prima prova a ottenere un URL valido
     let url = getValidWebSocketUrl();
     
+    // DEBUG: Log dell'URL
+    console.log('WEBSOCKET DEBUG - URL iniziale:', url);
+    
     // Verifica che l'URL sia valido prima di creare la WebSocket
     if (!isValidWebSocketUrl(url)) {
       console.error('URL WebSocket non valido rilevato:', url);
       
-      // Tentativo di costruire un URL alternativo da varie fonti
-      // 1. URL dal documento corrente
+      // Soluzione semplificata per Replit: usa direttamente l'URL corrente come base
+      const baseUrl = document.location.href;
+      console.log('WEBSOCKET DEBUG - Base URL:', baseUrl);
+      
       try {
-        const currentUrl = document.location.href;
-        const urlObj = new URL(currentUrl);
+        const urlObj = new URL(baseUrl);
         const protocol = urlObj.protocol === 'https:' ? 'wss:' : 'ws:';
         const host = urlObj.host;
         
         if (host && !host.includes('undefined')) {
           url = `${protocol}//${host}/ws`;
-          console.log('Prova URL alternativo da document.location:', url);
+          console.log('WEBSOCKET DEBUG - URL costruito da location:', url);
           
-          if (isValidWebSocketUrl(url)) {
-            console.log('URL WebSocket alternativo valido trovato:', url);
+          // Crea WebSocket direttamente (evita controlli aggiuntivi)
+          console.log('Tentativo creazione WebSocket con URL:', url);
+          try {
             return new WebSocket(url);
+          } catch (wsError) {
+            console.error('Errore creazione WebSocket:', wsError);
+            
+            // Ultima spiaggia: prova a rimuovere eventuali porte specificate
+            if (host.includes(':')) {
+              const hostWithoutPort = host.split(':')[0];
+              url = `${protocol}//${hostWithoutPort}/ws`;
+              console.log('WEBSOCKET DEBUG - Tentativo senza porta:', url);
+              return new WebSocket(url);
+            }
           }
         }
-      } catch (docError) {
-        console.error('Errore nella generazione URL alternativo dal documento:', docError);
+      } catch (error) {
+        console.error('Errore nella generazione URL WebSocket:', error);
       }
       
-      // 2. URL dal location.hostname
+      // Se siamo arrivati qui, ultima risorsa è usare l'hostname
       try {
-        const hostname = window.location.hostname;
-        if (hostname && !hostname.includes('undefined')) {
-          const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-          url = `${protocol}//${hostname}/ws`;
-          console.log('Prova URL alternativo da hostname:', url);
-          
-          if (isValidWebSocketUrl(url)) {
-            console.log('URL WebSocket alternativo valido trovato da hostname:', url);
-            return new WebSocket(url);
-          }
+        // Assicurati di catturare il dominio Replit
+        if (window.location.hostname.includes('replit')) {
+          url = `wss://${window.location.hostname}/ws`;
+          console.log('WEBSOCKET DEBUG - URL replit fallback:', url);
+          return new WebSocket(url);
         }
       } catch (hostError) {
-        console.error('Errore nella generazione URL alternativo da hostname:', hostError);
-      }
-      
-      // 3. Per Replit, usa l'URL del dominio corrente
-      try {
-        // Estrai il dominio Replit dall'URL corrente
-        const currentUrl = document.location.href;
-        const match = currentUrl.match(/https?:\/\/([\w-]+)\.replit\.(dev|app)/);
-        
-        if (match && match[1]) {
-          url = `wss://${match[1]}.replit.${match[2]}/ws`;
-          console.log('Prova URL specifico Replit:', url);
-          
-          if (isValidWebSocketUrl(url)) {
-            console.log('URL WebSocket Replit valido trovato:', url);
-            return new WebSocket(url);
-          }
-        }
-      } catch (replitError) {
-        console.error('Errore nella generazione URL specifico Replit:', replitError);
+        console.error('Errore nel fallback hostname:', hostError);
       }
       
       // Se nessun URL valido è stato trovato
@@ -177,7 +168,16 @@ export function createSafeWebSocket(): WebSocket | null {
     
     // L'URL originale era valido, usalo
     console.log('Creazione connessione WebSocket sicura verso:', url);
-    return new WebSocket(url);
+    try {
+      return new WebSocket(url);
+    } catch (wsError) {
+      console.error('Errore durante creazione WebSocket con URL valido:', wsError);
+      
+      // Fallback in caso di errore
+      const fallbackUrl = `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/ws`;
+      console.log('WEBSOCKET DEBUG - Fallback URL:', fallbackUrl);
+      return new WebSocket(fallbackUrl);
+    }
   } catch (error) {
     console.error('Errore durante la creazione della connessione WebSocket:', error);
     return null;
