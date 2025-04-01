@@ -5,62 +5,57 @@ const listeners = new Map<string, Set<(data: any) => void>>();
 let currentUserId: number | null = null;
 let connectionAttempts = 0;
 const MAX_RECONNECT_ATTEMPTS = 5;
+const RECONNECT_DELAY_MS = 3000;
 
 export function connectWebSocket(userId: number) {
-  if (socket) {
+  if (socket && socket.readyState === WebSocket.OPEN) {
+    console.log("WebSocket already connected");
     return;
   }
   
+  if (socket && (socket.readyState === WebSocket.CONNECTING)) {
+    console.log("WebSocket connection in progress");
+    return;
+  }
+  
+  // Chiudi la socket esistente se è in stato di closing
+  if (socket) {
+    try {
+      socket.close();
+    } catch (err) {
+      console.error("Error closing existing socket:", err);
+    }
+    socket = null;
+  }
+  
   currentUserId = userId;
+  connectionAttempts++;
+  
+  if (connectionAttempts > MAX_RECONNECT_ATTEMPTS) {
+    console.error(`Maximum connection attempts (${MAX_RECONNECT_ATTEMPTS}) reached`);
+    return;
+  }
+  
+  console.log(`WebSocket connection attempt ${connectionAttempts}/${MAX_RECONNECT_ATTEMPTS}`);
+  
+  // URL principale per la connessione WebSocket (path /ws sul server attuale)
+  const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+  const wsUrl = `${protocol}//${window.location.host}/ws`;
+  
+  console.log("Connecting to WebSocket:", wsUrl);
   
   try {
-    // Primo tentativo: URL completo basato sull'host attuale
-    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const wsUrl = `${protocol}//${window.location.host}/ws`;
-    console.log("Trying to connect to WebSocket:", wsUrl);
-    
+    // Utilizziamo un blocco try-catch per gestire eventuali errori di creazione della WebSocket
     socket = new WebSocket(wsUrl);
     setupWebSocketHandlers(userId);
   } catch (error) {
-    console.error("Error creating WebSocket with primary URL:", error);
-    fallbackWebSocketConnection(userId);
-  }
-}
-
-function fallbackWebSocketConnection(userId: number) {
-  console.log("Attempting fallback WebSocket connection...");
-  try {
-    // Usiamo 5000 come porta di fallback predefinita, oppure utilizziamo la porta corrente
-    const port = window.location.port || '5000';
-    const wsUrl = `${window.location.protocol === "https:" ? "wss:" : "ws:"}//${window.location.hostname}:${port}/ws`;
-    console.log("Fallback WebSocket URL:", wsUrl);
-    
-    socket = new WebSocket(wsUrl);
-    setupWebSocketHandlers(userId);
-  } catch (error) {
-    console.error("Error creating WebSocket with fallback URL:", error);
+    console.error("Error creating WebSocket:", error);
     socket = null;
     
-    // Come ultima risorsa, prova con un URL semplice
-    try {
-      const simpleUrl = `${window.location.protocol === "https:" ? "wss:" : "ws:"}//` + 
-                         `${window.location.hostname}/ws`;
-      console.log("Attempting final websocket connection to:", simpleUrl);
-      socket = new WebSocket(simpleUrl);
-      setupWebSocketHandlers(userId);
-    } catch (finalError) {
-      console.error("All WebSocket connection attempts failed:", finalError);
-      
-      // Pianifica un nuovo tentativo di connessione, ma limita i tentativi
-      connectionAttempts++;
-      if (connectionAttempts < MAX_RECONNECT_ATTEMPTS && !reconnectInterval) {
-        reconnectInterval = window.setInterval(() => {
-          connectWebSocket(userId);
-        }, 5000);
-      } else if (connectionAttempts >= MAX_RECONNECT_ATTEMPTS) {
-        console.error("Maximum WebSocket reconnection attempts reached");
-      }
-    }
+    // Pianifica un nuovo tentativo con un ritardo
+    setTimeout(() => {
+      connectWebSocket(userId);
+    }, RECONNECT_DELAY_MS);
   }
 }
 
@@ -106,26 +101,54 @@ function setupWebSocketHandlers(userId: number) {
     }
   };
 
-  socket.onclose = () => {
-    console.log("WebSocket disconnected, attempting to reconnect...");
+  socket.onclose = (event) => {
+    console.log(`WebSocket disconnected with code: ${event.code}, reason: ${event.reason || 'No reason provided'}`);
+    
+    // Evita il ricollegamento se la chiusura è stata intenzionale (codice 1000)
+    if (event.code === 1000) {
+      console.log("WebSocket closed normally, not reconnecting");
+      socket = null;
+      connectionAttempts = 0;
+      return;
+    }
+    
     socket = null;
+    
+    // Pulisci gli intervalli esistenti prima di crearne di nuovi
+    if (reconnectInterval) {
+      clearInterval(reconnectInterval);
+      reconnectInterval = null;
+    }
 
-    // Attempt to reconnect, but with a limit
-    connectionAttempts++;
-    if (connectionAttempts < MAX_RECONNECT_ATTEMPTS && !reconnectInterval) {
-      console.log(`WebSocket reconnection attempt ${connectionAttempts}/${MAX_RECONNECT_ATTEMPTS}`);
-      reconnectInterval = window.setInterval(() => {
-        connectWebSocket(userId);
-      }, 5000);
-    } else if (connectionAttempts >= MAX_RECONNECT_ATTEMPTS) {
+    // Utilizza setTimeout invece di setInterval per evitare sovrapposizioni
+    if (connectionAttempts < MAX_RECONNECT_ATTEMPTS) {
+      console.log(`WebSocket reconnection attempt ${connectionAttempts}/${MAX_RECONNECT_ATTEMPTS} in ${RECONNECT_DELAY_MS}ms`);
+      setTimeout(() => {
+        if (currentUserId) {
+          connectWebSocket(currentUserId);
+        }
+      }, RECONNECT_DELAY_MS);
+    } else {
       console.error("Maximum WebSocket reconnection attempts reached");
+      connectionAttempts = 0; // Reset per consentire tentativi futuri dopo un po' di tempo
+      setTimeout(() => {
+        if (currentUserId) {
+          connectionAttempts = 0;
+          connectWebSocket(currentUserId);
+        }
+      }, RECONNECT_DELAY_MS * 5); // Attendi più a lungo prima di riprovare da capo
     }
   };
 
   socket.onerror = (error) => {
-    console.error("WebSocket error:", error);
-    // Non chiudiamo esplicitamente la socket in caso di errore,
-    // poiché l'evento onclose verrà comunque attivato
+    console.error("WebSocket error occurred:", error);
+    
+    // Non è necessario chiudere esplicitamente, ma registriamo informazioni utili per il debug
+    if (socket) {
+      console.log("Current WebSocket state:", getWebSocketStatus());
+    }
+    
+    // Nota: onclose verrà chiamato automaticamente dopo la maggior parte degli errori
   };
 }
 
