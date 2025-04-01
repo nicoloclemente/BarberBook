@@ -19,6 +19,7 @@ import EmployeeManagementPage from "@/pages/employee-management-page";
 import AdminDashboard from "@/pages/admin-dashboard";
 import AdminNotificationsPage from "@/pages/admin-notifications";
 import AdminStatisticsPage from "@/pages/admin-statistics";
+import AdminEmployeesPage from "@/pages/admin-employees-page";
 import { AuthProvider } from "@/hooks/use-auth";
 import { ProtectedRoute } from "@/lib/protected-route";
 
@@ -43,6 +44,7 @@ function Router() {
       <ProtectedRoute path="/admin" component={AdminDashboard as React.ComponentType<any>} />
       <ProtectedRoute path="/admin/notifications" component={AdminNotificationsPage as React.ComponentType<any>} />
       <ProtectedRoute path="/admin/statistics" component={AdminStatisticsPage as React.ComponentType<any>} />
+      <ProtectedRoute path="/admin/employees" component={AdminEmployeesPage as React.ComponentType<any>} />
       <Route component={NotFound as React.ComponentType<any>} />
     </Switch>
   );

@@ -1474,6 +1474,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(barbers);
   });
   
+  app.get("/api/admin/employee-barbers", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    
+    const user = req.user!;
+    if (user.role !== 'admin') {
+      return res.status(403).json({ error: "Only admins can access this endpoint" });
+    }
+    
+    try {
+      // Ottieni solo i barbieri che hanno managerId impostato (sono dipendenti)
+      const employeeBarbers = await storage.getEmployeeBarbers();
+      
+      // Per ogni dipendente, ottieni anche le informazioni sul suo manager
+      const results = [];
+      for (const employee of employeeBarbers) {
+        let manager = null;
+        if (employee.managerId) {
+          manager = await storage.getUser(employee.managerId);
+        }
+        results.push({
+          ...employee,
+          manager: manager ? { 
+            id: manager.id,
+            name: manager.name,
+            username: manager.username
+          } : null
+        });
+      }
+      
+      res.json(results);
+    } catch (error) {
+      console.error('Error fetching employee barbers:', error);
+      res.status(500).json({ error: "Failed to fetch employee barbers" });
+    }
+  });
+  
   app.get("/api/admin/clients", async (req, res) => {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ error: "Not authenticated" });
@@ -1891,6 +1929,104 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching online users:", error);
       res.status(500).json({ error: "Failed to fetch online users" });
+    }
+  });
+  
+  // Route per eliminare la dipendenza di un barbiere dal suo manager
+  app.delete("/api/admin/barber-dependency/:barberId", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    
+    const user = req.user!;
+    if (user.role !== 'admin') {
+      return res.status(403).json({ error: "Only admins can access this endpoint" });
+    }
+    
+    try {
+      const barberId = parseInt(req.params.barberId);
+      if (isNaN(barberId)) {
+        return res.status(400).json({ error: "Invalid barber ID" });
+      }
+      
+      const success = await storage.removeBarberFromManager(barberId);
+      
+      if (success) {
+        // Invalida la cache per i dipendenti
+        cache.invalidate({ tags: ['user', 'barber'] });
+        
+        res.json({ message: "Employee successfully detached from manager" });
+      } else {
+        res.status(404).json({ error: "Barber not found or not associated with a manager" });
+      }
+    } catch (error) {
+      console.error("Error detaching employee:", error);
+      res.status(500).json({ error: "Failed to detach employee" });
+    }
+  });
+  
+  // Route per assegnare un barbiere a un manager
+  app.post("/api/admin/barber-dependency", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    
+    const user = req.user!;
+    if (user.role !== 'admin') {
+      return res.status(403).json({ error: "Only admins can access this endpoint" });
+    }
+    
+    try {
+      const { barberId, managerId } = req.body;
+      
+      if (!barberId || !managerId || isNaN(barberId) || isNaN(managerId)) {
+        return res.status(400).json({ error: "Invalid barber or manager ID" });
+      }
+      
+      // Verifica che il barbiere esista
+      const barber = await storage.getUser(barberId);
+      if (!barber || !barber.isBarber) {
+        return res.status(404).json({ error: "Barber not found" });
+      }
+      
+      // Verifica che il manager esista e sia effettivamente un manager
+      const manager = await storage.getUser(managerId);
+      if (!manager || !manager.isBarber || !manager.isManager) {
+        return res.status(404).json({ error: "Manager not found or not a manager" });
+      }
+      
+      // Assegna il barbiere al manager
+      const success = await storage.assignBarberToManager(barberId, managerId);
+      
+      if (success) {
+        // Invalida la cache per i dipendenti
+        cache.invalidate({ tags: ['user', 'barber'] });
+        
+        // Crea una notifica per il barbiere
+        await notificationService.createNotification({
+          userId: barberId,
+          title: "New manager assigned",
+          message: `You have been assigned to ${manager.name} as an employee barber.`,
+          type: "manager_assignment",
+          relatedId: managerId
+        });
+        
+        // Crea una notifica per il manager
+        await notificationService.createNotification({
+          userId: managerId,
+          title: "New employee assigned",
+          message: `${barber.name} has been assigned as your employee.`,
+          type: "employee_assignment",
+          relatedId: barberId
+        });
+        
+        res.json({ message: "Employee successfully assigned to manager" });
+      } else {
+        res.status(500).json({ error: "Failed to assign employee to manager" });
+      }
+    } catch (error) {
+      console.error("Error assigning employee:", error);
+      res.status(500).json({ error: "Failed to assign employee" });
     }
   });
 

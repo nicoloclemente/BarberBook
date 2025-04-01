@@ -150,6 +150,7 @@ export default function AdminDashboard() {
         <Tabs defaultValue="system" className="w-full">
           <TabsList className="mb-4">
             <TabsTrigger value="barbers">Gestione Barbieri</TabsTrigger>
+            <TabsTrigger value="employees">Barbieri Dipendenti</TabsTrigger>
             <TabsTrigger value="clients">Gestione Clienti</TabsTrigger>
             <TabsTrigger value="system">Sistema</TabsTrigger>
           </TabsList>
@@ -431,6 +432,18 @@ export default function AdminDashboard() {
                       <span className="font-medium flex items-center gap-2">
                         <Bell className="h-5 w-5" />
                         Gestione Notifiche
+                      </span>
+                      <span className="text-lg">→</span>
+                    </Button>
+                    
+                    <Button 
+                      className="w-full justify-between h-auto py-3 mt-3" 
+                      variant="outline" 
+                      onClick={() => navigate("/admin/employees")}
+                    >
+                      <span className="font-medium flex items-center gap-2">
+                        <UserCog className="h-5 w-5" />
+                        Barbieri Dipendenti
                       </span>
                       <span className="text-lg">→</span>
                     </Button>

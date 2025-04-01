@@ -39,6 +39,7 @@ export interface IStorage {
   assignBarberToManager(barberId: number, managerId: number): Promise<boolean>;
   removeBarberFromManager(barberId: number): Promise<boolean>;
   getBarberEmployees(managerId: number): Promise<User[]>;
+  getEmployeeBarbers(): Promise<User[]>; // Ottiene tutti i barbieri dipendenti
   getBarberManager(barberId: number): Promise<User | undefined>;
   setUserAsManager(userId: number, isManager: boolean): Promise<User | undefined>;
   
@@ -608,6 +609,8 @@ export class DatabaseStorage implements IStorage {
     // Eliminiamo la cache per ottenere i risultati più recenti
     cache.delete(`barber:employees:${managerId}`);
     
+    console.log(`Cercando dipendenti per manager ID ${managerId}`);
+    
     // Otteniamo i dipendenti per questo manager
     const cacheKey = `barber:employees:${managerId}`;
     return cache.getOrSet(cacheKey, async () => {
@@ -621,6 +624,22 @@ export class DatabaseStorage implements IStorage {
       
       console.log(`Trovati ${employees.length} dipendenti per manager ID ${managerId}`);
       return employees;
+    }, {
+      ttlMs: 5 * 60 * 1000, // 5 minuti
+      keyType: 'user'
+    });
+  }
+  
+  async getEmployeeBarbers(): Promise<User[]> {
+    // Ottiene tutti i barbieri che sono dipendenti (hanno un managerId impostato)
+    return cache.getOrSet('users:employees', async () => {
+      return db.select().from(users).where(
+        and(
+          eq(users.isActive, true),
+          eq(users.isBarber, true),
+          neq(users.managerId, null)
+        )
+      );
     }, {
       ttlMs: 5 * 60 * 1000, // 5 minuti
       keyType: 'user'
