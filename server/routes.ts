@@ -550,21 +550,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       console.log("Received appointment data:", req.body);
       
-      // Assicuriamoci che i campi notes e walkIn siano impostati correttamente
-      const appointmentDataFixed = {
-        ...req.body,
-        notes: req.body.notes || null,
-        walkIn: req.body.walkIn || false
-      };
-      
-      const appointmentData = insertAppointmentSchema.parse(appointmentDataFixed);
+      // Parsing dei dati con lo schema aggiornato che gestisce la conversione della data
+      // Lo schema si occuperà di trasformare le stringhe in Date e impostare valori di default
+      const appointmentData = insertAppointmentSchema.parse(req.body);
       console.log("Parsed appointment data:", appointmentData);
       
       const appointment = await storage.createAppointment(appointmentData);
       console.log("Created appointment:", appointment);
       
       // Invalida la cache per gli appuntamenti di questo barbiere e per questa data
-      const dateStr = new Date(appointmentData.date).toISOString().split('T')[0];
+      const dateObj = new Date(appointmentData.date);
+      const dateStr = dateObj.toISOString().split('T')[0];
       
       // Usa il metodo più semplice di invalidazione della cache
       cache.delete(`appointments:date:${appointmentData.barberId}:${dateStr}`);
@@ -591,8 +587,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (error instanceof ZodError) {
         const validationError = fromZodError(error);
         console.error("Zod validation error:", validationError);
-        res.status(400).json({ error: validationError.message });
+        const errorMessage = validationError.message || "Validation error";
+        res.status(400).json({ error: errorMessage });
       } else {
+        console.error("Unexpected error:", error);
         res.status(500).json({ error: "Failed to create appointment" });
       }
     }
@@ -648,7 +646,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
 
     try {
-      const appointmentData = insertAppointmentSchema.partial().parse(req.body);
+      // Utilizziamo il transform nella schema per convertire stringhe di date in Date
+      const appointmentData = insertAppointmentSchema.transform((data) => {
+        // Converti la data se è una stringa
+        if (data.date && typeof data.date === 'string') {
+          return {
+            ...data,
+            date: new Date(data.date),
+            notes: data.notes || null,
+            walkIn: data.walkIn || false
+          };
+        }
+        return data;
+      }).partial().parse(req.body);
       const updatedAppointment = await storage.updateAppointment(id, appointmentData);
       
       if (!updatedAppointment) {

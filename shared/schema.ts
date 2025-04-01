@@ -172,6 +172,15 @@ export const insertAppointmentSchema = createInsertSchema(appointments)
     status: true,
     notes: true,
     walkIn: true,
+  })
+  .transform((data) => {
+    // Converti la data da stringa a oggetto Date se necessario
+    return {
+      ...data,
+      date: typeof data.date === 'string' ? new Date(data.date) : data.date,
+      notes: data.notes || null,
+      walkIn: data.walkIn || false
+    };
   });
 
 export type InsertAppointment = z.infer<typeof insertAppointmentSchema>;
