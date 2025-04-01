@@ -199,6 +199,15 @@ export default function NavigationTabs({ orientation = "vertical", onItemClick }
                 isActive={isActive("/clients")}
                 onClick={handleItemClick}
               />
+              {user?.isManager && (
+                <NavItem
+                  icon={<UserCog className="h-4 w-4" />}
+                  label="Dipendenti"
+                  href="/employees"
+                  isActive={isActive("/employees")}
+                  onClick={handleItemClick}
+                />
+              )}
               <NavItem
                 icon={<MessageSquare className="h-4 w-4" />}
                 label="Chat"
@@ -375,6 +384,16 @@ export default function NavigationTabs({ orientation = "vertical", onItemClick }
                 tooltip={collapsed ? "Clienti" : undefined}
                 onClick={handleItemClick}
               />
+              {user?.isManager && (
+                <NavItem
+                  icon={<UserCog className="h-5 w-5" />}
+                  label={collapsed ? "" : "Dipendenti"}
+                  href="/employees"
+                  isActive={isActive("/employees")}
+                  tooltip={collapsed ? "Dipendenti" : undefined}
+                  onClick={handleItemClick}
+                />
+              )}
               <NavItem
                 icon={<Sparkles className="h-5 w-5" />}
                 label={collapsed ? "" : "Servizi"}

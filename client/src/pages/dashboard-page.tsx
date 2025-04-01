@@ -183,20 +183,6 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Pulsante per accedere alla gestione dipendenti (solo per barbieri manager) */}
-          {isBarber && isManager && (
-            <div className="mb-4 flex justify-end">
-              <Button
-                variant="outline"
-                className="flex items-center gap-2"
-                onClick={() => navigate("/employees")}
-              >
-                <UsersIcon className="h-4 w-4" />
-                Gestione Dipendenti
-              </Button>
-            </div>
-          )}
-
           <DateSelector 
             selectedDate={selectedDate} 
             onDateChange={setSelectedDate} 
