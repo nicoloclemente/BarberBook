@@ -11,9 +11,9 @@ interface TimeSlotsProps {
   selectedDate: Date;
   onSlotClick: () => void;
   isBarber?: boolean;
-  onBreakClick?: (time: { start: string; end: string }) => void;
   breaks?: { date: string; slots: { start: string; end: string }[] }[];
   user?: User;
+  onBreakClick?: (breakTime: { start: string; end: string }) => void;
 }
 
 export default function TimeSlots({ 
@@ -21,9 +21,9 @@ export default function TimeSlots({
   selectedDate, 
   onSlotClick, 
   isBarber = false, 
-  onBreakClick, 
   breaks = [], 
-  user 
+  user,
+  onBreakClick
 }: TimeSlotsProps) {
   const [noWorkingHours, setNoWorkingHours] = useState(false);
   
@@ -163,10 +163,9 @@ export default function TimeSlots({
     });
   };
 
-  // Legacy lunch break check (fallback if no breaks are defined)
-  const isLunchBreak = (time: Date) => {
-    const hour = time.getHours();
-    return hour === 13 && getDayBreaks().length === 0;
+  // Rimuoviamo il fallback per le pause pranzo
+  const isLunchBreak = (_time: Date) => {
+    return false;
   };
 
   // Format time as HH:MM
@@ -174,18 +173,7 @@ export default function TimeSlots({
     return format(time, 'HH:mm');
   };
 
-  // Handle click on a break slot
-  const handleBreakClick = (time: Date) => {
-    if (!isBarber || !onBreakClick) return;
-    
-    const formattedTime = format(time, 'HH:mm');
-    const nextSlot = format(addMinutes(time, 30), 'HH:mm');
-    
-    onBreakClick({
-      start: formattedTime,
-      end: nextSlot
-    });
-  };
+  // Le pause vanno gestite solo nella sezione apposita (Gestione Orari)
 
   if (noWorkingHours) {
     return (
@@ -229,19 +217,32 @@ export default function TimeSlots({
             className={cn(
               "timeslot relative",
               isOccupied 
-                ? "unavailable" 
+                ? "unavailable cursor-not-allowed" 
                 : isBreakOrLunch 
-                  ? "break" 
-                  : "available"
+                  ? onBreakClick && isBarber ? "break cursor-pointer" : "break cursor-not-allowed"
+                  : "available cursor-pointer"
             )}
             onClick={() => {
-              if (isOccupied) return;
-              
-              if (isBreakOrLunch && isBarber && onBreakClick) {
-                handleBreakClick(timeSlot);
-              } else if (!isBreakOrLunch) {
-                onSlotClick();
+              // Se è una pausa e abbiamo la funzione di gestione delle pause
+              if (isBreakOrLunch && onBreakClick) {
+                // Troviamo la pausa corrispondente
+                const time = formatTime(timeSlot);
+                const dayBreaks = getDayBreaks();
+                const breakSlot = dayBreaks.find(b => 
+                  time >= b.start && time < b.end
+                );
+                
+                if (breakSlot) {
+                  onBreakClick(breakSlot);
+                }
+                return;
               }
+              
+              // Ignoriamo i click su slot occupati o pause se non c'è onBreakClick
+              if (isOccupied || isBreakOrLunch) return;
+              
+              // Solo gli slot disponibili sono cliccabili
+              onSlotClick();
             }}
           >
             <span className="block text-sm font-medium">
@@ -252,18 +253,10 @@ export default function TimeSlots({
             )}
             {isBreakOrLunch && (
               <div className="flex items-center justify-center mt-0.5">
-                <span className="text-[10px] opacity-80 mr-1">Pausa</span>
-                {isBarber && <Edit className="h-2.5 w-2.5 opacity-70" />}
+                <span className="text-[10px] opacity-80">
+                  Pausa{onBreakClick && isBarber ? " ✎" : ""}
+                </span>
               </div>
-            )}
-            
-            {isBarber && isBreakOrLunch && (
-              <Badge 
-                variant="outline" 
-                className="absolute -top-1.5 -right-1.5 h-4 w-4 p-0 flex items-center justify-center opacity-80 border-amber-200"
-              >
-                <Edit className="h-2.5 w-2.5" />
-              </Badge>
             )}
           </div>
         );

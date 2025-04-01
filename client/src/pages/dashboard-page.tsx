@@ -30,8 +30,7 @@ export default function DashboardPage() {
   const { toast } = useToast();
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isBreakDialogOpen, setIsBreakDialogOpen] = useState(false);
-  const [selectedBreak, setSelectedBreak] = useState<{ start: string; end: string }>({ start: "", end: "" });
+  // Non gestiamo più le pause direttamente dalla dashboard
   const formattedDate = format(selectedDate, 'yyyy-MM-dd');
   const isBarber = user?.role === UserRole.BARBER || user?.role === UserRole.ADMIN;
 
@@ -72,21 +71,7 @@ export default function DashboardPage() {
     },
   });
 
-  // Mutation per aggiornare le pause dell'utente
-  const updateBreaksMutation = useMutation({
-    mutationFn: async (breaks: { date: string; slots: { start: string; end: string }[] }[]) => {
-      const res = await apiRequest("PUT", "/api/me", { breaks });
-      return await res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/me'] });
-      toast({
-        title: "Pausa aggiornata",
-        description: "La pausa è stata aggiornata con successo.",
-      });
-      setIsBreakDialogOpen(false);
-    },
-  });
+  // Non gestiamo più le pause dalla dashboard
 
   // Connect to WebSocket when user is authenticated
   useEffect(() => {
@@ -115,84 +100,7 @@ export default function DashboardPage() {
     }
   };
 
-  // Gestione delle pause
-  const handleBreakClick = (time: { start: string; end: string }) => {
-    setSelectedBreak(time);
-    setIsBreakDialogOpen(true);
-  };
-
-  const handleSaveBreak = () => {
-    if (!userData || !user) return;
-    
-    const formattedDateISO = formatISO(selectedDate, { representation: 'date' });
-    const existingBreaks = userData.breaks || [];
-    let updatedBreaks;
-    
-    // Trova se esiste già una pausa per questa data
-    const breakIndex = existingBreaks.findIndex(b => b.date === formattedDateISO);
-    
-    if (breakIndex >= 0) {
-      // Aggiorna la pausa esistente
-      updatedBreaks = [...existingBreaks];
-      
-      // Cerca se esiste già uno slot con lo stesso orario di inizio
-      const slotIndex = updatedBreaks[breakIndex].slots.findIndex(s => s.start === selectedBreak.start);
-      
-      if (slotIndex >= 0) {
-        // Aggiorna lo slot esistente
-        updatedBreaks[breakIndex].slots[slotIndex] = {
-          ...selectedBreak
-        };
-      } else {
-        // Aggiungi un nuovo slot
-        updatedBreaks[breakIndex].slots.push(selectedBreak);
-      }
-    } else {
-      // Crea una nuova pausa per questa data
-      updatedBreaks = [
-        ...existingBreaks,
-        {
-          date: formattedDateISO,
-          slots: [selectedBreak]
-        }
-      ];
-    }
-    
-    // Salva le pause aggiornate
-    updateBreaksMutation.mutate(updatedBreaks);
-  };
-
-  // Funzione per eliminare la pausa
-  const handleDeleteBreak = () => {
-    if (!userData || !user) return;
-    
-    const formattedDateISO = formatISO(selectedDate, { representation: 'date' });
-    const existingBreaks = userData.breaks || [];
-    let updatedBreaks;
-    
-    // Trova se esiste già una pausa per questa data
-    const breakIndex = existingBreaks.findIndex(b => b.date === formattedDateISO);
-    
-    if (breakIndex >= 0) {
-      updatedBreaks = [...existingBreaks];
-      
-      // Cerca lo slot con lo stesso orario di inizio
-      const slotIndex = updatedBreaks[breakIndex].slots.findIndex(s => s.start === selectedBreak.start);
-      
-      if (slotIndex >= 0) {
-        // Rimuovi lo slot
-        updatedBreaks[breakIndex].slots = updatedBreaks[breakIndex].slots.filter((_, i) => i !== slotIndex);
-        
-        // Se non ci sono più slot, rimuovi l'intera pausa
-        if (updatedBreaks[breakIndex].slots.length === 0) {
-          updatedBreaks = updatedBreaks.filter((_, i) => i !== breakIndex);
-        }
-        
-        // Salva le pause aggiornate
-        updateBreaksMutation.mutate(updatedBreaks);
-      }
-    }
-  };
+  // La gestione delle pause è stata spostata nella pagina di gestione orari
 
   return (
     <MainLayout>
@@ -256,11 +164,6 @@ export default function DashboardPage() {
           <div className="bg-white rounded-lg shadow-md p-4 mb-6">
             <h3 className="text-xl font-heading font-semibold mb-4 border-b pb-2">
               Disponibilità del giorno
-              {isBarber && (
-                <span className="text-xs sm:text-sm font-normal block sm:inline sm:ml-2 text-gray-500">
-                  (Clicca sulle pause per modificarle)
-                </span>
-              )}
             </h3>
             
             <TimeSlots 
@@ -268,7 +171,6 @@ export default function DashboardPage() {
               selectedDate={selectedDate}
               onSlotClick={() => setIsModalOpen(true)}
               isBarber={isBarber}
-              onBreakClick={handleBreakClick}
               breaks={userData?.breaks}
               user={user}
             />
@@ -281,71 +183,6 @@ export default function DashboardPage() {
         onClose={() => setIsModalOpen(false)}
         selectedDate={selectedDate}
       />
-
-      {/* Dialogo per la modifica delle pause */}
-      <Dialog open={isBreakDialogOpen} onOpenChange={setIsBreakDialogOpen}>
-        <DialogContent className="sm:max-w-[425px] w-[calc(100%-2rem)] p-4 sm:p-6">
-          <DialogHeader>
-            <DialogTitle>Modifica pausa</DialogTitle>
-            <DialogDescription>
-              Imposta l'orario di inizio e fine della pausa
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="break-start">Inizio pausa</Label>
-                <Input
-                  id="break-start"
-                  value={selectedBreak.start}
-                  onChange={(e) => setSelectedBreak({ ...selectedBreak, start: e.target.value })}
-                  placeholder="10:00"
-                  type="time"
-                  className="text-sm sm:text-base"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="break-end">Fine pausa</Label>
-                <Input
-                  id="break-end"
-                  value={selectedBreak.end}
-                  onChange={(e) => setSelectedBreak({ ...selectedBreak, end: e.target.value })}
-                  placeholder="11:00"
-                  type="time"
-                  className="text-sm sm:text-base"
-                />
-              </div>
-            </div>
-          </div>
-          <DialogFooter className="flex flex-col sm:flex-row gap-3 sm:gap-0 sm:justify-between">
-            <Button 
-              variant="destructive" 
-              onClick={handleDeleteBreak}
-              size="sm"
-              className="text-xs sm:text-sm h-8 sm:h-10"
-            >
-              Elimina pausa
-            </Button>
-            <div className="flex justify-end space-x-2">
-              <Button 
-                variant="outline" 
-                onClick={() => setIsBreakDialogOpen(false)}
-                size="sm"
-                className="text-xs sm:text-sm h-8 sm:h-10"
-              >
-                Annulla
-              </Button>
-              <Button 
-                onClick={handleSaveBreak}
-                size="sm"
-                className="text-xs sm:text-sm h-8 sm:h-10"
-              >
-                Salva
-              </Button>
-            </div>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </MainLayout>
   );
 }
