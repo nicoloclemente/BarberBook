@@ -298,7 +298,9 @@ export default function ProfilePage() {
                 <Label>Ruolo</Label>
                 <p className="text-neutral-700 capitalize">
                   {isClient && "Cliente"}
-                  {isBarber && "Barbiere"}
+                  {isBarber && !userInfo.isManager && userInfo.managerId === null && "Barbiere (Dipendente in attesa)"}
+                  {isBarber && !userInfo.isManager && userInfo.managerId !== null && "Barbiere (Dipendente)"}
+                  {isBarber && userInfo.isManager && "Barbiere (Indipendente)"}
                   {isAdmin && "Amministratore"}
                 </p>
               </div>
