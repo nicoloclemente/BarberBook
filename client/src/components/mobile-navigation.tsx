@@ -2,6 +2,7 @@ import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import {
   Calendar,
+  Clock,
   Users,
   MessageSquare,
   Sparkles,
@@ -138,10 +139,10 @@ export default function MobileNavigation() {
         />
         
         <NavItem 
-          icon={<Users className="h-5 w-5" />} 
-          label="Clienti" 
-          href="/clients" 
-          isActive={isActive("/clients")} 
+          icon={<Clock className="h-5 w-5" />} 
+          label="Orari" 
+          href="/schedule" 
+          isActive={isActive("/schedule")} 
         />
         
         <NavItem 

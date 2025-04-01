@@ -2,6 +2,7 @@ import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import {
   Calendar,
+  Clock,
   Users,
   MessageSquare,
   Sparkles,
@@ -351,6 +352,14 @@ export default function NavigationTabs({ orientation = "vertical", onItemClick }
                 href="/daily"
                 isActive={isActive("/daily")}
                 tooltip={collapsed ? "Giornaliero" : undefined}
+                onClick={handleItemClick}
+              />
+              <NavItem
+                icon={<Clock className="h-5 w-5" />}
+                label={collapsed ? "" : "Gestione Orari"}
+                href="/schedule"
+                isActive={isActive("/schedule")}
+                tooltip={collapsed ? "Gestione Orari" : undefined}
                 onClick={handleItemClick}
               />
             </NavSection>

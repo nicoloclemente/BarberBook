@@ -14,6 +14,7 @@ import SettingsPage from "@/pages/settings-page";
 import BarberDetailPage from "@/pages/barber-detail-page";
 import BarbersListPage from "@/pages/barbers-list-page";
 import DailyPage from "@/pages/daily-page";
+import SchedulePage from "@/pages/schedule-page";
 import AdminDashboard from "@/pages/admin-dashboard";
 import AdminNotificationsPage from "@/pages/admin-notifications";
 import AdminStatisticsPage from "@/pages/admin-statistics";
@@ -34,6 +35,7 @@ function Router() {
       <ProtectedRoute path="/statistics" component={StatisticsPage as React.ComponentType<any>} />
       <ProtectedRoute path="/profile" component={ProfilePage as React.ComponentType<any>} />
       <ProtectedRoute path="/settings" component={SettingsPage as React.ComponentType<any>} />
+      <ProtectedRoute path="/schedule" component={SchedulePage as React.ComponentType<any>} />
       <Route path="/barbers" component={BarbersListPage as React.ComponentType<any>} />
       <Route path="/barbers/:id" component={BarberDetailPage as React.ComponentType<any>} />
       <ProtectedRoute path="/admin" component={AdminDashboard as React.ComponentType<any>} />

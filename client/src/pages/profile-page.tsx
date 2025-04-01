@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { Link } from "wouter";
 import MainLayout from "@/components/main-layout";
 import { apiRequest, queryClient, getQueryFn } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
@@ -348,33 +349,30 @@ export default function ProfilePage() {
           </Card>
         </div>
         
-        {/* Sezione Orari di Lavoro per i Barbieri */}
+        {/* Link alla pagina di gestione orari per i barbieri */}
         {isBarber && (
           <div className="mt-8">
-            <Tabs defaultValue="schedule" className="w-full">
-              <TabsList className="grid w-full max-w-md grid-cols-2">
-                <TabsTrigger value="schedule">
-                  <Clock className="h-4 w-4 mr-2" />
-                  Orari di Lavoro
-                </TabsTrigger>
-                <TabsTrigger value="calendar">
-                  <Calendar className="h-4 w-4 mr-2" />
-                  Calendario
-                </TabsTrigger>
-              </TabsList>
-              <TabsContent value="schedule" className="mt-4">
-                <WorkingHoursForm />
-              </TabsContent>
-              <TabsContent value="calendar" className="mt-4">
-                <div className="rounded-lg border p-8 text-center bg-background">
-                  <Calendar className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-medium mb-2">Visualizzazione del calendario in arrivo</h3>
-                  <p className="text-muted-foreground max-w-md mx-auto">
-                    La visualizzazione completa del calendario con le tue prenotazioni sarà disponibile a breve.
+            <div className="p-6 bg-gradient-to-br from-primary/5 to-primary/10 rounded-lg border shadow-sm">
+              <div className="flex items-center gap-3 mb-4">
+                <Clock className="h-8 w-8 text-primary" />
+                <div>
+                  <h3 className="text-lg font-medium">Gestione Orari e Disponibilità</h3>
+                  <p className="text-muted-foreground">
+                    Configura i tuoi orari di lavoro, pause programmate e giorni di chiusura
                   </p>
                 </div>
-              </TabsContent>
-            </Tabs>
+              </div>
+              <p className="mb-4 text-sm">
+                Imposta quando sei disponibile per i tuoi clienti nella nuova sezione dedicata alla gestione degli orari.
+                Potrai configurare fasce orarie personalizzate per ogni giorno della settimana, programmare pause e giorni di chiusura.
+              </p>
+              <Link href="/schedule">
+                <Button className="btn-elegant">
+                  <Clock className="h-4 w-4 mr-2" />
+                  Vai alla Gestione Orari
+                </Button>
+              </Link>
+            </div>
           </div>
         )}
       </div>
