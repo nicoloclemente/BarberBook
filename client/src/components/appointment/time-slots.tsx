@@ -60,6 +60,9 @@ export default function TimeSlots({
 
   // Get breaks for the selected date
   const getDayBreaks = () => {
+    if (!breaks || !Array.isArray(breaks)) {
+      return [];
+    }
     const formattedDate = formatISO(selectedDate, { representation: 'date' });
     const dayBreaks = breaks.find(b => b.date === formattedDate);
     return dayBreaks?.slots || [];
