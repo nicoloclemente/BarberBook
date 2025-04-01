@@ -1,7 +1,7 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useLocation } from "wouter";
 import { Loader2, Scissors } from "lucide-react";
@@ -44,10 +44,12 @@ export default function AuthPage() {
   };
 
   // Redirect if already logged in
-  if (user) {
-    setLocation("/");
-    return null;
-  }
+  // Utilizziamo useEffect per il reindirizzamento per evitare l'errore di aggiornamento durante il rendering
+  useEffect(() => {
+    if (user) {
+      setLocation("/");
+    }
+  }, [user, setLocation]);
 
   const loginForm = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),

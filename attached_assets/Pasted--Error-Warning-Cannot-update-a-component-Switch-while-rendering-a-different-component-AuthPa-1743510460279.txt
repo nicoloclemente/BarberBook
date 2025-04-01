@@ -1,0 +1,47 @@
+[Error] Warning: Cannot update a component (`Switch`) while rendering a different component (`AuthPage`). To locate the bad setState() call inside `AuthPage`, follow the stack trace as described in https://reactjs.org/link/setstate-in-render
+AuthPage@https://a0f90c86-3fee-4e87-a85b-5d335b8f8a82-00-3iqmg9etd4bmz.worf.replit.dev/src/pages/auth-page.tsx:49:45
+Route@https://a0f90c86-3fee-4e87-a85b-5d335b8f8a82-00-3iqmg9etd4bmz.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js:323:20
+Switch@https://a0f90c86-3fee-4e87-a85b-5d335b8f8a82-00-3iqmg9etd4bmz.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js:379:25
+Router
+AuthProvider@https://a0f90c86-3fee-4e87-a85b-5d335b8f8a82-00-3iqmg9etd4bmz.worf.replit.dev/src/hooks/use-auth.tsx:40:40
+QueryClientProvider@https://a0f90c86-3fee-4e87-a85b-5d335b8f8a82-00-3iqmg9etd4bmz.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js:2805:9
+App
+	printWarning (chunk-RPCDYKBN.js:521)
+	error (chunk-RPCDYKBN.js:505)
+	warnAboutRenderPhaseUpdatesInDEV (chunk-RPCDYKBN.js:19793)
+	scheduleUpdateOnFiber (chunk-RPCDYKBN.js:18546)
+	forceStoreRerender (chunk-RPCDYKBN.js:11999)
+	handleStoreChange (chunk-RPCDYKBN.js:11981)
+	dispatchEvent
+	(anonymous function) (wouter.js:224)
+	AuthPage (auth-page.tsx:56)
+	renderWithHooks (chunk-RPCDYKBN.js:11548)
+	updateFunctionComponent (chunk-RPCDYKBN.js:14582)
+	beginWork$1 (chunk-RPCDYKBN.js:19753)
+	performUnitOfWork (chunk-RPCDYKBN.js:19198)
+	workLoopSync (chunk-RPCDYKBN.js:19137)
+	renderRootSync (chunk-RPCDYKBN.js:19116)
+	performSyncWorkOnRoot (chunk-RPCDYKBN.js:18874)
+	flushSyncCallbacks (chunk-RPCDYKBN.js:9119)
+	(anonymous function) (chunk-RPCDYKBN.js:18627)
+[Error] Error: Rendered fewer hooks than expected. This may be caused by an accidental early return statement.
+	renderWithHooks (chunk-RPCDYKBN.js:11595:128)
+	updateFunctionComponent (chunk-RPCDYKBN.js:14582)
+	callCallback2 (chunk-RPCDYKBN.js:3674)
+	dispatchEvent
+	invokeGuardedCallbackDev (chunk-RPCDYKBN.js:3699)
+	invokeGuardedCallback (chunk-RPCDYKBN.js:3733)
+	beginWork$1 (chunk-RPCDYKBN.js:19765)
+	performUnitOfWork (chunk-RPCDYKBN.js:19198)
+	workLoopSync (chunk-RPCDYKBN.js:19137)
+	renderRootSync (chunk-RPCDYKBN.js:19116)
+	performSyncWorkOnRoot (chunk-RPCDYKBN.js:18874)
+	flushSyncCallbacks (chunk-RPCDYKBN.js:9119)
+	(anonymous function) (chunk-RPCDYKBN.js:18627)
+[Error] Error: Rendered fewer hooks than expected. This may be caused by an accidental early return statement.
+	reportError (chunk-RPCDYKBN.js:11595)
+	commitRootImpl (chunk-RPCDYKBN.js:19403)
+	commitRoot (chunk-RPCDYKBN.js:19277)
+	performSyncWorkOnRoot (chunk-RPCDYKBN.js:18895)
+	flushSyncCallbacks (chunk-RPCDYKBN.js:9119)
+	(anonymous function) (chunk-RPCDYKBN.js:18627)
