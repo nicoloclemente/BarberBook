@@ -45,10 +45,9 @@ export default function ServiceCard({
             <Clock className="h-4 w-4 mr-1" />
             <span>{service.duration} minuti</span>
           </div>
-          <div className="text-sm bg-primary/10 px-3 py-1.5 rounded-full flex items-center border border-primary/20 shadow-sm">
-            <EuroIcon className="h-3.5 w-3.5 mr-1 text-primary" />
-            <span className="text-gray-600 mr-1">Prezzo:</span>
-            <span className="font-semibold text-primary">{formattedPrice}</span>
+          <div className="text-xs bg-slate-100 px-2 py-1 rounded-full flex items-center">
+            <EuroIcon className="h-3 w-3 mr-1 text-primary" />
+            <span className="font-semibold text-gray-700">{formattedPrice}</span>
           </div>
         </div>
         <div className="mt-4 flex justify-end space-x-2">
