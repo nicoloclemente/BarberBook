@@ -24,7 +24,6 @@ const registerSchema = z.object({
   confirmPassword: z.string(),
   phone: z.string().optional(),
   isBarber: z.boolean().default(false),
-  isManager: z.boolean().default(false),
 }).refine(data => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ["confirmPassword"],
@@ -66,7 +65,6 @@ export default function AuthPage() {
       confirmPassword: "",
       phone: "",
       isBarber: false,
-      isManager: false,
     },
   });
 
@@ -326,13 +324,7 @@ export default function AuthPage() {
                           <FormControl>
                             <Checkbox
                               checked={field.value}
-                              onCheckedChange={(checked) => {
-                                field.onChange(checked);
-                                // Se deseleziono barbiere, deseleziono anche manager
-                                if (!checked) {
-                                  registerForm.setValue("isManager", false);
-                                }
-                              }}
+                              onCheckedChange={field.onChange}
                               disabled={registerMutation.isPending}
                               className="data-[state=checked]:bg-black data-[state=checked]:border-black"
                             />
@@ -346,31 +338,6 @@ export default function AuthPage() {
                         </FormItem>
                       )}
                     />
-                    
-                    {registerForm.watch("isBarber") && (
-                      <FormField
-                        control={registerForm.control}
-                        name="isManager"
-                        render={({ field }) => (
-                          <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border border-gray-200 p-4 mt-2 bg-gray-50/50">
-                            <FormControl>
-                              <Checkbox
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                                disabled={registerMutation.isPending}
-                                className="data-[state=checked]:bg-black data-[state=checked]:border-black"
-                              />
-                            </FormControl>
-                            <div className="space-y-1 leading-none">
-                              <FormLabel className="text-sm font-medium text-gray-700">Sono un barbiere capo</FormLabel>
-                              <FormDescription className="text-xs font-normal text-gray-500">
-                                Seleziona questa opzione se gestisci altri barbieri nel tuo salone
-                              </FormDescription>
-                            </div>
-                          </FormItem>
-                        )}
-                      />
-                    )}
                     <Button 
                       type="submit" 
                       className="w-full mt-6 h-11 bg-black hover:bg-black/90 text-white font-medium text-[15px] transition-all" 
