@@ -6,7 +6,7 @@ import { relations } from "drizzle-orm";
 // Enum per i tipi di utenti
 export const UserRole = {
   ADMIN: 'admin',
-  BARBER: 'barber',
+  EMPLOYEE: 'employee', // Sostituito 'barber' con 'employee'
   CLIENT: 'client',
 } as const;
 

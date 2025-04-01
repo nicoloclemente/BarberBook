@@ -672,8 +672,8 @@ export class DatabaseStorage implements IStorage {
     // Assicuriamoci che il ruolo e isBarber siano consistenti
     let userToInsert = { ...insertUser };
     
-    if (userToInsert.role === 'barber') {
-      userToInsert.isBarber = true;
+    if (userToInsert.role === 'employee') {
+      userToInsert.isBarber = true; // Manteniamo isBarber=true per compatibilità
     } else if (userToInsert.role === 'client') {
       userToInsert.isBarber = false;
     }
@@ -736,16 +736,19 @@ export class DatabaseStorage implements IStorage {
   async getUsersByRole(role: string): Promise<User[]> {
     // Memorizziamo la lista degli utenti per ruolo in cache per 10 minuti
     return cache.getOrSet(`users:role:${role}`, async () => {
-      if (role === 'barber') {
-        // Per i barbieri, include sia gli utenti con role=barber che quelli con isBarber=true
+      if (role === 'employee') {
+        // Per i dipendenti, include sia gli utenti con role=employee che quelli con isBarber=true
         return db.select().from(users).where(
           and(
             eq(users.isActive, true),
             or(
               eq(users.role, role),
-              and(
-                eq(users.isBarber, true),
-                neq(users.role, 'admin') // Esclude gli admin
+              or(
+                eq(users.role, 'barber'), // Compatibilità con vecchio ruolo
+                and(
+                  eq(users.isBarber, true),
+                  neq(users.role, 'admin') // Esclude gli admin
+                )
               )
             )
           )
@@ -1451,8 +1454,8 @@ export class DatabaseStorage implements IStorage {
         cache.delete('users:clients');
         cache.delete(`users:role:${user.role}`);
         
-        // Invalidate appointment caches if user is barber
-        if (user.isBarber || user.role === 'barber') {
+        // Invalidate appointment caches if user is employee
+        if (user.isBarber || user.role === 'employee' || user.role === 'barber') {
           // Clear all date-specific appointment caches for this barber
           // Non possiamo sapere tutte le date, ma invalidiamo la cache completa
           cache.invalidateByTag('appointments');

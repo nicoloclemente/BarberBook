@@ -726,7 +726,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(400).json({ error: "Invalid barber ID" });
     }
     
-    // Verifica che l'utente autenticato sia il barbiere capo o un admin
+    // Verifica che l'utente autenticato sia il manager o un admin
     const user = req.user as any;
     if (user.id !== managerId && user.role !== 'admin') {
       return res.status(403).json({ error: "Not authorized to view these employees" });
@@ -753,7 +753,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(400).json({ error: "Invalid ID format" });
     }
     
-    // Verifica che l'utente autenticato sia il barbiere capo o un admin
+    // Verifica che l'utente autenticato sia il manager o un admin
     const user = req.user as any;
     if (user.id !== managerId && user.role !== 'admin') {
       return res.status(403).json({ error: "Not authorized to assign employees" });
@@ -784,7 +784,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(400).json({ error: "Invalid ID format" });
     }
     
-    // Verifica che l'utente autenticato sia il barbiere capo o un admin
+    // Verifica che l'utente autenticato sia il manager o un admin
     const user = req.user as any;
     if (user.id !== managerId && user.role !== 'admin') {
       return res.status(403).json({ error: "Not authorized to remove employees" });
@@ -1090,8 +1090,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Endpoint per ottenere l'elenco dei barbieri
   app.get("/api/barbers", async (req, res) => {
     try {
-      // Ottieni tutti gli utenti con ruolo barbiere e approvati
-      const barbers = await storage.getUsersByRole("barber");
+      // Ottieni tutti gli utenti con ruolo dipendente e approvati
+      const barbers = await storage.getUsersByRole("employee");
       const approvedBarbers = barbers.filter(barber => barber.isApproved && barber.isActive);
       
       // Filtra le informazioni sensibili per l'uso pubblico
@@ -1468,9 +1468,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
     
     // Forza la pulizia della cache prima di eseguire la query
-    cache.delete('users:role:barber');
+    cache.delete('users:role:employee');
+    cache.delete('users:role:barber'); // backward compatibility
     
-    const barbers = await storage.getUsersByRole('barber');
+    const barbers = await storage.getUsersByRole('employee');
     res.json(barbers);
   });
   
