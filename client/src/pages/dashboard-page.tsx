@@ -114,9 +114,18 @@ export default function DashboardPage() {
 
   // La gestione delle pause è stata spostata nella pagina di gestione orari
 
-  // Forziamo la visualizzazione del messaggio di attesa per tutti i barbieri che non sono manager
-  // (temporaneamente per debug)
-  if (user?.role === UserRole.BARBER && user?.isManager !== true) {
+  // Verifica i valori dell'utente per debug
+  console.log("ROLE DEBUG", {
+    role: user?.role, 
+    roleEqualsBarber: user?.role === UserRole.BARBER,
+    isManager: user?.isManager,
+    managerId: user?.managerId,
+    UserRole: UserRole,
+    UserRoleBarber: UserRole.BARBER
+  });
+  
+  // Mostriamo il messaggio di attesa solo per i barbieri (non manager) senza managerId
+  if (user?.role === "barber" && user?.isManager !== true && user?.managerId === null) {
     return (
       <MainLayout>
         <div className="max-w-7xl mx-auto py-12 sm:px-6 lg:px-8">
