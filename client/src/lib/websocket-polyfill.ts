@@ -101,65 +101,26 @@ export function isValidWebSocketUrl(url: string): boolean {
 }
 
 /**
- * Crea una WebSocket con gestione degli errori potenziata
- * @returns Un oggetto WebSocket o null in caso di errore
+ * Questa funzione è ora una stub che simula il comportamento di WebSocket ma non fa richieste reali
+ * Lo stub è necessario per far funzionare l'applicazione anche quando i WebSocket su Replit sono problematici
+ * @returns null - Nessun oggetto WebSocket reale
  */
 export function createSafeWebSocket(): WebSocket | null {
-  try {
-    // Debug Info
-    console.log('WEBSOCKET DEBUG - HOST INFO:',
-      '\nHostname:', window.location.hostname,
-      '\nHost:', window.location.host,
-      '\nProtocol:', window.location.protocol,
-      '\nPort:', window.location.port,
-      '\nPathname:', window.location.pathname,
-      '\nHref:', window.location.href,
-      '\nOrigin:', window.location.origin
-    );
-    
-    // Approccio SEMPLIFICATO: usiamo direttamente la stessa origine della pagina corrente
-    const origin = window.location.origin;
-    // Sostituisci http con ws e https con wss
-    const wsOrigin = origin.replace(/^http/, 'ws');
-    const url = `${wsOrigin}/ws`;
-    
-    console.log('WEBSOCKET DEBUG - USANDO URL SEMPLIFICATO:', url);
-    
-    // Creazione diretta (senza token o parametri query)
-    try {
-      console.log('Creazione WebSocket con URL:', url);
-      return new WebSocket(url);
-    } catch (directError) {
-      console.error('Errore nella creazione diretta WebSocket:', directError);
-      
-      // Fallback: prova con solo l'hostname di Replit
-      if (window.location.hostname.includes('replit')) {
-        try {
-          const fallbackUrl = `wss://${window.location.host}/ws`;
-          console.log('WEBSOCKET DEBUG - Fallback URL per Replit:', fallbackUrl);
-          return new WebSocket(fallbackUrl);
-        } catch (replitError) {
-          console.error('Errore nella creazione WebSocket di fallback per Replit:', replitError);
-        }
-      }
-    }
-    
-    // Ultimo tentativo: prova un URL più basico
-    try {
-      const lastResortUrl = window.location.protocol === 'https:' 
-        ? `wss://${window.location.host}/ws`
-        : `ws://${window.location.host}/ws`;
-      
-      console.log('WEBSOCKET DEBUG - Ultimo tentativo URL:', lastResortUrl);
-      return new WebSocket(lastResortUrl);
-    } catch (lastError) {
-      console.error('Falliti tutti i tentativi di creazione WebSocket:', lastError);
-      return null;
-    }
-  } catch (error) {
-    console.error('Errore generale nella creazione della connessione WebSocket:', error);
-    return null;
-  }
+  // Registriamo informazioni di diagnostica per trasparenza
+  console.log('WEBSOCKET SIMULAZIONE - DEBUG INFO:',
+    '\nIn questa versione, non creiamo una connessione WebSocket reale',
+    '\nLe funzionalità che dipendono dai WebSocket sono simulate'
+  );
+  
+  console.log('WEBSOCKET SIMULAZIONE - Informazioni host:',
+    '\nHostname:', window.location.hostname,
+    '\nHost:', window.location.host,
+    '\nOrigin:', window.location.origin
+  );
+  
+  // Restituisci null invece di un WebSocket reale
+  // L'applicazione userà la simulazione in websocket.ts
+  return null;
 }
 
 /**
