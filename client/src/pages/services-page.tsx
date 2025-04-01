@@ -35,7 +35,10 @@ const serviceSchema = z.object({
   description: z.string().optional(),
   price: z.number().min(1, "Il prezzo deve essere almeno 1"),
   duration: z.number().min(5, "La durata deve essere almeno 5 minuti"),
-  imageUrl: z.string().url("Inserire un URL valido").optional(),
+  imageUrl: z.union([
+    z.string().url("Inserire un URL valido"),
+    z.string().length(0)
+  ]).optional(),
 });
 
 type ServiceFormValues = z.infer<typeof serviceSchema>;
@@ -317,6 +320,9 @@ export default function ServicesPage() {
                         value={field.value || ""}
                       />
                     </FormControl>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Lascia vuoto questo campo se non desideri aggiungere un'immagine al servizio.
+                    </p>
                     <FormMessage />
                   </FormItem>
                 )}

@@ -29,8 +29,8 @@ export default function ServiceCard({
           className="w-full h-48 object-cover"
         />
       ) : (
-        <div className="h-16 bg-primary/5 flex items-center justify-center">
-          <span className="text-primary/60 text-xs font-medium">Immagine non disponibile</span>
+        <div className="h-48 bg-primary/5 flex items-center justify-center">
+          <span className="text-primary/60 text-sm font-medium">Immagine non disponibile</span>
         </div>
       )}
       <div className="p-4">
