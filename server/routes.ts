@@ -19,6 +19,9 @@ import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
 import { cache } from "./cache";
 import * as os from 'os';
+import { db } from "./db";
+import { and, count, eq, gt } from "drizzle-orm";
+import { appointments } from "@shared/schema";
 
 // Map to store active client connections
 const clients = new Map<number, WebSocket>();
@@ -310,6 +313,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Se l'utente è un barbiere, può eliminare solo le proprie associazioni
       if (req.user!.role === UserRole.BARBER && existingBarberService.barberId !== req.user!.id) {
         return res.status(403).json({ error: "Barbers can only delete their own service associations" });
+      }
+      
+      // Verifica se ci sono appuntamenti futuri che utilizzano questo barber-service
+      const now = new Date();
+      const activeAppointments = await db
+        .select({ count: count() })
+        .from(appointments)
+        .where(and(
+          eq(appointments.barberId, existingBarberService.barberId),
+          eq(appointments.serviceId, existingBarberService.serviceId),
+          gt(appointments.date, now)
+        ));
+        
+      if (activeAppointments[0]?.count > 0) {
+        return res.status(400).json({ 
+          error: "Cannot delete this service association because there are future appointments using it", 
+          count: activeAppointments[0].count 
+        });
       }
       
       const deleted = await storage.deleteBarberService(id);
