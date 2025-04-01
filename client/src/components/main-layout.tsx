@@ -4,7 +4,7 @@ import MobileNavigation from "./mobile-navigation";
 import { useAuth } from "@/hooks/use-auth";
 import { ProfileImage } from "@/components/ui/profile-image";
 import { Button } from "@/components/ui/button";
-import { Scissors, LogOut, Settings, User, ChevronDown } from "lucide-react";
+import { Scissors, LogOut, Settings, User, ChevronDown, Search } from "lucide-react";
 import { NotificationCenter } from "@/components/ui/notification-center";
 import { useLocation } from "wouter";
 import { Separator } from "@/components/ui/separator";
@@ -17,6 +17,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
 
 interface MainLayoutProps {
   children: ReactNode;
@@ -28,6 +29,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
   const [location, navigate] = useLocation();
   const isMobile = useMobile();
   const [scrolled, setScrolled] = useState(false);
+  const [searchFocused, setSearchFocused] = useState(false);
 
   // Effetto di scrolling per l'header
   useEffect(() => {
@@ -60,6 +62,8 @@ export default function MainLayout({ children }: MainLayoutProps) {
     if (location.includes('/clients')) return 'Clienti';
     if (location.includes('/statistics')) return 'Statistiche';
     if (location.includes('/notifications')) return 'Notifiche';
+    if (location.includes('/barbers')) return 'Barbieri';
+    if (location.includes('/daily')) return 'Agenda Giornaliera';
     return 'BarberBook';
   };
 
@@ -68,16 +72,16 @@ export default function MainLayout({ children }: MainLayoutProps) {
     // Se è la pagina di login, renderizziamo il contenuto
     if (location === '/') {
       return (
-        <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-gradient-to-b from-background to-muted/40">
-          <div className="w-full max-w-md rounded-xl border bg-card p-6 shadow-lg">
+        <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-gradient-to-b from-background via-slate-50 to-blue-50/20">
+          <div className="w-full max-w-md rounded-xl border bg-white p-8 shadow-elegant scale-in">
             <div className="text-center mb-6">
-              <div className="inline-flex items-center justify-center h-12 w-12 rounded-full bg-primary/10 mb-4">
-                <Scissors className="h-6 w-6 text-primary" />
+              <div className="inline-flex items-center justify-center h-16 w-16 rounded-full bg-primary/10 mb-5 shadow-md">
+                <Scissors className="h-8 w-8 text-primary" />
               </div>
-              <h1 className="text-2xl font-bold">BarberBook</h1>
-              <p className="text-sm text-muted-foreground mt-1">Gestione barbieri professionale</p>
+              <h1 className="text-2xl font-bold text-gradient">BarberBook</h1>
+              <p className="text-sm text-muted-foreground mt-2">Gestione barbieri professionale</p>
             </div>
-            <Separator className="my-4" />
+            <Separator className="my-5" />
             {children}
           </div>
         </div>
@@ -87,10 +91,12 @@ export default function MainLayout({ children }: MainLayoutProps) {
     // Altrimenti reindirizziamo alla pagina di login
     navigate('/');
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-6">
-        <div className="flex items-center flex-col gap-2">
-          <Scissors className="h-10 w-10 text-primary animate-pulse" />
-          <p className="text-muted-foreground">Reindirizzamento...</p>
+      <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-gradient-to-b from-background to-muted/20">
+        <div className="flex items-center flex-col gap-3">
+          <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center shadow-lg">
+            <Scissors className="h-8 w-8 text-primary animate-pulse" />
+          </div>
+          <p className="text-muted-foreground mt-2">Reindirizzamento...</p>
         </div>
       </div>
     );
@@ -100,36 +106,51 @@ export default function MainLayout({ children }: MainLayoutProps) {
     <div className="min-h-screen flex flex-col bg-background">
       {/* Header */}
       <header 
-        className={`sticky top-0 z-30 border-b transition-all duration-200 ${
-          scrolled ? "bg-background/95 backdrop-blur-sm shadow-sm" : "bg-background"
+        className={`sticky top-0 z-30 border-b transition-all duration-300 ${
+          scrolled ? "bg-white/95 backdrop-blur-md shadow-sm" : "bg-white"
         }`}
       >
         <div className="container mx-auto px-4">
           <div className="flex h-16 items-center justify-between">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               <div 
-                className="flex items-center gap-2 cursor-pointer" 
+                className="flex items-center gap-2 cursor-pointer transition-transform duration-300 hover:scale-105" 
                 onClick={() => navigate(user.role === 'admin' ? '/admin' : '/dashboard')}
               >
-                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10">
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/15 shadow-sm">
                   <Scissors className="h-5 w-5 text-primary" />
                 </div>
-                <h1 className="font-semibold text-lg tracking-tight">BarberBook</h1>
+                <h1 className="font-semibold text-lg tracking-tight text-gradient">BarberBook</h1>
               </div>
               
               {!isMobile && (
-                <div className="ml-6 text-sm font-medium text-muted-foreground">
+                <div className="ml-6 text-sm font-medium text-muted-foreground py-1 px-3 rounded-md bg-gray-50 border border-gray-100">
                   {getPageTitle()}
                 </div>
               )}
             </div>
+            
+            {!isMobile && (
+              <div className="flex-1 max-w-md mx-8 relative">
+                <div className={`flex items-center rounded-lg border border-gray-200 px-3 ${searchFocused ? 'ring-2 ring-primary/20 border-primary/50' : 'hover:border-gray-300'} transition-all duration-200 bg-gray-50/80`}>
+                  <Search className="h-4 w-4 text-muted-foreground mr-2" />
+                  <Input 
+                    type="text" 
+                    placeholder="Cerca..." 
+                    className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 h-9 py-2"
+                    onFocus={() => setSearchFocused(true)}
+                    onBlur={() => setSearchFocused(false)}
+                  />
+                </div>
+              </div>
+            )}
             
             <div className="flex items-center gap-4">
               <NotificationCenter />
               
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="flex items-center gap-2 px-2 hover:bg-muted/60">
+                  <Button variant="ghost" className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-muted/80 transition-colors duration-200">
                     <ProfileImage user={user} />
                     {!isMobile && (
                       <>
@@ -139,8 +160,8 @@ export default function MainLayout({ children }: MainLayoutProps) {
                     )}
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-56" align="end">
-                  <DropdownMenuLabel className="font-normal">
+                <DropdownMenuContent className="w-56 rounded-xl p-1 shadow-elegant" align="end">
+                  <DropdownMenuLabel className="font-normal rounded-lg px-3 py-2 hover:bg-muted/50">
                     <div className="flex flex-col space-y-1">
                       <p className="text-sm font-medium leading-none">{user.name}</p>
                       <p className="text-xs leading-none text-muted-foreground">
@@ -149,11 +170,17 @@ export default function MainLayout({ children }: MainLayoutProps) {
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => navigate('/profile')}>
+                  <DropdownMenuItem 
+                    onClick={() => navigate('/profile')}
+                    className="rounded-lg px-3 py-2 cursor-pointer transition-colors"
+                  >
                     <User className="mr-2 h-4 w-4" />
                     <span>Profilo</span>
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate('/settings')}>
+                  <DropdownMenuItem 
+                    onClick={() => navigate('/settings')}
+                    className="rounded-lg px-3 py-2 cursor-pointer transition-colors"
+                  >
                     <Settings className="mr-2 h-4 w-4" />
                     <span>Impostazioni</span>
                   </DropdownMenuItem>
@@ -161,7 +188,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                   <DropdownMenuItem
                     onClick={handleLogout}
                     disabled={isLogoutPending}
-                    className="text-red-600"
+                    className="text-red-600 rounded-lg px-3 py-2 cursor-pointer transition-colors"
                   >
                     <LogOut className="mr-2 h-4 w-4" />
                     <span>Logout</span>

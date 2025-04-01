@@ -38,19 +38,27 @@ function NavItem({ icon, label, href, isActive, badge, tooltip, onClick }: NavIt
     <Link href={href}>
       <div
         className={cn(
-          "group flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground",
-          isActive ? "bg-accent text-accent-foreground" : "transparent"
+          "group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 hover:bg-primary/5",
+          isActive 
+            ? "bg-primary/10 text-primary shadow-sm border-l-2 border-primary" 
+            : "text-gray-700 hover:text-primary"
         )}
         onClick={onClick}
       >
-        <div className="flex h-6 w-6 items-center justify-center">
+        <div className={cn(
+          "flex h-6 w-6 items-center justify-center transition-all duration-300",
+          isActive ? "text-primary" : "text-gray-500 group-hover:text-primary"
+        )}>
           {icon}
         </div>
-        <span>{label}</span>
+        <span className="transition-colors duration-200">{label}</span>
         {badge !== undefined && badge > 0 && (
           <Badge
             variant="secondary"
-            className="ml-auto h-5 min-w-5 flex items-center justify-center rounded-full p-0 text-[10px]"
+            className={cn(
+              "ml-auto h-5 min-w-5 flex items-center justify-center rounded-full p-0 text-[10px] shadow-sm",
+              isActive ? "bg-primary/20 text-primary" : "bg-gray-100 text-gray-700"
+            )}
           >
             {badge > 99 ? "99+" : badge}
           </Badge>
@@ -64,7 +72,9 @@ function NavItem({ icon, label, href, isActive, badge, tooltip, onClick }: NavIt
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>{content}</TooltipTrigger>
-          <TooltipContent side="right">{tooltip}</TooltipContent>
+          <TooltipContent side="right" className="rounded-lg shadow-lg text-xs px-3 py-1.5 bg-white border border-gray-100">
+            {tooltip}
+          </TooltipContent>
         </Tooltip>
       </TooltipProvider>
     );
@@ -80,11 +90,13 @@ interface NavSectionProps {
 
 function NavSection({ title, children }: NavSectionProps) {
   return (
-    <div className="px-3 py-2">
-      <h2 className="mb-2 px-1 text-xs font-semibold text-muted-foreground">
-        {title}
-      </h2>
-      <div className="space-y-1">{children}</div>
+    <div className="px-3 py-2.5">
+      {title && (
+        <h2 className="mb-3 px-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+          {title}
+        </h2>
+      )}
+      <div className="space-y-1.5">{children}</div>
     </div>
   );
 }
@@ -258,36 +270,38 @@ export default function NavigationTabs({ orientation = "vertical", onItemClick }
   return (
     <aside
       className={cn(
-        "hidden md:flex h-screen flex-col border-r bg-card",
-        collapsed ? "w-[70px]" : "w-[240px]"
+        "hidden md:flex h-screen flex-col border-r bg-white shadow-sm transition-all duration-300 ease-in-out",
+        collapsed ? "w-[70px]" : "w-[260px]"
       )}
     >
-      <div className="flex h-14 items-center justify-between border-b px-3">
+      <div className="flex h-16 items-center justify-between border-b px-4">
         <div className={cn("flex items-center gap-2", collapsed && "justify-center w-full")}>
-          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/15 shadow-sm">
             <Scissors className="h-5 w-5 text-primary" />
           </div>
-          {!collapsed && <h1 className="font-semibold text-lg tracking-tight">BarberBook</h1>}
+          {!collapsed && <h1 className="font-semibold text-lg tracking-tight text-gradient">BarberBook</h1>}
         </div>
         {!collapsed && (
           <button
-            className="h-8 w-8 rounded-md hover:bg-muted flex items-center justify-center"
+            className="h-8 w-8 rounded-lg hover:bg-muted flex items-center justify-center transition-colors duration-200"
             onClick={() => setCollapsed(true)}
+            aria-label="Comprimi menu"
           >
             <PanelLeft className="h-4 w-4" />
           </button>
         )}
         {collapsed && (
           <button
-            className="absolute right-0 top-3 h-8 w-5 rounded-l-md bg-primary hover:bg-primary/90 flex items-center justify-center text-primary-foreground"
+            className="absolute -right-3 top-16 h-6 w-6 rounded-full bg-primary hover:bg-primary/90 flex items-center justify-center text-white shadow-md transform transition-transform duration-200 hover:scale-110"
             onClick={() => setCollapsed(false)}
+            aria-label="Espandi menu"
           >
             <PanelLeft className="h-3 w-3 rotate-180" />
           </button>
         )}
       </div>
 
-      <div className="flex-1 overflow-auto py-2">
+      <div className="flex-1 overflow-auto py-3 px-2">
         {isAdmin ? (
           // Navigazione Admin
           <>
