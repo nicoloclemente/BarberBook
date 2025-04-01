@@ -3,22 +3,66 @@ import pkg from "pg";
 const { Pool } = pkg;
 import * as schema from "@shared/schema";
 
-// Ottimizzazione della connessione al database PostgreSQL
+/**
+ * Configurazione ottimizzata del pool di connessione PostgreSQL
+ * Bilanciata per prestazioni e utilizzo efficiente delle risorse
+ */
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  // Riduciamo il numero massimo di connessioni per risparmiare memoria ma garantiamo un minimo
-  max: 10,
-  min: 1,
-  // Impostiamo un timeout di inattività più lungo per evitare disconnessioni frequenti
-  idleTimeoutMillis: 60000,
-  // Aumentiamo il timeout di connessione per dare più tempo alla connessione di stabilirsi
-  connectionTimeoutMillis: 10000,
+  
+  // Configurazione del pool per bilanciare prestazioni e risorse
+  max: process.env.NODE_ENV === 'production' ? 20 : 10, // Più connessioni in produzione
+  min: 2, // Manteniamo almeno 2 connessioni attive per evitare latenza
+  
+  // Gestione efficiente delle connessioni inattive
+  idleTimeoutMillis: 30000, // 30 secondi di inattività massima
+  
+  // Timeout di connessione ragionevole
+  connectionTimeoutMillis: 5000, // 5 secondi per stabilire una connessione
+  
+  // Strategie di resilienza
+  allowExitOnIdle: false, // Non chiudere il pool all'uscita di Node
+  keepAlive: true, // Mantiene le connessioni TCP in vita
+  keepAliveInitialDelayMillis: 10000, // 10 secondi prima del primo keepalive
+  
+  // Utilizzo delle query preparate per prestazioni migliori
+  statement_timeout: 10000, // 10 secondi timeout per le query
+  query_timeout: 10000, // 10 secondi timeout per le query
 });
 
-// Gestione errori di connessione
+// Monitoraggio e gestione degli errori
 pool.on('error', (err) => {
-  console.error('Errore imprevisto del pool di connessione:', err);
+  console.error('Errore di connessione al database:', err);
+  // In produzione, potremmo voler riavviare il pool dopo errori critici
 });
+
+pool.on('connect', (client) => {
+  if (process.env.NODE_ENV !== 'production') {
+    console.log('Nuova connessione al database stabilita');
+  }
+  
+  // Imposta parametri di sessione ottimali per ogni nuova connessione
+  client.query('SET application_name = "barber_shop_app"');
+});
+
+/**
+ * Funzione per controllare lo stato della connessione al database
+ * Utile per health checks e monitoraggio
+ */
+export async function checkDatabaseConnection(): Promise<boolean> {
+  try {
+    const client = await pool.connect();
+    try {
+      await client.query('SELECT 1');
+      return true;
+    } finally {
+      client.release();
+    }
+  } catch (error) {
+    console.error('Errore di connessione al database durante il controllo:', error);
+    return false;
+  }
+}
 
 // Esporta l'istanza drizzle per l'uso in tutta l'applicazione
 export const db = drizzle(pool, { schema });
