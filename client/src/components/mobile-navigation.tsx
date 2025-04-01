@@ -30,34 +30,34 @@ function NavItem({ icon, label, href, isActive, badge }: NavItemProps) {
     <Link href={href}>
       <div className="relative group">
         <div className={cn(
-          "flex flex-col items-center p-2 transition-all duration-200",
+          "flex flex-col items-center py-2 px-1 transition-all duration-150",
           isActive 
             ? "text-primary" 
             : "text-muted-foreground hover:text-foreground"
         )}>
           <div className={cn(
-            "relative flex items-center justify-center w-11 h-11 rounded-xl mb-1 transition-all duration-200",
+            "relative flex items-center justify-center w-10 h-10 mb-0.5 transition-all duration-150",
             isActive 
-              ? "bg-primary/15 text-primary shadow-sm transform scale-105" 
-              : "group-hover:bg-muted/70 text-muted-foreground hover:shadow-sm"
+              ? "text-primary" 
+              : "text-muted-foreground"
           )}>
             {icon}
             {badge !== undefined && badge > 0 && (
               <Badge 
                 className={cn(
-                  "absolute -top-1 -right-1 h-5 min-w-5 flex items-center justify-center rounded-full p-0 text-[10px] shadow-sm",
-                  isActive ? "bg-primary/20 text-primary border-white border-2" : "border border-white"
+                  "absolute -top-0.5 -right-0.5 h-4 min-w-4 flex items-center justify-center rounded-full p-0 text-[9px] shadow-sm",
+                  isActive ? "bg-primary text-white border-white border" : "bg-gray-400 text-white border border-white"
                 )}
               >
                 {badge > 9 ? '9+' : badge}
               </Badge>
             )}
           </div>
-          <span className="text-[11px] font-medium transition-all duration-200">{label}</span>
+          <span className="text-[10px] font-medium transition-all duration-150 opacity-90">{label}</span>
         </div>
         
         {isActive && (
-          <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+          <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-8 h-0.5 rounded-t-full bg-primary" />
         )}
       </div>
     </Link>
@@ -100,7 +100,7 @@ export default function MobileNavigation() {
   // Navigazione mobile per l'amministratore
   if (isAdmin) {
     return (
-      <nav className="fixed bottom-0 left-0 right-0 z-40 flex justify-around h-18 px-2 bg-white border-t shadow-md md:hidden">
+      <nav className="fixed bottom-0 left-0 right-0 z-40 flex justify-around h-16 bg-white border-t shadow-sm md:hidden">
         <NavItem 
           icon={<ShieldCheck className="h-5 w-5" />} 
           label="Admin" 
@@ -129,10 +129,10 @@ export default function MobileNavigation() {
   // Navigazione mobile per i barbieri
   if (isBarber) {
     return (
-      <nav className="fixed bottom-0 left-0 right-0 z-40 flex justify-around h-18 px-2 bg-white border-t shadow-md md:hidden">
+      <nav className="fixed bottom-0 left-0 right-0 z-40 flex justify-around h-16 bg-white border-t shadow-sm md:hidden">
         <NavItem 
           icon={<Calendar className="h-5 w-5" />} 
-          label="Appuntamenti" 
+          label="Agenda" 
           href="/dashboard" 
           isActive={isActive("/dashboard") || isActive("/")} 
         />
@@ -171,7 +171,7 @@ export default function MobileNavigation() {
 
   // Navigazione mobile per i clienti
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 flex justify-around h-18 px-2 bg-white border-t shadow-md md:hidden">
+    <nav className="fixed bottom-0 left-0 right-0 z-40 flex justify-around h-16 bg-white border-t shadow-sm md:hidden">
       <NavItem 
         icon={<Home className="h-5 w-5" />} 
         label="Home" 

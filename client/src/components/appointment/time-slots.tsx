@@ -64,8 +64,14 @@ export default function TimeSlots({
       return [];
     }
     const formattedDate = formatISO(selectedDate, { representation: 'date' });
-    const dayBreaks = breaks.find(b => b.date === formattedDate);
-    return dayBreaks?.slots || [];
+    // Proteggiamo da errori null/undefined con maggiore sicurezza
+    try {
+      const dayBreaks = breaks.find(b => b && b.date === formattedDate);
+      return (dayBreaks && dayBreaks.slots) ? dayBreaks.slots : [];
+    } catch (error) {
+      console.error("Errore nel recupero delle pause:", error);
+      return [];
+    }
   };
 
   // Check if a time slot is a break
@@ -73,9 +79,17 @@ export default function TimeSlots({
     const formattedTime = format(time, 'HH:mm');
     const dayBreaks = getDayBreaks();
     
+    if (!dayBreaks || !Array.isArray(dayBreaks) || dayBreaks.length === 0) {
+      return false;
+    }
+    
     return dayBreaks.some(breakSlot => {
+      if (!breakSlot || typeof breakSlot !== 'object') return false;
+      
       const breakStart = breakSlot.start;
       const breakEnd = breakSlot.end;
+      
+      if (!breakStart || !breakEnd) return false;
       
       return formattedTime >= breakStart && formattedTime < breakEnd;
     });
@@ -106,7 +120,7 @@ export default function TimeSlots({
   };
 
   return (
-    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2 mb-6">
+    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2 md:gap-3 mb-6">
       {timeSlots.map((timeSlot, index) => {
         const isOccupied = isSlotOccupied(timeSlot);
         const isOnBreak = isBreak(timeSlot);
@@ -117,12 +131,12 @@ export default function TimeSlots({
           <div
             key={index}
             className={cn(
-              "time-slot rounded p-2 text-center transition-all relative",
+              "timeslot relative",
               isOccupied 
-                ? "bg-error bg-opacity-10 cursor-not-allowed" 
+                ? "unavailable" 
                 : isBreakOrLunch 
-                  ? "bg-warning bg-opacity-10 cursor-pointer" 
-                  : "bg-neutral-light cursor-pointer hover:scale-105"
+                  ? "break" 
+                  : "available"
             )}
             onClick={() => {
               if (isOccupied) return;
@@ -134,28 +148,25 @@ export default function TimeSlots({
               }
             }}
           >
-            <span className={cn(
-              "block text-sm font-medium",
-              isOccupied ? "text-error" : isBreakOrLunch ? "text-warning" : ""
-            )}>
+            <span className="block text-sm font-medium">
               {formatTime(timeSlot)}
             </span>
             {isOccupied && (
-              <span className="text-xs text-error">Occupato</span>
+              <span className="text-[10px] opacity-80">Occupato</span>
             )}
             {isBreakOrLunch && (
-              <div className="flex items-center justify-center">
-                <span className="text-xs text-warning mr-1">Pausa</span>
-                {isBarber && <Edit className="h-3 w-3 text-warning" />}
+              <div className="flex items-center justify-center mt-0.5">
+                <span className="text-[10px] opacity-80 mr-1">Pausa</span>
+                {isBarber && <Edit className="h-2.5 w-2.5 opacity-70" />}
               </div>
             )}
             
             {isBarber && isBreakOrLunch && (
               <Badge 
                 variant="outline" 
-                className="absolute -top-2 -right-2 h-5 w-5 p-0 flex items-center justify-center"
+                className="absolute -top-1.5 -right-1.5 h-4 w-4 p-0 flex items-center justify-center opacity-80 border-amber-200"
               >
-                <Edit className="h-3 w-3" />
+                <Edit className="h-2.5 w-2.5" />
               </Badge>
             )}
           </div>

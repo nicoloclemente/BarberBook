@@ -144,22 +144,38 @@
     @apply bg-gradient-to-r from-gray-50 to-slate-50/30 border-l-4 border-gray-400 rounded-r-lg;
   }
   
-  /* Stili per card con effetti minimal ed eleganti */
+  /* Stili per card con effetti minimal ed eleganti simili ad app native */
   .card-minimal {
-    @apply bg-white rounded-xl border border-gray-100 shadow-md transition-all duration-300;
+    @apply bg-white rounded-xl border border-gray-100/70 shadow-sm transition-all duration-200;
   }
   
-  .card-minimal:hover {
-    @apply border-primary/20 shadow-lg transform translate-y-[-2px];
+  @media (hover: hover) {
+    .card-minimal:hover {
+      @apply border-primary/20 shadow-md transform translate-y-[-1px];
+    }
   }
   
-  /* Stili per bottoni minimal ed eleganti */
+  /* Style per app native */
+  .card-native {
+    @apply bg-white rounded-2xl shadow-sm border-0 overflow-hidden;
+  }
+  
+  /* Stili per bottoni eleganti in stile app native */
   .btn-minimal {
-    @apply bg-primary hover:bg-primary/90 text-white font-medium rounded-lg transition-all duration-200 shadow-sm hover:shadow-md;
+    @apply bg-primary hover:bg-primary/90 text-white font-medium rounded-xl transition-all duration-150 shadow-sm;
   }
 
   .btn-minimal:active {
-    @apply transform scale-95;
+    @apply transform scale-[0.98] bg-primary/95;
+  }
+  
+  /* Stile per pulsanti outline nativi */
+  .btn-outline-native {
+    @apply border border-gray-200 bg-white/80 text-gray-700 font-medium rounded-xl transition-all duration-150 shadow-sm hover:bg-gray-50;
+  }
+  
+  .btn-outline-native:active {
+    @apply transform scale-[0.98] bg-gray-100;
   }
 
   /* Stili speciali per calendario */
@@ -184,53 +200,63 @@
     @apply absolute w-2 h-2 bg-primary rounded-full top-1 right-1;
   }
   
-  /* Stili per timeslots */
+  /* Stili per timeslots in stile app native */
   .timeslot {
-    @apply p-2.5 rounded-lg border border-slate-200 text-center transition-all cursor-pointer hover:shadow-sm;
+    @apply p-2.5 rounded-xl border border-slate-100 text-center transition-all cursor-pointer text-sm;
   }
   
   .timeslot.available {
-    @apply bg-emerald-50 border-emerald-200 hover:bg-emerald-100 hover:border-emerald-300;
+    @apply bg-white border-slate-200 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200;
   }
   
   .timeslot.unavailable {
-    @apply bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed opacity-70;
+    @apply bg-slate-50 border-slate-100 text-slate-400 cursor-not-allowed opacity-70;
   }
 
   .timeslot.selected {
-    @apply bg-primary/15 border-primary text-primary font-medium shadow-sm transform scale-[1.05];
+    @apply bg-primary/15 border-primary text-primary font-medium shadow-sm transform scale-[1.03];
   }
 
   .timeslot.break {
-    @apply bg-amber-50 border-amber-200 text-amber-700;
+    @apply bg-amber-50 border-amber-100 text-amber-700;
   }
 
-  /* Animazioni */
+  /* Animazioni in stile app native */
   @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
+    from { opacity: 0; transform: translateY(8px); }
     to { opacity: 1; transform: translateY(0); }
   }
   
   @keyframes slideIn {
-    from { opacity: 0; transform: translateX(-10px); }
+    from { opacity: 0; transform: translateX(-8px); }
     to { opacity: 1; transform: translateX(0); }
   }
   
   @keyframes scaleIn {
-    from { opacity: 0; transform: scale(0.95); }
+    from { opacity: 0; transform: scale(0.97); }
     to { opacity: 1; transform: scale(1); }
+  }
+  
+  @keyframes pulseLight {
+    0% { opacity: 0.7; }
+    50% { opacity: 1; }
+    100% { opacity: 0.7; }
   }
 
   .fade-in {
-    animation: fadeIn 0.3s ease-out forwards;
+    animation: fadeIn 0.25s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
   }
   
   .slide-in {
-    animation: slideIn 0.3s ease-out forwards;
+    animation: slideIn 0.25s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
   }
   
   .scale-in {
-    animation: scaleIn 0.3s ease-out forwards;
+    animation: scaleIn 0.25s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
+  }
+  
+  .pulse-light {
+    animation: pulseLight 2s ease-in-out infinite;
   }
   
   /* Miglioramenti per l'UI */
@@ -238,21 +264,25 @@
     @apply bg-white/80 backdrop-blur-md border border-white/50;
   }
   
-  /* Stats cards */
+  /* Stats cards in stile app native */
   .stat-card {
-    @apply card-minimal p-5 flex flex-col;
+    @apply card-native p-6 flex flex-col;
   }
   
   .stat-card .stat-title {
-    @apply text-sm font-normal text-gray-500;
+    @apply text-sm font-medium text-gray-500 mb-1;
   }
   
   .stat-card .stat-value {
-    @apply text-3xl font-semibold mt-2 text-gray-800;
+    @apply text-3xl font-semibold text-gray-800;
   }
   
   .stat-card .stat-desc {
-    @apply text-xs text-gray-400 mt-1;
+    @apply text-xs text-gray-400 mt-1 leading-tight;
+  }
+  
+  .stat-card .stat-icon {
+    @apply p-2 rounded-xl bg-primary/10 text-primary mb-3 self-start;
   }
   
   /* Improvements for form inputs */
