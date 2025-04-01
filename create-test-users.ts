@@ -48,6 +48,8 @@ async function createTestUsers() {
       imageUrl: null,
       barberCode: 'MARCO123',
       preferredBarberId: null,
+      isManager: true, // Marco è un barbiere capo (manager)
+      description: 'Barbiere esperto con 15 anni di esperienza',
       workingHours: JSON.stringify({
         monday: { start: '09:00', end: '18:00' },
         tuesday: { start: '09:00', end: '18:00' },
@@ -72,6 +74,8 @@ async function createTestUsers() {
       imageUrl: null,
       barberCode: 'LUCA456',
       preferredBarberId: null,
+      isManager: true, // Luca è un barbiere capo (manager)
+      description: 'Specializzato in tagli moderni e barba',
       workingHours: JSON.stringify({
         monday: { start: '10:00', end: '19:00' },
         tuesday: { start: '10:00', end: '19:00' },
@@ -96,7 +100,63 @@ async function createTestUsers() {
       imageUrl: null,
       barberCode: 'GIUSEP789',
       preferredBarberId: null,
+      isManager: false,
+      description: 'Esperto in tecniche tradizionali',
       workingHours: null,
+      breaks: null,
+      closedDays: null
+    },
+    {
+      username: 'francesca',
+      password: hashedPassword,
+      name: 'Francesca Ricci',
+      phone: '+39 345 4444444',
+      role: UserRole.BARBER,
+      isBarber: true,
+      isActive: true,
+      isApproved: true,
+      imageUrl: null,
+      barberCode: 'FRANC123',
+      preferredBarberId: null,
+      managerId: 1, // Dipendente di Marco (ID 1)
+      isManager: false,
+      description: 'Specializzata in styling moderno',
+      workingHours: JSON.stringify({
+        monday: { start: '09:00', end: '18:00' },
+        tuesday: { start: '09:00', end: '18:00' },
+        wednesday: { start: '09:00', end: '18:00' },
+        thursday: { start: '09:00', end: '18:00' },
+        friday: { start: '09:00', end: '18:00' },
+        saturday: null,
+        sunday: null
+      }),
+      breaks: null,
+      closedDays: null
+    },
+    {
+      username: 'davide',
+      password: hashedPassword,
+      name: 'Davide Conti',
+      phone: '+39 345 5555555',
+      role: UserRole.BARBER,
+      isBarber: true,
+      isActive: true,
+      isApproved: true,
+      imageUrl: null,
+      barberCode: 'DAVID456',
+      preferredBarberId: null,
+      managerId: 2, // Dipendente di Luca (ID 2)
+      isManager: false,
+      description: 'Esperto in barba e rasature',
+      workingHours: JSON.stringify({
+        monday: null,
+        tuesday: { start: '10:00', end: '19:00' },
+        wednesday: { start: '10:00', end: '19:00' },
+        thursday: { start: '10:00', end: '19:00' },
+        friday: { start: '10:00', end: '19:00' },
+        saturday: { start: '10:00', end: '14:00' },
+        sunday: null
+      }),
       breaks: null,
       closedDays: null
     }
@@ -216,9 +276,11 @@ async function createTestUsers() {
 
     console.log('\nInformazioni di accesso:');
     console.log('- Admin: username = admin, password = password123');
-    console.log('- Barbiere Marco: username = marco, password = password123, codice = MARCO123');
-    console.log('- Barbiere Luca: username = luca, password = password123, codice = LUCA456');
+    console.log('- Barbiere Manager: username = marco, password = password123, codice = MARCO123');
+    console.log('- Barbiere Manager: username = luca, password = password123, codice = LUCA456');
     console.log('- Barbiere Giuseppe (non approvato): username = giuseppe, password = password123, codice = GIUSEP789');
+    console.log('- Barbiera Francesca (dipendente di Marco): username = francesca, password = password123');
+    console.log('- Barbiere Davide (dipendente di Luca): username = davide, password = password123');
     console.log('- Clienti di Marco: andrea, paolo');
     console.log('- Cliente di Luca: roberto');
     console.log('- Clienti senza barbiere: mario, stefano');
