@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
+import { useLocation } from "wouter";
 import { AppointmentWithDetails, UserRole } from "@shared/schema";
 import { getQueryFn, apiRequest, queryClient } from "@/lib/queryClient";
 import { connectWebSocket, addEventListener, removeEventListener } from "@/lib/websocket";
@@ -10,7 +11,7 @@ import TimeSlots from "@/components/appointment/time-slots";
 import AppointmentCard from "@/components/appointment/appointment-card";
 import NewAppointmentModal from "@/components/appointment/new-appointment-modal";
 import { Button } from "@/components/ui/button";
-import { PlusIcon, RefreshCw } from "lucide-react";
+import { PlusIcon, RefreshCw, UsersIcon } from "lucide-react";
 import { format, parseISO, formatISO } from "date-fns";
 import { it } from "date-fns/locale";
 import { 
@@ -28,11 +29,13 @@ import { useToast } from "@/hooks/use-toast";
 export default function DashboardPage() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const [, navigate] = useLocation();
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [isModalOpen, setIsModalOpen] = useState(false);
   // Non gestiamo più le pause direttamente dalla dashboard
   const formattedDate = format(selectedDate, 'yyyy-MM-dd');
   const isBarber = user?.role === UserRole.BARBER || user?.role === UserRole.ADMIN;
+  const isManager = user?.isManager;
 
   // Query per gli appuntamenti
   const { data: appointments = [], isLoading, refetch } = useQuery<AppointmentWithDetails[]>({
@@ -131,6 +134,20 @@ export default function DashboardPage() {
               </Button>
             </div>
           </div>
+
+          {/* Pulsante per accedere alla gestione dipendenti (solo per barbieri manager) */}
+          {isBarber && isManager && (
+            <div className="mb-4 flex justify-end">
+              <Button
+                variant="outline"
+                className="flex items-center gap-2"
+                onClick={() => navigate("/employees")}
+              >
+                <UsersIcon className="h-4 w-4" />
+                Gestione Dipendenti
+              </Button>
+            </div>
+          )}
 
           <DateSelector 
             selectedDate={selectedDate} 
