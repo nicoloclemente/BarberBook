@@ -36,6 +36,10 @@ export default function DashboardPage() {
   const formattedDate = format(selectedDate, 'yyyy-MM-dd');
   const isBarber = user?.role === UserRole.BARBER || user?.role === UserRole.ADMIN;
   const isManager = user?.isManager;
+  
+  // Verifica se un barbiere dipendente è già associato a un manager
+  const isEmployeeBarber = user?.role === UserRole.BARBER && !user?.isManager;
+  const isAssignedToManager = isEmployeeBarber && user?.managerId !== null;
 
   // Query per gli appuntamenti
   const { data: appointments = [], isLoading, refetch } = useQuery<AppointmentWithDetails[]>({
@@ -104,6 +108,35 @@ export default function DashboardPage() {
   };
 
   // La gestione delle pause è stata spostata nella pagina di gestione orari
+
+  // Se il barbiere è dipendente ma non ancora associato a un manager, mostra un messaggio speciale
+  if (isEmployeeBarber && !isAssignedToManager) {
+    return (
+      <MainLayout>
+        <div className="max-w-7xl mx-auto py-12 sm:px-6 lg:px-8">
+          <div className="px-4 py-8 bg-white rounded-lg shadow-md">
+            <div className="flex flex-col items-center text-center">
+              <h2 className="text-2xl font-bold text-gray-800 mb-4">Account in attesa di associazione</h2>
+              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-6">
+                <UsersIcon className="h-8 w-8 text-gray-500" />
+              </div>
+              <p className="text-gray-600 mb-2 max-w-md">
+                Il tuo account barbiere è stato creato con successo, ma per poter utilizzare tutte le funzionalità devi essere associato a un manager.
+              </p>
+              <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200 text-left">
+                <h3 className="text-md font-medium text-gray-800 mb-2">Prossimi passi:</h3>
+                <ol className="list-decimal list-inside space-y-2 text-gray-600">
+                  <li>Comunica il tuo username <span className="font-bold">{user?.username}</span> al tuo manager</li>
+                  <li>Il manager ti assocerà come barbiere dipendente nel suo pannello di gestione</li>
+                  <li>Dopo l'associazione, potrai visualizzare e gestire gli appuntamenti</li>
+                </ol>
+              </div>
+            </div>
+          </div>
+        </div>
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout>
