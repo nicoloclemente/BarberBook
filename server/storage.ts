@@ -35,6 +35,13 @@ export interface IStorage {
   approveBarber(id: number): Promise<User | undefined>;
   deleteUser(id: number): Promise<boolean>;
   
+  // Barber Manager operations
+  assignBarberToManager(barberId: number, managerId: number): Promise<boolean>;
+  removeBarberFromManager(barberId: number): Promise<boolean>;
+  getBarberEmployees(managerId: number): Promise<User[]>;
+  getBarberManager(barberId: number): Promise<User | undefined>;
+  setUserAsManager(userId: number, isManager: boolean): Promise<User | undefined>;
+  
   // Service related operations
   getService(id: number): Promise<Service | undefined>;
   getAllServices(): Promise<Service[]>;
@@ -541,6 +548,85 @@ export class DatabaseStorage implements IStorage {
       createTableIfMissing: true,
     });
   }
+  
+  // Barber Manager operations
+  async assignBarberToManager(barberId: number, managerId: number): Promise<boolean> {
+    // Verifichiamo che entrambi siano barbieri
+    const [barber] = await db.select().from(users).where(eq(users.id, barberId));
+    const [manager] = await db.select().from(users).where(eq(users.id, managerId));
+    
+    if (!barber || !barber.isBarber || !manager || !manager.isBarber || !manager.isManager) {
+      return false;
+    }
+    
+    // Aggiorniamo l'associazione
+    const [updatedBarber] = await db.update(users)
+      .set({ managerId })
+      .where(eq(users.id, barberId))
+      .returning();
+    
+    // Invalidiamo la cache
+    cache.delete(`user:${barberId}`);
+    cache.delete(`barber:employees:${managerId}`);
+    
+    return !!updatedBarber;
+  }
+  
+  async removeBarberFromManager(barberId: number): Promise<boolean> {
+    const [barber] = await db.select().from(users).where(eq(users.id, barberId));
+    if (!barber || !barber.managerId) return false;
+    
+    const oldManagerId = barber.managerId;
+    
+    // Rimuoviamo l'associazione impostando managerId a null
+    const [updatedBarber] = await db.update(users)
+      .set({ managerId: null })
+      .where(eq(users.id, barberId))
+      .returning();
+    
+    // Invalidiamo la cache
+    cache.delete(`user:${barberId}`);
+    cache.delete(`barber:employees:${oldManagerId}`);
+    
+    return !!updatedBarber;
+  }
+  
+  async getBarberEmployees(managerId: number): Promise<User[]> {
+    const cacheKey = `barber:employees:${managerId}`;
+    return cache.getOrSet(cacheKey, async () => {
+      return await db.select()
+        .from(users)
+        .where(and(
+          eq(users.managerId, managerId),
+          eq(users.isBarber, true)
+        ));
+    }, {
+      ttlMs: 5 * 60 * 1000, // 5 minuti
+      keyType: 'user'
+    });
+  }
+  
+  async getBarberManager(barberId: number): Promise<User | undefined> {
+    const [barber] = await db.select().from(users).where(eq(users.id, barberId));
+    if (!barber || !barber.managerId) return undefined;
+    
+    return await this.getUser(barber.managerId);
+  }
+  
+  async setUserAsManager(userId: number, isManager: boolean): Promise<User | undefined> {
+    const [existingUser] = await db.select().from(users).where(eq(users.id, userId));
+    if (!existingUser || !existingUser.isBarber) return undefined;
+    
+    const [updatedUser] = await db.update(users)
+      .set({ isManager })
+      .where(eq(users.id, userId))
+      .returning();
+    
+    // Invalidiamo la cache
+    cache.delete(`user:${userId}`);
+    
+    return updatedUser;
+  }
 
   // User related methods
   async getUser(id: number): Promise<User | undefined> {
@@ -658,10 +744,15 @@ export class DatabaseStorage implements IStorage {
   async updateUser(id: number, userData: Partial<InsertUser>): Promise<User | undefined> {
     // Se stiamo aggiornando il barberCode, dobbiamo invalidare la cache dei clienti per quel barberCode
     let oldBarberCode: string | null = null;
-    if (userData.barberCode !== undefined) {
-      const [existingUser] = await db.select().from(users).where(eq(users.id, id));
-      if (existingUser) {
+    let oldManagerId: number | null = null;
+    const [existingUser] = await db.select().from(users).where(eq(users.id, id));
+    
+    if (existingUser) {
+      if (userData.barberCode !== undefined) {
         oldBarberCode = existingUser.barberCode;
+      }
+      if (userData.managerId !== undefined || userData.isManager !== undefined) {
+        oldManagerId = existingUser.managerId;
       }
     }
     

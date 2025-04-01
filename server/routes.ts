@@ -715,6 +715,134 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.status(204).end();
   });
 
+  // Barbiere capo e dipendenti routes
+  app.get("/api/barbers/:id/employees", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    
+    const managerId = parseInt(req.params.id);
+    if (isNaN(managerId)) {
+      return res.status(400).json({ error: "Invalid barber ID" });
+    }
+    
+    // Verifica che l'utente autenticato sia il barbiere capo o un admin
+    const user = req.user as any;
+    if (user.id !== managerId && user.role !== 'admin') {
+      return res.status(403).json({ error: "Not authorized to view these employees" });
+    }
+    
+    try {
+      const employees = await storage.getBarberEmployees(managerId);
+      res.json(employees);
+    } catch (error) {
+      console.error("Error fetching barber employees:", error);
+      res.status(500).json({ error: "Failed to fetch barber employees" });
+    }
+  });
+  
+  app.post("/api/barbers/:managerId/employees/:barberId", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    
+    const managerId = parseInt(req.params.managerId);
+    const barberId = parseInt(req.params.barberId);
+    
+    if (isNaN(managerId) || isNaN(barberId)) {
+      return res.status(400).json({ error: "Invalid ID format" });
+    }
+    
+    // Verifica che l'utente autenticato sia il barbiere capo o un admin
+    const user = req.user as any;
+    if (user.id !== managerId && user.role !== 'admin') {
+      return res.status(403).json({ error: "Not authorized to assign employees" });
+    }
+    
+    try {
+      const result = await storage.assignBarberToManager(barberId, managerId);
+      if (result) {
+        res.json({ success: true, message: "Barber assigned successfully" });
+      } else {
+        res.status(400).json({ error: "Failed to assign barber. Make sure both IDs are valid barbers and the manager has manager rights." });
+      }
+    } catch (error) {
+      console.error("Error assigning barber to manager:", error);
+      res.status(500).json({ error: "Failed to assign barber to manager" });
+    }
+  });
+  
+  app.delete("/api/barbers/:managerId/employees/:barberId", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    
+    const managerId = parseInt(req.params.managerId);
+    const barberId = parseInt(req.params.barberId);
+    
+    if (isNaN(managerId) || isNaN(barberId)) {
+      return res.status(400).json({ error: "Invalid ID format" });
+    }
+    
+    // Verifica che l'utente autenticato sia il barbiere capo o un admin
+    const user = req.user as any;
+    if (user.id !== managerId && user.role !== 'admin') {
+      return res.status(403).json({ error: "Not authorized to remove employees" });
+    }
+    
+    try {
+      // Verifica che il barbiere sia effettivamente un dipendente di questo manager
+      const barber = await storage.getUser(barberId);
+      if (!barber || barber.managerId !== managerId) {
+        return res.status(400).json({ error: "This barber is not your employee" });
+      }
+      
+      const result = await storage.removeBarberFromManager(barberId);
+      if (result) {
+        res.json({ success: true, message: "Barber removed successfully" });
+      } else {
+        res.status(400).json({ error: "Failed to remove barber. Make sure the barber ID is valid." });
+      }
+    } catch (error) {
+      console.error("Error removing barber from manager:", error);
+      res.status(500).json({ error: "Failed to remove barber from manager" });
+    }
+  });
+  
+  app.post("/api/barbers/:id/manager-status", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      return res.status(400).json({ error: "Invalid barber ID" });
+    }
+    
+    // Solo un admin può impostare lo stato di manager
+    const user = req.user as any;
+    if (user.role !== 'admin') {
+      return res.status(403).json({ error: "Only admins can set manager status" });
+    }
+    
+    const { isManager } = req.body;
+    if (typeof isManager !== 'boolean') {
+      return res.status(400).json({ error: "isManager must be a boolean value" });
+    }
+    
+    try {
+      const updatedUser = await storage.setUserAsManager(id, isManager);
+      if (updatedUser) {
+        res.json(updatedUser);
+      } else {
+        res.status(400).json({ error: "Failed to update manager status. Make sure the user is a barber." });
+      }
+    } catch (error) {
+      console.error("Error updating manager status:", error);
+      res.status(500).json({ error: "Failed to update manager status" });
+    }
+  });
+  
   // Messages Routes
   app.get("/api/messages/:userId", async (req, res) => {
     if (!req.isAuthenticated()) {

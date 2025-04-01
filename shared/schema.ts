@@ -26,6 +26,9 @@ export const users = pgTable("users", {
   preferredBarberId: integer("preferred_barber_id"), // Barbiere preferito per i clienti (deprecato)
   barberCode: text("barber_code"), // Codice univoco del barbiere che il cliente può utilizzare
   description: text("description"), // Descrizione/biografia del barbiere
+  managerId: integer("manager_id"), // ID del barbiere capo/manager (per barbieri dipendenti)
+  isManager: boolean("is_manager").default(false), // Se true, può gestire barbieri dipendenti
+  shopId: integer("shop_id"), // ID del barbershop a cui appartiene (per organizzare barbieri in shop)
   workingHours: jsonb("working_hours").$type<{
     monday: { start: string; end: string; enabled: boolean }[];
     tuesday: { start: string; end: string; enabled: boolean }[];
@@ -53,6 +56,14 @@ export const userRelations = relations(users, ({ many, one }) => ({
     fields: [users.preferredBarberId],
     references: [users.id],
   }),
+  manager: one(users, {
+    fields: [users.managerId],
+    references: [users.id],
+    relationName: "employee_manager"
+  }),
+  employees: many(users, {
+    relationName: "employee_manager"
+  }),
   barberServices: many(barberServices)
 }));
 
@@ -70,6 +81,9 @@ export const insertUserSchema = createInsertSchema(users)
     preferredBarberId: true,
     barberCode: true,
     description: true,
+    managerId: true,
+    isManager: true,
+    shopId: true,
     workingHours: true,
     breaks: true,
     closedDays: true,
