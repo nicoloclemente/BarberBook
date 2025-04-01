@@ -8,7 +8,10 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
 import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
@@ -16,16 +19,9 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { User } from "@shared/schema";
 import { useAuth } from "@/hooks/use-auth";
 import { AlertTriangle, CalendarIcon, CalendarOff, Clock, Info, Loader2, Plus, Save, Scissors, Trash2, X } from "lucide-react";
-import { format, formatISO } from "date-fns";
+import { format, formatISO, parse } from "date-fns";
 import { it } from "date-fns/locale";
 import { Badge } from "@/components/ui/badge";
-
-// Tipo per un singolo slot orario
-interface TimeSlot {
-  start: string;
-  end: string;
-  enabled: boolean;
-}
 
 // Schema per gli orari di lavoro
 const workingHoursSchema = z.object({
@@ -81,8 +77,8 @@ const closedDaysSchema = z.array(z.string());
 // Schema combinato
 const scheduleSchema = z.object({
   workingHours: workingHoursSchema,
-  breaks: breaksSchema.optional().default([]),
-  closedDays: closedDaysSchema.optional().default([])
+  breaks: breaksSchema,
+  closedDays: closedDaysSchema
 });
 
 type ScheduleFormValues = z.infer<typeof scheduleSchema>;
@@ -98,21 +94,10 @@ const daysOfWeek = [
 ];
 
 // Orari di slot predefiniti
-const defaultTimeSlot: TimeSlot = {
+const defaultTimeSlots = {
   start: "09:00",
   end: "18:00",
   enabled: true
-};
-
-// Mappa i valori predefiniti dei workingHours
-const defaultWorkingHours = {
-  monday: [{ ...defaultTimeSlot }],
-  tuesday: [{ ...defaultTimeSlot }],
-  wednesday: [{ ...defaultTimeSlot }],
-  thursday: [{ ...defaultTimeSlot }],
-  friday: [{ ...defaultTimeSlot }],
-  saturday: [{ ...defaultTimeSlot, end: "13:00" }],
-  sunday: [{ start: "00:00", end: "00:00", enabled: false }],
 };
 
 export default function WorkingHoursForm() {
@@ -120,43 +105,27 @@ export default function WorkingHoursForm() {
   const { toast } = useToast();
   const [currentDay, setCurrentDay] = useState("monday");
   const [selectedBreakDate, setSelectedBreakDate] = useState<Date | undefined>(new Date());
+  const [isEditingBreak, setIsEditingBreak] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  
+  // Stato per gestire i giorni di chiusura
   const [showClosedDays, setShowClosedDays] = useState(false);
 
-  // Prepara i valori predefiniti in base allo schema previsto
-  const prepareDefaultValues = () => {
-    if (!user?.workingHours) return defaultWorkingHours;
-
-    // Crea una copia profonda del defaultWorkingHours
-    const preparedWorkingHours = JSON.parse(JSON.stringify(defaultWorkingHours));
-
-    // Per ogni giorno, controlla se workingHours dell'utente ha il formato corretto
-    daysOfWeek.forEach(day => {
-      const dayId = day.id as keyof typeof defaultWorkingHours;
-      const userDayData = user.workingHours?.[dayId];
-
-      // Se esiste ed è un array, usalo
-      if (Array.isArray(userDayData) && userDayData.length > 0) {
-        preparedWorkingHours[dayId] = userDayData;
-      } 
-      // Se è un oggetto con start/end (formato vecchio), convertilo in array
-      else if (userDayData && 'start' in userDayData && 'end' in userDayData) {
-        preparedWorkingHours[dayId] = [{
-          start: userDayData.start,
-          end: userDayData.end,
-          enabled: true
-        }];
-      }
-      // Altrimenti mantieni il default
-    });
-
-    return preparedWorkingHours;
+  // Valore predefinito per gli orari di lavoro (9-18 per i giorni settimanali, chiuso la domenica)
+  const defaultWorkingHours = {
+    monday: [{ ...defaultTimeSlots }],
+    tuesday: [{ ...defaultTimeSlots }],
+    wednesday: [{ ...defaultTimeSlots }],
+    thursday: [{ ...defaultTimeSlots }],
+    friday: [{ ...defaultTimeSlots }],
+    saturday: [{ ...defaultTimeSlots, end: "13:00" }],
+    sunday: [{ start: "00:00", end: "00:00", enabled: false }],
   };
 
   const form = useForm<ScheduleFormValues>({
     resolver: zodResolver(scheduleSchema),
     defaultValues: {
-      workingHours: prepareDefaultValues(),
+      workingHours: user?.workingHours || defaultWorkingHours,
       breaks: user?.breaks || [],
       closedDays: user?.closedDays || []
     }
@@ -189,23 +158,14 @@ export default function WorkingHoursForm() {
     updateScheduleMutation.mutate(values);
   };
 
-  // Ottieni gli array di TimeSlot per un giorno specifico
-  const getDayTimeSlots = (day: string): TimeSlot[] => {
-    const values = form.getValues();
-    const dayKey = day as keyof typeof defaultWorkingHours;
-    const slots = values.workingHours[dayKey];
-    
-    // Se non è un array valido, fornisci un array di default
-    if (!Array.isArray(slots) || slots.length === 0) {
-      return [{ ...defaultTimeSlot }];
-    }
-    
-    return slots;
-  };
-
   const addTimeSlot = (day: string) => {
-    const currentSlots = getDayTimeSlots(day);
-    const lastSlot = currentSlots[currentSlots.length - 1] || defaultTimeSlot;
+    const dayWorkingHours = form.getValues().workingHours[day as keyof typeof defaultWorkingHours];
+    // Se non è un array o è vuoto, inizializziamo con un elemento di default
+    const currentSlots = Array.isArray(dayWorkingHours) && dayWorkingHours.length > 0 
+      ? dayWorkingHours 
+      : [{ ...defaultTimeSlots }];
+    
+    const lastSlot = currentSlots[currentSlots.length - 1] || defaultTimeSlots;
     
     // Calcoliamo l'orario di inizio della nuova fascia usando l'orario di fine dell'ultima fascia
     const newSlot = {
@@ -214,31 +174,22 @@ export default function WorkingHoursForm() {
       enabled: true
     };
     
-    const dayKey = day as keyof typeof defaultWorkingHours;
-    form.setValue(`workingHours.${dayKey}` as any, [...currentSlots, newSlot]);
+    form.setValue(`workingHours.${day}`, [...currentSlots, newSlot]);
   };
 
   const removeTimeSlot = (day: string, index: number) => {
-    const currentSlots = getDayTimeSlots(day);
-    
+    const dayWorkingHours = form.getValues().workingHours[day as keyof typeof defaultWorkingHours];
+    // Se non è un array o è vuoto, inizializziamo con un elemento di default
+    const currentSlots = Array.isArray(dayWorkingHours) && dayWorkingHours.length > 0 
+      ? dayWorkingHours 
+      : [{ ...defaultTimeSlots }];
+      
     if (currentSlots.length > 1) {
-      const dayKey = day as keyof typeof defaultWorkingHours;
-      form.setValue(`workingHours.${dayKey}` as any, 
-        currentSlots.filter((_, i) => i !== index));
+      form.setValue(`workingHours.${day}`, currentSlots.filter((_, i) => i !== index));
     } else {
       // Se c'è un solo slot, lo disabilitiamo invece di rimuoverlo
-      const dayKey = day as keyof typeof defaultWorkingHours;
-      form.setValue(`workingHours.${dayKey}.0.enabled` as any, false);
+      form.setValue(`workingHours.${day}.0.enabled`, false);
     }
-  };
-
-  // Ottieni le pause per una data specifica
-  const getBreaksForDate = (date: Date | undefined) => {
-    if (!date) return null;
-    
-    const formattedDate = formatISO(date, { representation: 'date' });
-    const allBreaks = form.getValues().breaks || [];
-    return allBreaks.find(b => b.date === formattedDate);
   };
 
   const addBreak = () => {
@@ -263,6 +214,8 @@ export default function WorkingHoursForm() {
       };
       form.setValue("breaks", [...existingBreaks, newBreak]);
     }
+    
+    setIsEditingBreak(true);
   };
 
   const removeBreakSlot = (dateIndex: number, slotIndex: number) => {
@@ -277,6 +230,15 @@ export default function WorkingHoursForm() {
       // Rimuovi l'intera pausa se era l'ultimo slot
       form.setValue("breaks", currentBreaks.filter((_, i) => i !== dateIndex));
     }
+  };
+
+  // Ottieni le pause per una data specifica
+  const getBreaksForDate = (date: Date | undefined) => {
+    if (!date) return null;
+    
+    const formattedDate = formatISO(date, { representation: 'date' });
+    const allBreaks = form.getValues().breaks || [];
+    return allBreaks.find(b => b.date === formattedDate);
   };
 
   // Funzioni per i giorni di chiusura
@@ -370,43 +332,42 @@ export default function WorkingHoursForm() {
                   </div>
                   
                   <div className="rounded-lg border p-4 bg-card">
-                    <h3 className="font-medium text-lg mb-4">
-                      {daysOfWeek.find(d => d.id === currentDay)?.name}
-                    </h3>
+                    <h3 className="font-medium text-lg mb-4">{daysOfWeek.find(d => d.id === currentDay)?.name}</h3>
                     
                     {daysOfWeek.map((day) => (
                       <div key={day.id} className={day.id === currentDay ? "block" : "hidden"}>
-                        {getDayTimeSlots(day.id).map((_, index) => (
-                          <div key={index} className="grid grid-cols-12 gap-4 mb-4 items-center">
-                            <FormField
-                              control={form.control}
-                              name={`workingHours.${day.id}.${index}.enabled` as any}
-                              render={({ field }) => (
-                                <FormItem className="col-span-2 flex items-center gap-2">
-                                  <FormControl>
-                                    <Switch
-                                      checked={field.value}
-                                      onCheckedChange={field.onChange}
-                                    />
-                                  </FormControl>
-                                  <Label className="cursor-pointer" htmlFor={field.name}>
-                                    {field.value ? "Attivo" : "Chiuso"}
-                                  </Label>
-                                </FormItem>
-                              )}
-                            />
+                        {Array.isArray(form.getValues().workingHours[day.id as keyof typeof defaultWorkingHours]) 
+                          ? form.getValues().workingHours[day.id as keyof typeof defaultWorkingHours].map((_, index) => (
+                            <div key={index} className="grid grid-cols-12 gap-4 mb-4 items-center">
+                              <FormField
+                                control={form.control}
+                                name={`workingHours.${day.id}.${index}.enabled`}
+                                render={({ field }) => (
+                                  <FormItem className="col-span-2 flex items-center gap-2">
+                                    <FormControl>
+                                      <Switch
+                                        checked={field.value}
+                                        onCheckedChange={field.onChange}
+                                      />
+                                    </FormControl>
+                                    <Label className="cursor-pointer" htmlFor={field.name}>
+                                      {field.value ? "Attivo" : "Chiuso"}
+                                    </Label>
+                                  </FormItem>
+                                )}
+                              />
                             
                             <div className="col-span-7 grid grid-cols-7 gap-2 items-center">
                               <FormField
                                 control={form.control}
-                                name={`workingHours.${day.id}.${index}.start` as any}
+                                name={`workingHours.${day.id}.${index}.start`}
                                 render={({ field }) => (
                                   <FormItem className="col-span-3">
                                     <FormControl>
                                       <Input
                                         type="time"
                                         {...field}
-                                        disabled={!getDayTimeSlots(day.id)[index]?.enabled}
+                                        disabled={!form.getValues().workingHours[day.id as keyof typeof defaultWorkingHours][index].enabled}
                                       />
                                     </FormControl>
                                   </FormItem>
@@ -417,14 +378,14 @@ export default function WorkingHoursForm() {
                               
                               <FormField
                                 control={form.control}
-                                name={`workingHours.${day.id}.${index}.end` as any}
+                                name={`workingHours.${day.id}.${index}.end`}
                                 render={({ field }) => (
                                   <FormItem className="col-span-3">
                                     <FormControl>
                                       <Input
                                         type="time"
                                         {...field}
-                                        disabled={!getDayTimeSlots(day.id)[index]?.enabled}
+                                        disabled={!form.getValues().workingHours[day.id as keyof typeof defaultWorkingHours][index].enabled}
                                       />
                                     </FormControl>
                                   </FormItem>
@@ -438,7 +399,7 @@ export default function WorkingHoursForm() {
                                 variant="ghost" 
                                 size="icon"
                                 onClick={() => removeTimeSlot(day.id, index)}
-                                disabled={getDayTimeSlots(day.id).length <= 1}
+                                disabled={form.getValues().workingHours[day.id as keyof typeof defaultWorkingHours].length <= 1}
                                 className="h-9 w-9"
                               >
                                 <Trash2 className="h-4 w-4" />
@@ -543,7 +504,7 @@ export default function WorkingHoursForm() {
                                 <div className="flex-1 grid grid-cols-7 gap-2 items-center">
                                   <FormField
                                     control={form.control}
-                                    name={`breaks.${selectedDateBreakIndex}.slots.${slotIndex}.start` as any}
+                                    name={`breaks.${selectedDateBreakIndex}.slots.${slotIndex}.start`}
                                     render={({ field }) => (
                                       <FormItem className="col-span-3">
                                         <FormControl>
@@ -557,7 +518,7 @@ export default function WorkingHoursForm() {
                                   
                                   <FormField
                                     control={form.control}
-                                    name={`breaks.${selectedDateBreakIndex}.slots.${slotIndex}.end` as any}
+                                    name={`breaks.${selectedDateBreakIndex}.slots.${slotIndex}.end`}
                                     render={({ field }) => (
                                       <FormItem className="col-span-3">
                                         <FormControl>
@@ -665,34 +626,34 @@ export default function WorkingHoursForm() {
                       {(form.getValues().closedDays || []).length > 0 ? (
                         <>
                           <div className="flex items-center justify-between">
-                            <h3 className="font-medium">Giorni di chiusura</h3>
+                            <h3 className="font-medium">
+                              Giorni di chiusura programmati
+                            </h3>
                             <Badge variant="outline" className="bg-red-50 border-red-200 text-red-700">
-                              {(form.getValues().closedDays || []).length} giorni
+                              {(form.getValues().closedDays || []).length} {(form.getValues().closedDays || []).length === 1 ? "giorno" : "giorni"}
                             </Badge>
                           </div>
                           
-                          <div className="bg-card border rounded-lg p-4">
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          <div className="bg-card border rounded-lg p-4 max-h-[300px] overflow-y-auto">
+                            <div className="space-y-2">
                               {(form.getValues().closedDays || [])
-                                .sort()
+                                .sort((a, b) => new Date(a).getTime() - new Date(b).getTime())
                                 .map((dateStr, index) => {
                                   const date = new Date(dateStr);
                                   return (
-                                    <div key={index} className="flex items-center justify-between bg-red-50 rounded-md p-2 border border-red-100">
+                                    <div key={index} className="flex items-center justify-between p-2 rounded-md hover:bg-muted/50">
                                       <div className="flex items-center gap-2">
-                                        <CalendarOff className="h-4 w-4 text-red-500" />
-                                        <span className="text-sm font-medium">
-                                          {format(date, "d MMMM yyyy", { locale: it })}
-                                        </span>
+                                        <Calendar className="h-4 w-4 text-red-600" />
+                                        <span>{format(date, "d MMMM yyyy", { locale: it })}</span>
                                       </div>
                                       <Button
                                         type="button"
                                         variant="ghost"
                                         size="icon"
                                         onClick={() => removeClosedDay(dateStr)}
-                                        className="h-7 w-7"
+                                        className="h-8 w-8"
                                       >
-                                        <X className="h-3 w-3" />
+                                        <Trash2 className="h-4 w-4" />
                                       </Button>
                                     </div>
                                   );
@@ -705,7 +666,7 @@ export default function WorkingHoursForm() {
                           <CalendarOff className="h-12 w-12 text-muted-foreground/50 mb-4" />
                           <h3 className="font-medium mb-1">Nessun giorno di chiusura</h3>
                           <p className="text-muted-foreground text-center text-sm max-w-[250px]">
-                            Seleziona un giorno dal calendario per aggiungerlo come giorno di chiusura
+                            Seleziona un giorno dal calendario per impostarlo come giorno di chiusura
                           </p>
                         </div>
                       )}
@@ -714,10 +675,10 @@ export default function WorkingHoursForm() {
                         <div className="flex items-start gap-2">
                           <AlertTriangle className="h-5 w-5 text-red-700 mt-0.5 flex-shrink-0" />
                           <div>
-                            <h4 className="font-medium text-red-900">Importante</h4>
+                            <h4 className="font-medium text-red-900">Nota importante</h4>
                             <p className="text-red-800 text-sm">
-                              Nei giorni di chiusura non sarà possibile prenotare appuntamenti.
-                              Questi giorni hanno priorità sugli orari di lavoro.
+                              I giorni di chiusura rappresentano le date in cui l'attività è completamente chiusa 
+                              (festività, ferie, ecc). Durante questi giorni non sarà possibile prenotare alcun appuntamento.
                             </p>
                           </div>
                         </div>
@@ -727,13 +688,25 @@ export default function WorkingHoursForm() {
                 </TabsContent>
               </Tabs>
               
-              <CardFooter className="justify-end p-0 pt-4 border-t">
-                <Button type="submit" disabled={isSaving}>
-                  {isSaving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                  <Save className="h-4 w-4 mr-2" />
-                  Salva impostazioni
+              <div className="flex justify-end pt-2">
+                <Button 
+                  type="submit" 
+                  className="btn-elegant"
+                  disabled={isSaving}
+                >
+                  {isSaving ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Salvataggio...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="mr-2 h-4 w-4" />
+                      Salva Orari
+                    </>
+                  )}
                 </Button>
-              </CardFooter>
+              </div>
             </form>
           </Form>
         </CardContent>

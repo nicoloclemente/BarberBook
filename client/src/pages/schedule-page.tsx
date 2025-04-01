@@ -14,6 +14,13 @@ export default function SchedulePage() {
   const [, navigate] = useLocation();
   const { toast } = useToast();
   
+  // Debug: log dei dati workingHours per verificarne la struttura
+  useEffect(() => {
+    if (user) {
+      console.log("User workingHours:", user.workingHours);
+    }
+  }, [user]);
+  
   // Verifica se l'utente è un barbiere
   const isBarber = user && (user.isBarber || user.role === UserRole.BARBER);
   
