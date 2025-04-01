@@ -1,5 +1,7 @@
+import { createSafeWebSocket, getValidWebSocketUrl } from './websocket-polyfill';
+
 let socket: WebSocket | null = null;
-let reconnectInterval: number | null = null;
+let reconnectTimeout: number | null = null;
 let heartbeatInterval: number | null = null;
 const listeners = new Map<string, Set<(data: any) => void>>();
 let currentUserId: number | null = null;
@@ -28,32 +30,42 @@ export function connectWebSocket(userId: number) {
     socket = null;
   }
   
+  // Cancella eventuali tentativi di riconnessione programmati
+  if (reconnectTimeout) {
+    window.clearTimeout(reconnectTimeout);
+    reconnectTimeout = null;
+  }
+  
   currentUserId = userId;
   connectionAttempts++;
   
   if (connectionAttempts > MAX_RECONNECT_ATTEMPTS) {
     console.error(`Maximum connection attempts (${MAX_RECONNECT_ATTEMPTS}) reached`);
+    // Resettiamo dopo un po' di tempo per permettere tentativi futuri
+    setTimeout(() => {
+      connectionAttempts = 0;
+    }, RECONNECT_DELAY_MS * 5);
     return;
   }
   
   console.log(`WebSocket connection attempt ${connectionAttempts}/${MAX_RECONNECT_ATTEMPTS}`);
   
-  // URL principale per la connessione WebSocket (path /ws sul server attuale)
-  const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-  const wsUrl = `${protocol}//${window.location.host}/ws`;
-  
-  console.log("Connecting to WebSocket:", wsUrl);
-  
   try {
-    // Utilizziamo un blocco try-catch per gestire eventuali errori di creazione della WebSocket
-    socket = new WebSocket(wsUrl);
-    setupWebSocketHandlers(userId);
+    // Utilizziamo la nostra utility per creare una WebSocket sicura
+    socket = createSafeWebSocket();
+    
+    if (socket) {
+      setupWebSocketHandlers(userId);
+    } else {
+      throw new Error("Failed to create WebSocket");
+    }
   } catch (error) {
-    console.error("Error creating WebSocket:", error);
+    console.error("Error during WebSocket creation:", error);
     socket = null;
     
     // Pianifica un nuovo tentativo con un ritardo
-    setTimeout(() => {
+    reconnectTimeout = window.setTimeout(() => {
+      reconnectTimeout = null;
       connectWebSocket(userId);
     }, RECONNECT_DELAY_MS);
   }
@@ -74,10 +86,10 @@ function setupWebSocketHandlers(userId: number) {
       }));
     }
 
-    // Clear reconnect interval if it exists
-    if (reconnectInterval) {
-      clearInterval(reconnectInterval);
-      reconnectInterval = null;
+    // Clear reconnect timeout if it exists
+    if (reconnectTimeout) {
+      window.clearTimeout(reconnectTimeout);
+      reconnectTimeout = null;
     }
     
     // Set up heartbeat to keep the connection alive and track user activity
@@ -114,10 +126,10 @@ function setupWebSocketHandlers(userId: number) {
     
     socket = null;
     
-    // Pulisci gli intervalli esistenti prima di crearne di nuovi
-    if (reconnectInterval) {
-      clearInterval(reconnectInterval);
-      reconnectInterval = null;
+    // Pulisci i timeout di riconnessione programmati
+    if (reconnectTimeout) {
+      window.clearTimeout(reconnectTimeout);
+      reconnectTimeout = null;
     }
 
     // Utilizza setTimeout invece di setInterval per evitare sovrapposizioni
@@ -167,9 +179,9 @@ export function disconnectWebSocket() {
     socket = null;
   }
 
-  if (reconnectInterval) {
-    clearInterval(reconnectInterval);
-    reconnectInterval = null;
+  if (reconnectTimeout) {
+    window.clearTimeout(reconnectTimeout);
+    reconnectTimeout = null;
   }
   
   if (heartbeatInterval) {
