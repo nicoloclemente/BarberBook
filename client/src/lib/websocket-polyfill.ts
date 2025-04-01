@@ -25,8 +25,14 @@ export function getValidWebSocketUrl(): string {
     // Preferisci sempre usare l'host del documento come fonte più affidabile
     const host = documentUrl.host;
     
+    // Debug: log the host value
+    console.log('Debug WebSocket - URL host:', host);
+    console.log('Debug WebSocket - URL protocol:', protocol);
+    console.log('Debug WebSocket - Full URL:', `${protocol}//${host}/ws`);
+    
     // Verifica che l'host sia valido
     if (!host || host.includes('undefined')) {
+      console.error(`Host invalido nel documento: ${host}`);
       throw new Error(`Host invalido nel documento: ${host}`);
     }
     
@@ -40,7 +46,8 @@ export function getValidWebSocketUrl(): string {
     
     // Per ambienti locali di sviluppo
     if (host.includes('localhost')) {
-      const port = documentUrl.port || (protocol === 'wss:' ? '443' : '80');
+      // Imposta sempre la porta a quella corrente
+      const port = documentUrl.port || window.location.port || '3000';
       const wsUrl = `${protocol}//localhost:${port}/ws`;
       console.log('WebSocket URL localhost costruito correttamente:', wsUrl);
       return wsUrl;
