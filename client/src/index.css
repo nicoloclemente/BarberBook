@@ -220,6 +220,18 @@
   .timeslot.break {
     @apply bg-amber-50 border-amber-100 text-amber-700;
   }
+  
+  .timeslot.closed-day {
+    @apply bg-red-50 border-red-100 text-red-700;
+  }
+  
+  .timeslot.working-hours {
+    @apply bg-emerald-50 border-emerald-200 text-emerald-700;
+  }
+  
+  .timeslot.outside-working-hours {
+    @apply bg-gray-100 border-gray-200 text-gray-500 opacity-50;
+  }
 
   /* Animazioni in stile app native */
   @keyframes fadeIn {

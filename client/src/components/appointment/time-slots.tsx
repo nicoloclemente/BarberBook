@@ -167,6 +167,41 @@ export default function TimeSlots({
   const isLunchBreak = (_time: Date) => {
     return false;
   };
+  
+  // Check if a time is within working hours
+  const isWithinWorkingHours = (time: Date): boolean => {
+    if (!user || !user.workingHours) return true; // Default to true if no working hours
+    
+    const dayIndex = getDay(time);
+    const dayNames = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"] as const;
+    const dayName = dayNames[dayIndex];
+    const workingHoursForDay = (user.workingHours[dayName] || []) as { start: string; end: string; enabled: boolean }[];
+    
+    if (!Array.isArray(workingHoursForDay) || workingHoursForDay.length === 0) {
+      return false; // Closed day
+    }
+    
+    const timeStr = format(time, 'HH:mm');
+    
+    return workingHoursForDay.some(range => {
+      if (!range.enabled) return false;
+      return timeStr >= range.start && timeStr < range.end;
+    });
+  };
+  
+  // Check if this is a closed day
+  const isClosedDay = (): boolean => {
+    if (!user || !user.workingHours) return false;
+    
+    const dayIndex = getDay(selectedDate);
+    const dayNames = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"] as const;
+    const dayName = dayNames[dayIndex];
+    const workingHoursForDay = (user.workingHours[dayName] || []) as { start: string; end: string; enabled: boolean }[];
+    
+    return !Array.isArray(workingHoursForDay) || 
+           workingHoursForDay.length === 0 || 
+           !workingHoursForDay.some(slot => slot.enabled);
+  };
 
   // Format time as HH:MM
   const formatTime = (time: Date) => {
@@ -203,6 +238,35 @@ export default function TimeSlots({
     );
   }
   
+  // Aggiungiamo un avviso visivo se è un giorno di chiusura
+  if (isClosedDay()) {
+    return (
+      <div className="mb-6">
+        <Alert className="bg-red-50 border-red-200">
+          <AlertCircle className="h-4 w-4 text-red-700" />
+          <AlertDescription className="text-red-800">
+            Questo è un giorno di chiusura. {format(selectedDate, 'EEEE')} non è configurato come giorno lavorativo.
+            {isBarber && " Vai alla sezione 'Gestione Orari' per configurare gli orari di lavoro."}
+          </AlertDescription>
+        </Alert>
+        
+        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2 md:gap-3 mt-4 mb-6 opacity-80">
+          {timeSlots.map((timeSlot, index) => (
+            <div
+              key={index}
+              className="timeslot relative closed-day cursor-not-allowed"
+            >
+              <span className="block text-sm font-medium">
+                {formatTime(timeSlot)}
+              </span>
+              <span className="text-[10px] opacity-80">Chiuso</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+  
   return (
     <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2 md:gap-3 mb-6">
       {timeSlots.map((timeSlot, index) => {
@@ -210,17 +274,29 @@ export default function TimeSlots({
         const isOnBreak = isBreak(timeSlot);
         const isLunch = isLunchBreak(timeSlot);
         const isBreakOrLunch = isOnBreak || isLunch;
+        const isInWorkingHours = isWithinWorkingHours(timeSlot);
+        
+        // Determinare la classe CSS corretta in base allo stato dello slot
+        let slotClassName = "";
+        
+        if (isOccupied) {
+          slotClassName = "unavailable cursor-not-allowed";
+        } else if (isBreakOrLunch) {
+          slotClassName = onBreakClick && isBarber 
+            ? "break cursor-pointer" 
+            : "break cursor-not-allowed";
+        } else if (!isInWorkingHours) {
+          slotClassName = "outside-working-hours cursor-not-allowed";
+        } else {
+          slotClassName = "working-hours cursor-pointer";
+        }
         
         return (
           <div
             key={index}
             className={cn(
               "timeslot relative",
-              isOccupied 
-                ? "unavailable cursor-not-allowed" 
-                : isBreakOrLunch 
-                  ? onBreakClick && isBarber ? "break cursor-pointer" : "break cursor-not-allowed"
-                  : "available cursor-pointer"
+              slotClassName
             )}
             onClick={() => {
               // Se è una pausa e abbiamo la funzione di gestione delle pause
@@ -238,8 +314,8 @@ export default function TimeSlots({
                 return;
               }
               
-              // Ignoriamo i click su slot occupati o pause se non c'è onBreakClick
-              if (isOccupied || isBreakOrLunch) return;
+              // Ignoriamo i click su slot occupati, pause o fuori orario
+              if (isOccupied || isBreakOrLunch || !isInWorkingHours) return;
               
               // Solo gli slot disponibili sono cliccabili
               onSlotClick();
@@ -257,6 +333,9 @@ export default function TimeSlots({
                   Pausa{onBreakClick && isBarber ? " ✎" : ""}
                 </span>
               </div>
+            )}
+            {!isOccupied && !isBreakOrLunch && !isInWorkingHours && (
+              <span className="text-[10px] opacity-80">Chiuso</span>
             )}
           </div>
         );

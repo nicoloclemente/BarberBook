@@ -174,6 +174,33 @@ export default function DashboardPage() {
               breaks={userData?.breaks}
               user={user}
             />
+            
+            {/* Legenda per spiegare i colori degli slot */}
+            <div className="mt-4 bg-gray-50 rounded-lg p-3 border border-gray-100">
+              <h4 className="text-sm font-medium text-gray-700 mb-2">Legenda colori:</h4>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 text-xs">
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 bg-emerald-50 border border-emerald-200 rounded-md flex items-center justify-center text-[9px] text-emerald-700 font-medium"></div>
+                  <span className="text-gray-700">Orario di lavoro</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 bg-amber-50 border border-amber-100 rounded-md flex items-center justify-center text-[9px] text-amber-700 font-medium"></div>
+                  <span className="text-gray-700">Pausa</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 bg-slate-50 border border-slate-100 rounded-md flex items-center justify-center text-[9px] text-slate-400 font-medium"></div>
+                  <span className="text-gray-700">Occupato</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 bg-gray-100 border border-gray-200 rounded-md flex items-center justify-center text-[9px] text-gray-500 font-medium"></div>
+                  <span className="text-gray-700">Fuori orario</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 bg-red-50 border border-red-100 rounded-md flex items-center justify-center text-[9px] text-red-700 font-medium"></div>
+                  <span className="text-gray-700">Giorno chiusura</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
