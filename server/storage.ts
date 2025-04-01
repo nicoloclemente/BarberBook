@@ -651,21 +651,45 @@ export class DatabaseStorage implements IStorage {
 
   // User related methods
   async getUser(id: number): Promise<User | undefined> {
-    // Utilizziamo la cache per l'utente, valida per 5 minuti
-    const cacheKey = `user:${id}`;
-    return cache.getOrSet(cacheKey, async () => {
+    if (!id) return undefined;
+    
+    try {
+      // Utilizziamo la cache per l'utente, con gestione migliorata degli errori
+      const cacheKey = `user:${id}`;
+      return await cache.getOrSet(cacheKey, async () => {
+        const [user] = await db.select().from(users).where(eq(users.id, id));
+        return user;
+      }, {
+        ttlMs: 5 * 60 * 1000, // 5 minuti
+        keyType: 'user'
+      });
+    } catch (error) {
+      // In caso di errore nella cache, proviamo a recuperare direttamente dal DB
+      console.error(`Errore nel recupero dell'utente dalla cache (ID: ${id}):`, error);
       const [user] = await db.select().from(users).where(eq(users.id, id));
       return user;
-    }, 5 * 60 * 1000); // 5 minuti
+    }
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    // Utilizziamo la cache per gli utenti cercati per username
-    const cacheKey = `user:username:${username}`;
-    return cache.getOrSet(cacheKey, async () => {
+    if (!username) return undefined;
+    
+    try {
+      // Utilizziamo la cache per gli utenti cercati per username, con gestione migliorata degli errori
+      const cacheKey = `user:username:${username}`;
+      return await cache.getOrSet(cacheKey, async () => {
+        const [user] = await db.select().from(users).where(eq(users.username, username));
+        return user;
+      }, {
+        ttlMs: 5 * 60 * 1000, // 5 minuti
+        keyType: 'user'
+      });
+    } catch (error) {
+      // In caso di errore nella cache, proviamo a recuperare direttamente dal DB
+      console.error(`Errore nel recupero dell'utente per username dalla cache (username: ${username}):`, error);
       const [user] = await db.select().from(users).where(eq(users.username, username));
       return user;
-    }, 5 * 60 * 1000); // 5 minuti
+    }
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {

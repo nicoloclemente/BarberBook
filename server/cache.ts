@@ -194,13 +194,13 @@ class MemoryCache {
    * Recupera un elemento dalla cache o lo crea utilizzando la funzione fornita
    * @param key Chiave dell'elemento
    * @param fetchFn Funzione per recuperare i dati se non presenti in cache
-   * @param options Opzioni di configurazione
+   * @param options Opzioni di configurazione o TTL in millisecondi per compatibilità con il vecchio codice
    * @returns I dati dalla cache o dalla funzione fetchFn
    */
   async getOrSet<T>(
     key: CacheKey, 
     fetchFn: () => Promise<T>, 
-    options?: CacheOptions
+    options?: CacheOptions | number
   ): Promise<T> {
     // Prova a ottenere dalla cache
     const cachedItem = this.get<T>(key);
@@ -217,16 +217,32 @@ class MemoryCache {
         return data;
       }
       
-      // Calcola il TTL in base al tipo o utilizza quello fornito
-      let ttl = options?.ttlMs;
-      if (!ttl && options?.keyType) {
-        ttl = this.getTtlForType(options.keyType);
-      } else if (!ttl) {
+      // Gestisci sia oggetto di opzioni che numero come TTL per retrocompatibilità
+      let ttl: number;
+      let tags: TagName[] | undefined;
+      
+      if (typeof options === 'number') {
+        // Vecchio stile: opzioni è direttamente il TTL
+        ttl = options;
+        tags = undefined;
+      } else if (options) {
+        // Nuovo stile: opzioni è un oggetto
+        ttl = options.ttlMs || this.TTL.DEFAULT;
+        
+        // Calcola il TTL in base al tipo se fornito
+        if (!options.ttlMs && options.keyType) {
+          ttl = this.getTtlForType(options.keyType);
+        }
+        
+        tags = options.tags;
+      } else {
+        // Nessuna opzione
         ttl = this.TTL.DEFAULT;
+        tags = undefined;
       }
       
       // Memorizza con tag opzionali
-      this.set(key, data, ttl, options?.tags);
+      this.set(key, data, ttl, tags);
       
       return data;
     } catch (error) {

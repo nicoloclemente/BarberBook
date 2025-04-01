@@ -78,9 +78,17 @@ export function setupAuth(app: Express) {
   passport.deserializeUser(async (id: number, done) => {
     try {
       const user = await storage.getUser(id);
+      if (!user) {
+        // Se l'utente non viene trovato nel database, non generare un errore
+        // ma semplicemente ritorna null (utente non autenticato)
+        return done(null, null);
+      }
       done(null, user);
     } catch (error) {
-      done(error);
+      console.error("Errore durante la deserializzazione dell'utente:", error);
+      // Per motivi di sicurezza, in caso di errore trattiamo l'utente come non autenticato
+      // anziché lanciare un errore 500
+      done(null, null);
     }
   });
 
