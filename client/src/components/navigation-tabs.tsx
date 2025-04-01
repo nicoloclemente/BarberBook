@@ -115,6 +115,8 @@ export default function NavigationTabs({ orientation = "vertical", onItemClick }
 
   const isAdmin = user?.role === 'admin';
   const isBarber = user?.isBarber || user?.role === 'barber';
+  const isManager = user?.isManager;
+  const isEmployeeBarber = isBarber && !isManager;
   
   // Recupera il conteggio delle notifiche non lette
   useEffect(() => {
@@ -183,7 +185,25 @@ export default function NavigationTabs({ orientation = "vertical", onItemClick }
                 onClick={handleItemClick}
               />
             </>
-          ) : isBarber ? (
+          ) : isEmployeeBarber ? (
+            <>
+              <NavItem
+                icon={<ListTodo className="h-4 w-4" />}
+                label="Agenda Giornaliera"
+                href="/daily"
+                isActive={isActive("/daily") || isActive("/")}
+                onClick={handleItemClick}
+              />
+              <NavItem
+                icon={<MessageSquare className="h-4 w-4" />}
+                label="Chat"
+                href="/chat"
+                isActive={isActive("/chat")}
+                badge={unreadCount}
+                onClick={handleItemClick}
+              />
+            </>
+          ) : isBarber && isManager ? (
             <>
               <NavItem
                 icon={<Calendar className="h-4 w-4" />}
@@ -193,21 +213,26 @@ export default function NavigationTabs({ orientation = "vertical", onItemClick }
                 onClick={handleItemClick}
               />
               <NavItem
+                icon={<ListTodo className="h-4 w-4" />}
+                label="Giornaliero"
+                href="/daily"
+                isActive={isActive("/daily")}
+                onClick={handleItemClick}
+              />
+              <NavItem
                 icon={<Users className="h-4 w-4" />}
                 label="Clienti"
                 href="/clients"
                 isActive={isActive("/clients")}
                 onClick={handleItemClick}
               />
-              {user?.isManager && (
-                <NavItem
-                  icon={<UserCog className="h-4 w-4" />}
-                  label="Dipendenti"
-                  href="/employees"
-                  isActive={isActive("/employees")}
-                  onClick={handleItemClick}
-                />
-              )}
+              <NavItem
+                icon={<UserCog className="h-4 w-4" />}
+                label="Dipendenti"
+                href="/employees"
+                isActive={isActive("/employees")}
+                onClick={handleItemClick}
+              />
               <NavItem
                 icon={<MessageSquare className="h-4 w-4" />}
                 label="Chat"
@@ -343,8 +368,36 @@ export default function NavigationTabs({ orientation = "vertical", onItemClick }
               />
             </NavSection>
           </>
-        ) : isBarber ? (
-          // Navigazione Barbieri
+        ) : isEmployeeBarber ? (
+          // Navigazione Barbiere Dipendente (solo agenda giornaliera)
+          <>
+            <NavSection title={collapsed ? "" : "Agenda"}>
+              <NavItem
+                icon={<ListTodo className="h-5 w-5" />}
+                label={collapsed ? "" : "Agenda Giornaliera"}
+                href="/daily"
+                isActive={isActive("/daily") || isActive("/")}
+                tooltip={collapsed ? "Agenda Giornaliera" : undefined}
+                onClick={handleItemClick}
+              />
+            </NavSection>
+
+            <Separator className={cn("my-4", collapsed && "mx-2")} />
+
+            <NavSection title={collapsed ? "" : "Comunicazioni"}>
+              <NavItem
+                icon={<MessageSquare className="h-5 w-5" />}
+                label={collapsed ? "" : "Chat"}
+                href="/chat"
+                isActive={isActive("/chat")}
+                badge={unreadCount}
+                tooltip={collapsed ? "Chat" : undefined}
+                onClick={handleItemClick}
+              />
+            </NavSection>
+          </>
+        ) : isBarber && isManager ? (
+          // Navigazione Barbieri Manager
           <>
             <NavSection title={collapsed ? "" : "Agenda"}>
               <NavItem
@@ -384,16 +437,14 @@ export default function NavigationTabs({ orientation = "vertical", onItemClick }
                 tooltip={collapsed ? "Clienti" : undefined}
                 onClick={handleItemClick}
               />
-              {user?.isManager && (
-                <NavItem
-                  icon={<UserCog className="h-5 w-5" />}
-                  label={collapsed ? "" : "Dipendenti"}
-                  href="/employees"
-                  isActive={isActive("/employees")}
-                  tooltip={collapsed ? "Dipendenti" : undefined}
-                  onClick={handleItemClick}
-                />
-              )}
+              <NavItem
+                icon={<UserCog className="h-5 w-5" />}
+                label={collapsed ? "" : "Dipendenti"}
+                href="/employees"
+                isActive={isActive("/employees")}
+                tooltip={collapsed ? "Dipendenti" : undefined}
+                onClick={handleItemClick}
+              />
               <NavItem
                 icon={<Sparkles className="h-5 w-5" />}
                 label={collapsed ? "" : "Servizi"}
