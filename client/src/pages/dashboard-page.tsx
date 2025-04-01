@@ -114,8 +114,9 @@ export default function DashboardPage() {
 
   // La gestione delle pause è stata spostata nella pagina di gestione orari
 
-  // Se il barbiere è dipendente ma non ancora associato a un manager, mostra un messaggio speciale
-  if (isEmployeeBarber && !isAssignedToManager) {
+  // Forziamo la visualizzazione del messaggio di attesa per tutti i barbieri che non sono manager
+  // (temporaneamente per debug)
+  if (user?.role === UserRole.BARBER && user?.isManager !== true) {
     return (
       <MainLayout>
         <div className="max-w-7xl mx-auto py-12 sm:px-6 lg:px-8">
