@@ -1,6 +1,7 @@
 import { 
   users, type User, type InsertUser,
   services, type Service, type InsertService,
+  barberServices, type BarberService, type InsertBarberService,
   appointments, type Appointment, type InsertAppointment,
   messages, type Message, type InsertMessage,
   statistics, type Statistics, type InsertStatistics,
@@ -10,6 +11,8 @@ import {
   type MessageWithSender,
   type StatisticsWithBarber,
   type ReviewWithDetails,
+  type BarberServiceWithDetails,
+  type ServiceWithBarbers,
   UserRole
 } from "@shared/schema";
 import createMemoryStore from "memorystore";
@@ -35,9 +38,20 @@ export interface IStorage {
   // Service related operations
   getService(id: number): Promise<Service | undefined>;
   getAllServices(): Promise<Service[]>;
+  getServiceWithBarbers(id: number): Promise<ServiceWithBarbers | undefined>;
+  getAllServicesWithBarbers(): Promise<ServiceWithBarbers[]>;
   createService(service: InsertService): Promise<Service>;
   updateService(id: number, service: Partial<InsertService>): Promise<Service | undefined>;
   deleteService(id: number): Promise<boolean>;
+  
+  // Barber Service operations
+  getBarberService(id: number): Promise<BarberService | undefined>;
+  getBarberServiceWithDetails(id: number): Promise<BarberServiceWithDetails | undefined>;
+  getBarberServicesByBarberId(barberId: number): Promise<BarberServiceWithDetails[]>;
+  getBarberServicesByServiceId(serviceId: number): Promise<BarberServiceWithDetails[]>;
+  createBarberService(barberService: InsertBarberService): Promise<BarberService>;
+  updateBarberService(id: number, barberService: Partial<InsertBarberService>): Promise<BarberService | undefined>;
+  deleteBarberService(id: number): Promise<boolean>;
   
   // Appointment related operations
   getAppointment(id: number): Promise<Appointment | undefined>;
@@ -731,12 +745,83 @@ export class DatabaseStorage implements IStorage {
       return db.select().from(services);
     }, 30 * 60 * 1000); // 30 minuti
   }
+  
+  async getServiceWithBarbers(id: number): Promise<ServiceWithBarbers | undefined> {
+    // Utilizziamo la cache per il servizio con i suoi barbieri, valida per 30 minuti
+    const cacheKey = `service:${id}:with_barbers`;
+    return cache.getOrSet(cacheKey, async () => {
+      const [service] = await db.select().from(services).where(eq(services.id, id));
+      
+      if (!service) return undefined;
+      
+      const barberServicesList = await db.select()
+        .from(barberServices)
+        .where(eq(barberServices.serviceId, id));
+        
+      // Per ogni servizio del barbiere, otteniamo i dettagli del barbiere
+      const barberServicesWithDetails: BarberServiceWithDetails[] = [];
+      
+      for (const bs of barberServicesList) {
+        const [barber] = await db.select().from(users).where(eq(users.id, bs.barberId));
+        
+        if (barber) {
+          barberServicesWithDetails.push({
+            ...bs,
+            barber,
+            service
+          });
+        }
+      }
+      
+      return {
+        ...service,
+        barberServices: barberServicesWithDetails
+      };
+    }, 30 * 60 * 1000); // 30 minuti
+  }
+  
+  async getAllServicesWithBarbers(): Promise<ServiceWithBarbers[]> {
+    // Memorizziamo la lista dei servizi con i loro barbieri in cache per 30 minuti
+    return cache.getOrSet('services:all:with_barbers', async () => {
+      const servicesList = await db.select().from(services);
+      const result: ServiceWithBarbers[] = [];
+      
+      for (const service of servicesList) {
+        const barberServicesList = await db.select()
+          .from(barberServices)
+          .where(eq(barberServices.serviceId, service.id));
+          
+        // Per ogni servizio del barbiere, otteniamo i dettagli del barbiere
+        const barberServicesWithDetails: BarberServiceWithDetails[] = [];
+        
+        for (const bs of barberServicesList) {
+          const [barber] = await db.select().from(users).where(eq(users.id, bs.barberId));
+          
+          if (barber) {
+            barberServicesWithDetails.push({
+              ...bs,
+              barber,
+              service
+            });
+          }
+        }
+        
+        result.push({
+          ...service,
+          barberServices: barberServicesWithDetails
+        });
+      }
+      
+      return result;
+    }, 30 * 60 * 1000); // 30 minuti
+  }
 
   async createService(service: InsertService): Promise<Service> {
     const [createdService] = await db.insert(services).values(service).returning();
     
     // Invalidiamo la cache dei servizi
     cache.delete('services:all');
+    cache.delete('services:all:with_barbers');
     
     return createdService;
   }
@@ -751,10 +836,178 @@ export class DatabaseStorage implements IStorage {
     // Invalidiamo le cache
     if (service) {
       cache.delete(`service:${id}`);
+      cache.delete(`service:${id}:with_barbers`);
       cache.delete('services:all');
+      cache.delete('services:all:with_barbers');
+      cache.invalidateByTag('barber-service');
     }
     
     return service;
+  }
+  
+  // BarberService methods
+  async getBarberService(id: number): Promise<BarberService | undefined> {
+    // Utilizziamo la cache per il servizio del barbiere, valida per 30 minuti
+    const cacheKey = `barber-service:${id}`;
+    return cache.getOrSet(cacheKey, async () => {
+      const [barberService] = await db.select().from(barberServices).where(eq(barberServices.id, id));
+      return barberService;
+    }, {
+      ttlMs: 30 * 60 * 1000, // 30 minuti
+      tags: ['barber-service']
+    });
+  }
+  
+  async getBarberServiceWithDetails(id: number): Promise<BarberServiceWithDetails | undefined> {
+    // Utilizziamo la cache per il servizio del barbiere con dettagli, valida per 30 minuti
+    const cacheKey = `barber-service:${id}:with_details`;
+    return cache.getOrSet(cacheKey, async () => {
+      const [barberService] = await db.select().from(barberServices).where(eq(barberServices.id, id));
+      
+      if (!barberService) return undefined;
+      
+      const [barber] = await db.select().from(users).where(eq(users.id, barberService.barberId));
+      const [service] = await db.select().from(services).where(eq(services.id, barberService.serviceId));
+      
+      if (!barber || !service) return undefined;
+      
+      return {
+        ...barberService,
+        barber,
+        service
+      };
+    }, {
+      ttlMs: 30 * 60 * 1000, // 30 minuti
+      tags: ['barber-service']
+    });
+  }
+  
+  async getBarberServicesByBarberId(barberId: number): Promise<BarberServiceWithDetails[]> {
+    // Utilizziamo la cache per i servizi del barbiere, valida per 30 minuti
+    const cacheKey = `barber:${barberId}:services`;
+    return cache.getOrSet(cacheKey, async () => {
+      const barberServicesList = await db.select()
+        .from(barberServices)
+        .where(eq(barberServices.barberId, barberId));
+        
+      const result: BarberServiceWithDetails[] = [];
+      
+      for (const bs of barberServicesList) {
+        const [barber] = await db.select().from(users).where(eq(users.id, bs.barberId));
+        const [service] = await db.select().from(services).where(eq(services.id, bs.serviceId));
+        
+        if (barber && service) {
+          result.push({
+            ...bs,
+            barber,
+            service
+          });
+        }
+      }
+      
+      return result;
+    }, {
+      ttlMs: 30 * 60 * 1000, // 30 minuti
+      tags: ['barber-service']
+    });
+  }
+  
+  async getBarberServicesByServiceId(serviceId: number): Promise<BarberServiceWithDetails[]> {
+    // Utilizziamo la cache per i barbieri che offrono un servizio, valida per 30 minuti
+    const cacheKey = `service:${serviceId}:barbers`;
+    return cache.getOrSet(cacheKey, async () => {
+      const barberServicesList = await db.select()
+        .from(barberServices)
+        .where(eq(barberServices.serviceId, serviceId));
+        
+      const result: BarberServiceWithDetails[] = [];
+      
+      for (const bs of barberServicesList) {
+        const [barber] = await db.select().from(users).where(eq(users.id, bs.barberId));
+        const [service] = await db.select().from(services).where(eq(services.id, bs.serviceId));
+        
+        if (barber && service) {
+          result.push({
+            ...bs,
+            barber,
+            service
+          });
+        }
+      }
+      
+      return result;
+    }, {
+      ttlMs: 30 * 60 * 1000, // 30 minuti
+      tags: ['barber-service']
+    });
+  }
+  
+  async createBarberService(barberService: InsertBarberService): Promise<BarberService> {
+    const [createdBarberService] = await db.insert(barberServices).values(barberService).returning();
+    
+    // Invalidiamo le cache correlate
+    cache.invalidateByTag('barber-service');
+    cache.delete(`barber:${barberService.barberId}:services`);
+    cache.delete(`service:${barberService.serviceId}:barbers`);
+    cache.delete(`service:${barberService.serviceId}:with_barbers`);
+    cache.delete('services:all:with_barbers');
+    
+    return createdBarberService;
+  }
+  
+  async updateBarberService(id: number, barberServiceUpdate: Partial<InsertBarberService>): Promise<BarberService | undefined> {
+    // Prima otteniamo il record originale per conoscere barberId e serviceId
+    const [originalBarberService] = await db.select().from(barberServices).where(eq(barberServices.id, id));
+    
+    if (!originalBarberService) return undefined;
+    
+    const [barberService] = await db
+      .update(barberServices)
+      .set(barberServiceUpdate)
+      .where(eq(barberServices.id, id))
+      .returning();
+    
+    // Invalidiamo le cache correlate
+    if (barberService) {
+      cache.delete(`barber-service:${id}`);
+      cache.delete(`barber-service:${id}:with_details`);
+      cache.delete(`barber:${originalBarberService.barberId}:services`);
+      cache.delete(`service:${originalBarberService.serviceId}:barbers`);
+      cache.delete(`service:${originalBarberService.serviceId}:with_barbers`);
+      cache.delete('services:all:with_barbers');
+      cache.invalidateByTag('barber-service');
+      
+      // Se è cambiato il barberId o il serviceId, invalidiamo anche le nuove cache correlate
+      if (barberServiceUpdate.barberId && barberServiceUpdate.barberId !== originalBarberService.barberId) {
+        cache.delete(`barber:${barberServiceUpdate.barberId}:services`);
+      }
+      if (barberServiceUpdate.serviceId && barberServiceUpdate.serviceId !== originalBarberService.serviceId) {
+        cache.delete(`service:${barberServiceUpdate.serviceId}:barbers`);
+        cache.delete(`service:${barberServiceUpdate.serviceId}:with_barbers`);
+      }
+    }
+    
+    return barberService;
+  }
+  
+  async deleteBarberService(id: number): Promise<boolean> {
+    // Prima otteniamo il record per conoscere barberId e serviceId
+    const [barberService] = await db.select().from(barberServices).where(eq(barberServices.id, id));
+    
+    if (!barberService) return false;
+    
+    const result = await db.delete(barberServices).where(eq(barberServices.id, id));
+    
+    // Invalidiamo le cache correlate
+    cache.delete(`barber-service:${id}`);
+    cache.delete(`barber-service:${id}:with_details`);
+    cache.delete(`barber:${barberService.barberId}:services`);
+    cache.delete(`service:${barberService.serviceId}:barbers`);
+    cache.delete(`service:${barberService.serviceId}:with_barbers`);
+    cache.delete('services:all:with_barbers');
+    cache.invalidateByTag('barber-service');
+    
+    return result.count > 0;
   }
 
   async deleteService(id: number): Promise<boolean> {

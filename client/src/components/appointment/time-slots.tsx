@@ -141,15 +141,16 @@ export default function TimeSlots({
       return [];
     }
   };
+  
+  // Versione sicura di getDayBreaks per l'uso interno nei rendering che restituisce un array vuoto invece di null
+  const getSafeBreaks = () => {
+    return getDayBreaks() || [];
+  };
 
   // Check if a time slot is a break
   const isBreak = (time: Date) => {
     const formattedTime = format(time, 'HH:mm');
-    const dayBreaks = getDayBreaks();
-    
-    if (!dayBreaks || !Array.isArray(dayBreaks) || dayBreaks.length === 0) {
-      return false;
-    }
+    const dayBreaks = getSafeBreaks();
     
     return dayBreaks.some(breakSlot => {
       if (!breakSlot || typeof breakSlot !== 'object') return false;
@@ -303,7 +304,7 @@ export default function TimeSlots({
               if (isBreakOrLunch && onBreakClick) {
                 // Troviamo la pausa corrispondente
                 const time = formatTime(timeSlot);
-                const dayBreaks = getDayBreaks();
+                const dayBreaks = getSafeBreaks();
                 const breakSlot = dayBreaks.find(b => 
                   time >= b.start && time < b.end
                 );

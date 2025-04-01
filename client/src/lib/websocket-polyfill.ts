@@ -30,6 +30,22 @@ export function getValidWebSocketUrl(): string {
       throw new Error(`Host invalido nel documento: ${host}`);
     }
     
+    // Per Replit, aggiungiamo controlli specifici all'host
+    if (host.includes('replit.dev') || host.includes('replit.app')) {
+      // Costruisci l'URL WebSocket con un endpoint stabile per Replit
+      const wsUrl = `${protocol}//${host}/ws`;
+      console.log('WebSocket URL per Replit costruito correttamente:', wsUrl);
+      return wsUrl;
+    }
+    
+    // Per ambienti locali di sviluppo
+    if (host.includes('localhost')) {
+      const port = documentUrl.port || (protocol === 'wss:' ? '443' : '80');
+      const wsUrl = `${protocol}//localhost:${port}/ws`;
+      console.log('WebSocket URL localhost costruito correttamente:', wsUrl);
+      return wsUrl;
+    }
+    
     // Costruisci l'URL WebSocket con un endpoint stabile
     const wsUrl = `${protocol}//${host}/ws`;
     console.log('WebSocket URL costruito correttamente:', wsUrl);

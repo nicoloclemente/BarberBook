@@ -52,7 +52,8 @@ export const userRelations = relations(users, ({ many, one }) => ({
   preferredBarber: one(users, {
     fields: [users.preferredBarberId],
     references: [users.id],
-  })
+  }),
+  barberServices: many(barberServices)
 }));
 
 export const insertUserSchema = createInsertSchema(users)
@@ -84,7 +85,12 @@ export const services = pgTable("services", {
   price: integer("price").notNull(), // stored in cents
   duration: integer("duration").notNull(), // stored in minutes
   imageUrl: text("image_url"),
+  isGeneric: boolean("is_generic").default(true).notNull(), // true se il servizio è generico, false se è specifico di un barbiere
 });
+
+export const serviceRelations = relations(services, ({ many }) => ({
+  barberServices: many(barberServices)
+}));
 
 export const insertServiceSchema = createInsertSchema(services)
   .pick({
@@ -93,10 +99,44 @@ export const insertServiceSchema = createInsertSchema(services)
     price: true,
     duration: true,
     imageUrl: true,
+    isGeneric: true,
   });
 
 export type InsertService = z.infer<typeof insertServiceSchema>;
 export type Service = typeof services.$inferSelect;
+
+// Tabella per associare barbieri a servizi
+export const barberServices = pgTable("barber_services", {
+  id: serial("id").primaryKey(),
+  barberId: integer("barber_id").notNull().references(() => users.id),
+  serviceId: integer("service_id").notNull().references(() => services.id),
+  price: integer("price"), // Prezzo specifico del barbiere (override), stored in cents
+  duration: integer("duration"), // Durata specifica del barbiere (override), stored in minutes
+  isActive: boolean("is_active").default(true).notNull(), // Se il servizio è attualmente offerto dal barbiere
+});
+
+export const barberServiceRelations = relations(barberServices, ({ one }) => ({
+  barber: one(users, {
+    fields: [barberServices.barberId],
+    references: [users.id],
+  }),
+  service: one(services, {
+    fields: [barberServices.serviceId],
+    references: [services.id],
+  }),
+}));
+
+export const insertBarberServiceSchema = createInsertSchema(barberServices)
+  .pick({
+    barberId: true,
+    serviceId: true,
+    price: true,
+    duration: true,
+    isActive: true,
+  });
+
+export type InsertBarberService = z.infer<typeof insertBarberServiceSchema>;
+export type BarberService = typeof barberServices.$inferSelect;
 
 export const appointments = pgTable("appointments", {
   id: serial("id").primaryKey(),
@@ -262,6 +302,15 @@ export type ReviewWithDetails = Review & {
   client: User;
   barber: User;
   appointment: Appointment;
+};
+
+export type BarberServiceWithDetails = BarberService & {
+  barber: User;
+  service: Service;
+};
+
+export type ServiceWithBarbers = Service & {
+  barberServices: BarberServiceWithDetails[];
 };
 
 // Tipo di notifica

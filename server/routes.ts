@@ -11,6 +11,7 @@ import {
   insertStatisticsSchema,
   insertUserSchema,
   insertNotificationSchema,
+  insertBarberServiceSchema,
   UserRole
 } from "@shared/schema";
 import { notificationService } from "./notification-service";
@@ -102,6 +103,225 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
 
     res.status(204).end();
+  });
+  
+  // API per i servizi con le associazioni ai barbieri
+  app.get("/api/services-with-barbers", async (req, res) => {
+    try {
+      const servicesWithBarbers = await storage.getAllServicesWithBarbers();
+      res.json(servicesWithBarbers);
+    } catch (error) {
+      console.error("Error getting services with barbers:", error);
+      res.status(500).json({ error: "Failed to get services with barbers" });
+    }
+  });
+  
+  app.get("/api/services/:id/with-barbers", async (req, res) => {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      return res.status(400).json({ error: "Invalid service ID" });
+    }
+    
+    try {
+      const serviceWithBarbers = await storage.getServiceWithBarbers(id);
+      if (!serviceWithBarbers) {
+        return res.status(404).json({ error: "Service not found" });
+      }
+      
+      res.json(serviceWithBarbers);
+    } catch (error) {
+      console.error("Error getting service with barbers:", error);
+      res.status(500).json({ error: "Failed to get service with barbers" });
+    }
+  });
+  
+  // API per le associazioni barbiere-servizio (BarberService)
+  app.get("/api/barber-services", async (req, res) => {
+    try {
+      const barberId = req.query.barberId ? parseInt(req.query.barberId as string) : undefined;
+      const serviceId = req.query.serviceId ? parseInt(req.query.serviceId as string) : undefined;
+      
+      if (barberId && isNaN(barberId)) {
+        return res.status(400).json({ error: "Invalid barber ID" });
+      }
+      
+      if (serviceId && isNaN(serviceId)) {
+        return res.status(400).json({ error: "Invalid service ID" });
+      }
+      
+      let barberServices = [];
+      
+      if (barberId) {
+        barberServices = await storage.getBarberServicesByBarberId(barberId);
+      } else if (serviceId) {
+        barberServices = await storage.getBarberServicesByServiceId(serviceId);
+      } else {
+        // Se non viene specificato né barberId né serviceId, ritorna un errore
+        return res.status(400).json({ error: "Missing barberId or serviceId parameter" });
+      }
+      
+      res.json(barberServices);
+    } catch (error) {
+      console.error("Error getting barber services:", error);
+      res.status(500).json({ error: "Failed to get barber services" });
+    }
+  });
+  
+  app.get("/api/barber-services/:id", async (req, res) => {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      return res.status(400).json({ error: "Invalid barber service ID" });
+    }
+    
+    try {
+      const barberService = await storage.getBarberServiceWithDetails(id);
+      if (!barberService) {
+        return res.status(404).json({ error: "Barber service not found" });
+      }
+      
+      res.json(barberService);
+    } catch (error) {
+      console.error("Error getting barber service:", error);
+      res.status(500).json({ error: "Failed to get barber service" });
+    }
+  });
+  
+  app.post("/api/barber-services", async (req, res) => {
+    // Richiede autenticazione come admin o barbiere
+    if (!req.isAuthenticated() || (req.user!.role !== UserRole.ADMIN && req.user!.role !== UserRole.BARBER)) {
+      return res.status(403).json({ error: "Unauthorized. Only admins and barbers can create barber services" });
+    }
+    
+    try {
+      const barberServiceData = insertBarberServiceSchema.parse(req.body);
+      
+      // Se l'utente è un barbiere, può associare solo se stesso ai servizi
+      if (req.user!.role === UserRole.BARBER && barberServiceData.barberId !== req.user!.id) {
+        return res.status(403).json({ error: "Barbers can only associate themselves with services" });
+      }
+      
+      // Verifica che il barbiere esista
+      const barber = await storage.getUser(barberServiceData.barberId);
+      if (!barber || barber.role !== UserRole.BARBER) {
+        return res.status(400).json({ error: "Invalid barber ID or user is not a barber" });
+      }
+      
+      // Verifica che il servizio esista
+      const service = await storage.getService(barberServiceData.serviceId);
+      if (!service) {
+        return res.status(400).json({ error: "Invalid service ID" });
+      }
+      
+      const barberService = await storage.createBarberService(barberServiceData);
+      res.status(201).json(barberService);
+    } catch (error) {
+      if (error instanceof ZodError) {
+        const validationError = fromZodError(error);
+        res.status(400).json({ error: validationError.message });
+      } else {
+        console.error("Error creating barber service:", error);
+        res.status(500).json({ error: "Failed to create barber service" });
+      }
+    }
+  });
+  
+  app.put("/api/barber-services/:id", async (req, res) => {
+    // Richiede autenticazione come admin o barbiere
+    if (!req.isAuthenticated() || (req.user!.role !== UserRole.ADMIN && req.user!.role !== UserRole.BARBER)) {
+      return res.status(403).json({ error: "Unauthorized. Only admins and barbers can update barber services" });
+    }
+    
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      return res.status(400).json({ error: "Invalid barber service ID" });
+    }
+    
+    try {
+      // Prima otteniamo il barber service esistente per verificare i permessi
+      const existingBarberService = await storage.getBarberService(id);
+      if (!existingBarberService) {
+        return res.status(404).json({ error: "Barber service not found" });
+      }
+      
+      // Se l'utente è un barbiere, può modificare solo le proprie associazioni
+      if (req.user!.role === UserRole.BARBER && existingBarberService.barberId !== req.user!.id) {
+        return res.status(403).json({ error: "Barbers can only update their own service associations" });
+      }
+      
+      const barberServiceData = insertBarberServiceSchema.partial().parse(req.body);
+      
+      // Se è specificato barberId, verifica che il barbiere esista
+      if (barberServiceData.barberId !== undefined) {
+        // Se l'utente è un barbiere, può associare solo se stesso ai servizi
+        if (req.user!.role === UserRole.BARBER && barberServiceData.barberId !== req.user!.id) {
+          return res.status(403).json({ error: "Barbers can only associate themselves with services" });
+        }
+        
+        const barber = await storage.getUser(barberServiceData.barberId);
+        if (!barber || barber.role !== UserRole.BARBER) {
+          return res.status(400).json({ error: "Invalid barber ID or user is not a barber" });
+        }
+      }
+      
+      // Se è specificato serviceId, verifica che il servizio esista
+      if (barberServiceData.serviceId !== undefined) {
+        const service = await storage.getService(barberServiceData.serviceId);
+        if (!service) {
+          return res.status(400).json({ error: "Invalid service ID" });
+        }
+      }
+      
+      const updatedBarberService = await storage.updateBarberService(id, barberServiceData);
+      
+      if (!updatedBarberService) {
+        return res.status(404).json({ error: "Barber service not found" });
+      }
+      
+      res.json(updatedBarberService);
+    } catch (error) {
+      if (error instanceof ZodError) {
+        const validationError = fromZodError(error);
+        res.status(400).json({ error: validationError.message });
+      } else {
+        console.error("Error updating barber service:", error);
+        res.status(500).json({ error: "Failed to update barber service" });
+      }
+    }
+  });
+  
+  app.delete("/api/barber-services/:id", async (req, res) => {
+    // Richiede autenticazione come admin o barbiere
+    if (!req.isAuthenticated() || (req.user!.role !== UserRole.ADMIN && req.user!.role !== UserRole.BARBER)) {
+      return res.status(403).json({ error: "Unauthorized. Only admins and barbers can delete barber services" });
+    }
+    
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      return res.status(400).json({ error: "Invalid barber service ID" });
+    }
+    
+    try {
+      // Prima otteniamo il barber service esistente per verificare i permessi
+      const existingBarberService = await storage.getBarberService(id);
+      if (!existingBarberService) {
+        return res.status(404).json({ error: "Barber service not found" });
+      }
+      
+      // Se l'utente è un barbiere, può eliminare solo le proprie associazioni
+      if (req.user!.role === UserRole.BARBER && existingBarberService.barberId !== req.user!.id) {
+        return res.status(403).json({ error: "Barbers can only delete their own service associations" });
+      }
+      
+      const deleted = await storage.deleteBarberService(id);
+      if (!deleted) {
+        return res.status(404).json({ error: "Barber service not found" });
+      }
+      
+      res.status(204).end();
+    } catch (error) {
+      console.error("Error deleting barber service:", error);
+      res.status(500).json({ error: "Failed to delete barber service" });
+    }
   });
 
   // Appointments Routes
