@@ -81,52 +81,54 @@ export default function AuthPage() {
       {/* Hero section */}
       <div className="bg-black text-white py-10 px-6 flex flex-col justify-center lg:w-1/2">
         <div className="max-w-xl mx-auto">
-          <div className="flex items-center space-x-3 mb-8">
-            <div className="bg-white/10 p-2 rounded-full">
-              <Scissors className="h-7 w-7" />
+          <div className="flex items-center space-x-4 mb-8">
+            <div className="bg-white p-2.5 rounded-full">
+              <Scissors className="h-7 w-7 text-black" />
             </div>
-            <h1 className="text-2xl font-bold tracking-tight">BarberBook</h1>
+            <h1 className="text-3xl font-bold tracking-tight text-white">BarberBook</h1>
           </div>
-          <h2 className="text-4xl font-bold mb-6 leading-tight">L'arte della barba e del taglio in formato digitale</h2>
+          <h2 className="text-4xl font-bold mb-8 leading-tight text-white">
+            L'arte della barba e del taglio in formato digitale
+          </h2>
           <p className="text-xl text-white mb-10 leading-relaxed">
             Una piattaforma elegante per gestire il tuo salone, prenotazioni e clienti con stile e professionalità.
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-10">
-            <div className="bg-white/10 p-6 rounded-lg border border-white/20 hover:bg-white/15 transition-colors">
-              <h3 className="font-semibold text-xl mb-4 flex items-center">
+            <div className="bg-white p-6 rounded-lg hover:bg-white/95 transition-colors">
+              <h3 className="font-bold text-xl mb-5 text-black">
                 Per Barbieri
               </h3>
               <ul className="space-y-4">
                 <li className="flex items-center">
-                  <span className="mr-2.5 text-white font-bold">—</span> 
-                  <span className="text-white text-base">Gestione calendario</span>
+                  <span className="mr-2.5 text-black font-bold">—</span> 
+                  <span className="text-black text-base">Gestione calendario</span>
                 </li>
                 <li className="flex items-center">
-                  <span className="mr-2.5 text-white font-bold">—</span> 
-                  <span className="text-white text-base">Inserimento clienti</span>
+                  <span className="mr-2.5 text-black font-bold">—</span> 
+                  <span className="text-black text-base">Inserimento clienti</span>
                 </li>
                 <li className="flex items-center">
-                  <span className="mr-2.5 text-white font-bold">—</span> 
-                  <span className="text-white text-base">Chat con i clienti</span>
+                  <span className="mr-2.5 text-black font-bold">—</span> 
+                  <span className="text-black text-base">Chat con i clienti</span>
                 </li>
               </ul>
             </div>
-            <div className="bg-white/10 p-6 rounded-lg border border-white/20 hover:bg-white/15 transition-colors">
-              <h3 className="font-semibold text-xl mb-4 flex items-center">
+            <div className="bg-white p-6 rounded-lg hover:bg-white/95 transition-colors">
+              <h3 className="font-bold text-xl mb-5 text-black">
                 Per Clienti
               </h3>
               <ul className="space-y-4">
                 <li className="flex items-center">
-                  <span className="mr-2.5 text-white font-bold">—</span>
-                  <span className="text-white text-base">Prenotazione semplice</span>
+                  <span className="mr-2.5 text-black font-bold">—</span>
+                  <span className="text-black text-base">Prenotazione semplice</span>
                 </li>
                 <li className="flex items-center">
-                  <span className="mr-2.5 text-white font-bold">—</span>
-                  <span className="text-white text-base">Notifiche appuntamenti</span>
+                  <span className="mr-2.5 text-black font-bold">—</span>
+                  <span className="text-black text-base">Notifiche appuntamenti</span>
                 </li>
                 <li className="flex items-center">
-                  <span className="mr-2.5 text-white font-bold">—</span>
-                  <span className="text-white text-base">Comunicazione diretta</span>
+                  <span className="mr-2.5 text-black font-bold">—</span>
+                  <span className="text-black text-base">Comunicazione diretta</span>
                 </li>
               </ul>
             </div>
