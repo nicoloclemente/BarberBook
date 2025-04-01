@@ -60,14 +60,31 @@ export default function TimeSlots({
 
   // Get breaks for the selected date
   const getDayBreaks = () => {
-    if (!breaks || !Array.isArray(breaks)) {
-      return [];
-    }
+    // Verifiche di sicurezza più robuste
+    if (!breaks) return [];
+    if (!Array.isArray(breaks)) return [];
+    if (breaks.length === 0) return [];
+    if (!selectedDate) return [];
+    
+    // Formatta la data per la comparazione
     const formattedDate = formatISO(selectedDate, { representation: 'date' });
-    // Proteggiamo da errori null/undefined con maggiore sicurezza
+    
     try {
-      const dayBreaks = breaks.find(b => b && b.date === formattedDate);
-      return (dayBreaks && dayBreaks.slots) ? dayBreaks.slots : [];
+      // Cerca la pausa del giorno selezionato con controlli di sicurezza extra
+      const dayBreaks = breaks.find(b => {
+        // Verifica che l'elemento sia valido e abbia una proprietà date
+        return b && typeof b === 'object' && 'date' in b && b.date === formattedDate;
+      });
+      
+      // Verifica che dayBreaks esista, sia un oggetto e abbia la proprietà slots come array
+      if (dayBreaks && 
+          typeof dayBreaks === 'object' && 
+          'slots' in dayBreaks && 
+          Array.isArray(dayBreaks.slots)) {
+        return dayBreaks.slots;
+      }
+      
+      return [];
     } catch (error) {
       console.error("Errore nel recupero delle pause:", error);
       return [];

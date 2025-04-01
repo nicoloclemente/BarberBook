@@ -4,9 +4,10 @@ import type {
   ToastActionElement,
   ToastProps,
 } from "@/components/ui/toast"
+import { hapticFeedback } from "@/lib/utils"
 
-const TOAST_LIMIT = 1
-const TOAST_REMOVE_DELAY = 1000000
+const TOAST_LIMIT = 3
+const TOAST_REMOVE_DELAY = 5000
 
 type ToasterToast = ToastProps & {
   id: string
@@ -148,6 +149,17 @@ function toast({ ...props }: Toast) {
       toast: { ...props, id },
     })
   const dismiss = () => dispatch({ type: "DISMISS_TOAST", toastId: id })
+
+  // Aggiungi feedback tattile in base alla variante del toast
+  const variant = props.variant as string | undefined;
+  
+  if (variant === "destructive") {
+    hapticFeedback("error");
+  } else if (variant === "default" || !variant) {
+    hapticFeedback("success");
+  } else {
+    hapticFeedback("light");
+  }
 
   dispatch({
     type: "ADD_TOAST",
