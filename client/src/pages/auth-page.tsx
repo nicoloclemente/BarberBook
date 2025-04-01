@@ -88,39 +88,45 @@ export default function AuthPage() {
             <h1 className="text-2xl font-bold tracking-tight">BarberBook</h1>
           </div>
           <h2 className="text-4xl font-bold mb-6 leading-tight">L'arte della barba e del taglio in formato digitale</h2>
-          <p className="text-lg opacity-80 mb-10 leading-relaxed">
+          <p className="text-xl text-white mb-10 leading-relaxed">
             Una piattaforma elegante per gestire il tuo salone, prenotazioni e clienti con stile e professionalità.
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-10">
-            <div className="bg-white/5 p-6 rounded-lg border border-white/10 hover:bg-white/10 transition-colors">
-              <h3 className="font-semibold text-lg mb-4 flex items-center">
-                <span className="mr-2 text-lg">✂️</span> Per Barbieri
+            <div className="bg-white/10 p-6 rounded-lg border border-white/20 hover:bg-white/15 transition-colors">
+              <h3 className="font-semibold text-xl mb-4 flex items-center">
+                Per Barbieri
               </h3>
-              <ul className="space-y-3">
-                <li className="flex items-center text-white/80">
-                  <span className="mr-2.5 text-white">•</span> Gestione calendario
+              <ul className="space-y-4">
+                <li className="flex items-center">
+                  <span className="mr-2.5 text-white font-bold">—</span> 
+                  <span className="text-white text-base">Gestione calendario</span>
                 </li>
-                <li className="flex items-center text-white/80">
-                  <span className="mr-2.5 text-white">•</span> Inserimento clienti
+                <li className="flex items-center">
+                  <span className="mr-2.5 text-white font-bold">—</span> 
+                  <span className="text-white text-base">Inserimento clienti</span>
                 </li>
-                <li className="flex items-center text-white/80">
-                  <span className="mr-2.5 text-white">•</span> Chat con i clienti
+                <li className="flex items-center">
+                  <span className="mr-2.5 text-white font-bold">—</span> 
+                  <span className="text-white text-base">Chat con i clienti</span>
                 </li>
               </ul>
             </div>
-            <div className="bg-white/5 p-6 rounded-lg border border-white/10 hover:bg-white/10 transition-colors">
-              <h3 className="font-semibold text-lg mb-4 flex items-center">
-                <span className="mr-2 text-lg">👤</span> Per Clienti
+            <div className="bg-white/10 p-6 rounded-lg border border-white/20 hover:bg-white/15 transition-colors">
+              <h3 className="font-semibold text-xl mb-4 flex items-center">
+                Per Clienti
               </h3>
-              <ul className="space-y-3">
-                <li className="flex items-center text-white/80">
-                  <span className="mr-2.5 text-white">•</span> Prenotazione semplice
+              <ul className="space-y-4">
+                <li className="flex items-center">
+                  <span className="mr-2.5 text-white font-bold">—</span>
+                  <span className="text-white text-base">Prenotazione semplice</span>
                 </li>
-                <li className="flex items-center text-white/80">
-                  <span className="mr-2.5 text-white">•</span> Notifiche appuntamenti
+                <li className="flex items-center">
+                  <span className="mr-2.5 text-white font-bold">—</span>
+                  <span className="text-white text-base">Notifiche appuntamenti</span>
                 </li>
-                <li className="flex items-center text-white/80">
-                  <span className="mr-2.5 text-white">•</span> Comunicazione diretta
+                <li className="flex items-center">
+                  <span className="mr-2.5 text-white font-bold">—</span>
+                  <span className="text-white text-base">Comunicazione diretta</span>
                 </li>
               </ul>
             </div>
