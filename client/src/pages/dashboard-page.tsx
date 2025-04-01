@@ -38,13 +38,13 @@ export default function DashboardPage() {
   const isManager = user?.isManager;
   
   // Verifica se un barbiere dipendente è già associato a un manager
-  const isEmployeeBarber = user?.role === UserRole.BARBER && !user?.isManager;
+  const isEmployeeBarber = user?.role === UserRole.BARBER && user?.isManager === false;
   const isAssignedToManager = isEmployeeBarber && user?.managerId !== null;
   
   // Debug per vedere i valori
   console.log("User info:", user);
-  console.log("Is employee barber:", isEmployeeBarber);
-  console.log("Is assigned to manager:", isAssignedToManager);
+  console.log("Is employee barber:", isEmployeeBarber, "Role:", user?.role, "isManager:", user?.isManager);
+  console.log("Is assigned to manager:", isAssignedToManager, "managerId:", user?.managerId);
 
   // Query per gli appuntamenti
   const { data: appointments = [], isLoading, refetch } = useQuery<AppointmentWithDetails[]>({

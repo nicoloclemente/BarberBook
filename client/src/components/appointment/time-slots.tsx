@@ -117,6 +117,8 @@ export default function TimeSlots({
     if (breaks.length === 0) return [];
     if (!selectedDate) return [];
     
+    console.log("TimeSlots - breaks:", breaks);
+    
     // Formatta la data per la comparazione
     const formattedDate = formatISO(selectedDate, { representation: 'date' });
     
