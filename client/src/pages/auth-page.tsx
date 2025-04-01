@@ -77,44 +77,50 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col lg:flex-row">
+    <div className="min-h-screen flex flex-col lg:flex-row">
       {/* Hero section */}
-      <div className="bg-primary text-white py-10 px-6 flex flex-col justify-center lg:w-1/2">
+      <div className="bg-black text-white py-10 px-6 flex flex-col justify-center lg:w-1/2">
         <div className="max-w-xl mx-auto">
-          <div className="flex items-center space-x-3 mb-6">
-            <Scissors className="h-8 w-8" />
-            <h1 className="text-2xl font-medium tracking-tight">BarberBook</h1>
+          <div className="flex items-center space-x-3 mb-8">
+            <div className="bg-white/10 p-2 rounded-full">
+              <Scissors className="h-7 w-7" />
+            </div>
+            <h1 className="text-2xl font-bold tracking-tight">BarberBook</h1>
           </div>
-          <h2 className="text-3xl font-medium mb-4">Gestisci il tuo salone da barbiere in modo efficiente</h2>
-          <p className="text-lg opacity-90 mb-8">
-            Prenota appuntamenti, gestisci clienti, organizza il tuo calendario e comunica facilmente con i tuoi clienti.
+          <h2 className="text-4xl font-bold mb-6 leading-tight">L'arte della barba e del taglio in formato digitale</h2>
+          <p className="text-lg opacity-80 mb-10 leading-relaxed">
+            Una piattaforma elegante per gestire il tuo salone, prenotazioni e clienti con stile e professionalità.
           </p>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mt-8">
-            <div className="bg-white/10 p-5 rounded-md shadow-sm">
-              <h3 className="font-medium text-lg mb-3">Per Barbieri</h3>
-              <ul className="space-y-2.5">
-                <li className="flex items-center">
-                  <span className="mr-2.5 text-primary-foreground">✓</span> Gestione calendario
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-10">
+            <div className="bg-white/5 p-6 rounded-lg border border-white/10 hover:bg-white/10 transition-colors">
+              <h3 className="font-semibold text-lg mb-4 flex items-center">
+                <span className="mr-2 text-lg">✂️</span> Per Barbieri
+              </h3>
+              <ul className="space-y-3">
+                <li className="flex items-center text-white/80">
+                  <span className="mr-2.5 text-white">•</span> Gestione calendario
                 </li>
-                <li className="flex items-center">
-                  <span className="mr-2.5 text-primary-foreground">✓</span> Inserimento clienti
+                <li className="flex items-center text-white/80">
+                  <span className="mr-2.5 text-white">•</span> Inserimento clienti
                 </li>
-                <li className="flex items-center">
-                  <span className="mr-2.5 text-primary-foreground">✓</span> Chat con i clienti
+                <li className="flex items-center text-white/80">
+                  <span className="mr-2.5 text-white">•</span> Chat con i clienti
                 </li>
               </ul>
             </div>
-            <div className="bg-white/10 p-5 rounded-md shadow-sm">
-              <h3 className="font-medium text-lg mb-3">Per Clienti</h3>
-              <ul className="space-y-2.5">
-                <li className="flex items-center">
-                  <span className="mr-2.5 text-primary-foreground">✓</span> Prenotazione semplice
+            <div className="bg-white/5 p-6 rounded-lg border border-white/10 hover:bg-white/10 transition-colors">
+              <h3 className="font-semibold text-lg mb-4 flex items-center">
+                <span className="mr-2 text-lg">👤</span> Per Clienti
+              </h3>
+              <ul className="space-y-3">
+                <li className="flex items-center text-white/80">
+                  <span className="mr-2.5 text-white">•</span> Prenotazione semplice
                 </li>
-                <li className="flex items-center">
-                  <span className="mr-2.5 text-primary-foreground">✓</span> Notifiche appuntamenti
+                <li className="flex items-center text-white/80">
+                  <span className="mr-2.5 text-white">•</span> Notifiche appuntamenti
                 </li>
-                <li className="flex items-center">
-                  <span className="mr-2.5 text-primary-foreground">✓</span> Comunicazione diretta
+                <li className="flex items-center text-white/80">
+                  <span className="mr-2.5 text-white">•</span> Comunicazione diretta
                 </li>
               </ul>
             </div>
@@ -123,33 +129,38 @@ export default function AuthPage() {
       </div>
 
       {/* Auth forms */}
-      <div className="flex items-center justify-center p-6 lg:p-8 lg:w-1/2">
-        <Card className="w-full max-w-md shadow-md border-0">
+      <div className="flex items-center justify-center p-6 lg:p-8 lg:w-1/2 bg-white">
+        <Card className="w-full max-w-md shadow-xl border-0 bg-white">
           <CardHeader className="pb-3">
-            <CardTitle className="text-xl text-center">Benvenuto su BarberBook</CardTitle>
-            <CardDescription className="text-center text-sm">
-              Accedi o registrati per iniziare a usare l'applicazione
+            <div className="flex justify-center mb-3">
+              <div className="rounded-full bg-black p-2.5">
+                <Scissors className="h-6 w-6 text-white" />
+              </div>
+            </div>
+            <CardTitle className="text-2xl font-bold text-center text-black">Benvenuto</CardTitle>
+            <CardDescription className="text-center text-gray-500 mt-2">
+              Accedi o registrati per gestire il tuo salone
             </CardDescription>
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="login" value={activeTab} onValueChange={handleTabChange}>
-              <TabsList className="grid w-full grid-cols-2 mb-5">
-                <TabsTrigger value="login" type="button">Accedi</TabsTrigger>
-                <TabsTrigger value="register" type="button">Registrati</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-2 mb-8 bg-gray-100">
+                <TabsTrigger value="login" type="button" className="font-medium">Accedi</TabsTrigger>
+                <TabsTrigger value="register" type="button" className="font-medium">Registrati</TabsTrigger>
               </TabsList>
 
               <TabsContent value="login">
                 <Form {...loginForm}>
-                  <form onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-4 py-2">
+                  <form onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-5 py-2">
                     <FormField
                       control={loginForm.control}
                       name="username"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-sm">Username</FormLabel>
+                          <FormLabel className="text-sm font-medium text-gray-700">Username</FormLabel>
                           <FormControl>
                             <Input 
-                              className="h-10 shadow-sm"
+                              className="h-11 border-gray-200 bg-gray-50/50 focus:bg-white shadow-sm transition-all rounded-md"
                               placeholder="Inserisci il tuo username" 
                               {...field}
                               disabled={loginMutation.isPending}
@@ -164,12 +175,12 @@ export default function AuthPage() {
                       name="password"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-sm">Password</FormLabel>
+                          <FormLabel className="text-sm font-medium text-gray-700">Password</FormLabel>
                           <FormControl>
                             <Input 
-                              className="h-10 shadow-sm"
+                              className="h-11 border-gray-200 bg-gray-50/50 focus:bg-white shadow-sm transition-all rounded-md"
                               type="password" 
-                              placeholder="Password" 
+                              placeholder="Inserisci la tua password" 
                               {...field}
                               disabled={loginMutation.isPending}
                             />
@@ -180,7 +191,7 @@ export default function AuthPage() {
                     />
                     <Button 
                       type="submit" 
-                      className="w-full mt-6 h-10" 
+                      className="w-full mt-6 h-11 bg-black hover:bg-black/90 text-white font-medium text-[15px] transition-all" 
                       disabled={loginMutation.isPending}
                     >
                       {loginMutation.isPending ? (
@@ -194,17 +205,17 @@ export default function AuthPage() {
 
               <TabsContent value="register">
                 <Form {...registerForm}>
-                  <form onSubmit={registerForm.handleSubmit(onRegisterSubmit)} className="space-y-4 py-2">
+                  <form onSubmit={registerForm.handleSubmit(onRegisterSubmit)} className="space-y-5 py-2">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <FormField
                         control={registerForm.control}
                         name="name"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="text-sm">Nome Completo</FormLabel>
+                            <FormLabel className="text-sm font-medium text-gray-700">Nome Completo</FormLabel>
                             <FormControl>
                               <Input 
-                                className="h-10 shadow-sm"
+                                className="h-11 border-gray-200 bg-gray-50/50 focus:bg-white shadow-sm transition-all rounded-md"
                                 placeholder="Il tuo nome completo" 
                                 {...field}
                                 disabled={registerMutation.isPending}
@@ -219,10 +230,10 @@ export default function AuthPage() {
                         name="username"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="text-sm">Username</FormLabel>
+                            <FormLabel className="text-sm font-medium text-gray-700">Username</FormLabel>
                             <FormControl>
                               <Input 
-                                className="h-10 shadow-sm"
+                                className="h-11 border-gray-200 bg-gray-50/50 focus:bg-white shadow-sm transition-all rounded-md"
                                 placeholder="Crea un username" 
                                 {...field}
                                 disabled={registerMutation.isPending}
@@ -239,16 +250,16 @@ export default function AuthPage() {
                       name="phone"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-sm">Telefono</FormLabel>
+                          <FormLabel className="text-sm font-medium text-gray-700">Telefono</FormLabel>
                           <FormControl>
                             <Input 
-                              className="h-10 shadow-sm"
+                              className="h-11 border-gray-200 bg-gray-50/50 focus:bg-white shadow-sm transition-all rounded-md"
                               placeholder="Numero di telefono (opzionale)" 
                               {...field}
                               disabled={registerMutation.isPending}
                             />
                           </FormControl>
-                          <FormDescription className="text-xs font-normal">
+                          <FormDescription className="text-xs font-normal text-gray-500">
                             Inserisci il numero per essere contattato
                           </FormDescription>
                           <FormMessage className="text-xs font-medium" />
@@ -262,10 +273,10 @@ export default function AuthPage() {
                         name="password"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="text-sm">Password</FormLabel>
+                            <FormLabel className="text-sm font-medium text-gray-700">Password</FormLabel>
                             <FormControl>
                               <Input 
-                                className="h-10 shadow-sm"
+                                className="h-11 border-gray-200 bg-gray-50/50 focus:bg-white shadow-sm transition-all rounded-md"
                                 type="password" 
                                 placeholder="Crea una password" 
                                 {...field}
@@ -281,10 +292,10 @@ export default function AuthPage() {
                         name="confirmPassword"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="text-sm">Conferma Password</FormLabel>
+                            <FormLabel className="text-sm font-medium text-gray-700">Conferma Password</FormLabel>
                             <FormControl>
                               <Input 
-                                className="h-10 shadow-sm"
+                                className="h-11 border-gray-200 bg-gray-50/50 focus:bg-white shadow-sm transition-all rounded-md"
                                 type="password" 
                                 placeholder="Conferma la password" 
                                 {...field}
@@ -301,17 +312,18 @@ export default function AuthPage() {
                       control={registerForm.control}
                       name="isBarber"
                       render={({ field }) => (
-                        <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 mt-2">
+                        <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border border-gray-200 p-4 mt-2 bg-gray-50/50">
                           <FormControl>
                             <Checkbox
                               checked={field.value}
                               onCheckedChange={field.onChange}
                               disabled={registerMutation.isPending}
+                              className="data-[state=checked]:bg-black data-[state=checked]:border-black"
                             />
                           </FormControl>
                           <div className="space-y-1 leading-none">
-                            <FormLabel className="text-sm">Sono un barbiere</FormLabel>
-                            <FormDescription className="text-xs font-normal">
+                            <FormLabel className="text-sm font-medium text-gray-700">Sono un barbiere</FormLabel>
+                            <FormDescription className="text-xs font-normal text-gray-500">
                               Seleziona questa opzione se vuoi gestire un salone
                             </FormDescription>
                           </div>
@@ -320,7 +332,7 @@ export default function AuthPage() {
                     />
                     <Button 
                       type="submit" 
-                      className="w-full mt-4 h-10" 
+                      className="w-full mt-6 h-11 bg-black hover:bg-black/90 text-white font-medium text-[15px] transition-all" 
                       disabled={registerMutation.isPending}
                     >
                       {registerMutation.isPending ? (
@@ -333,14 +345,14 @@ export default function AuthPage() {
               </TabsContent>
             </Tabs>
           </CardContent>
-          <CardFooter className="flex justify-center pt-0 pb-4">
-            <p className="text-xs text-center text-gray-500">
+          <CardFooter className="flex justify-center pt-3 pb-6">
+            <p className="text-sm text-center text-gray-500">
               {activeTab === "login" ? (
                 <>
                   Non hai un account?{" "}
                   <Button 
                     variant="link" 
-                    className="p-0 h-auto text-xs font-medium" 
+                    className="p-0 h-auto text-sm font-medium text-black hover:text-black/80" 
                     onClick={(e) => {
                       e.preventDefault();
                       handleTabChange("register");
@@ -354,7 +366,7 @@ export default function AuthPage() {
                   Hai già un account?{" "}
                   <Button 
                     variant="link" 
-                    className="p-0 h-auto text-xs font-medium" 
+                    className="p-0 h-auto text-sm font-medium text-black hover:text-black/80" 
                     onClick={(e) => {
                       e.preventDefault();
                       handleTabChange("login");
