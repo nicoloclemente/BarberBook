@@ -349,7 +349,7 @@ export default function ProfilePage() {
         </div>
         
         {/* Sezione Orari di Lavoro per i Barbieri */}
-        {isBarber && userInfo?.isApproved && (
+        {isBarber && (
           <div className="mt-8">
             <Tabs defaultValue="schedule" className="w-full">
               <TabsList className="grid w-full max-w-md grid-cols-2">

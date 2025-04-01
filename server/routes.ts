@@ -946,6 +946,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Endpoint per modificare il proprio profilo utente
+  app.patch("/api/me", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    
+    // Ottiene l'ID dell'utente corrente
+    const currentUser = req.user!;
+    const id = currentUser.id;
+    
+    try {
+      // Utilizziamo uno schema parziale per consentire aggiornamenti selettivi
+      const userData = insertUserSchema.partial().parse(req.body);
+      
+      // Non consentire di cambiare campi sensibili
+      delete userData.role;
+      delete userData.isApproved;
+      delete userData.isActive;
+      delete userData.username;
+      delete userData.password;
+      
+      const updatedUser = await storage.updateUser(id, userData);
+      if (!updatedUser) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      
+      res.json(updatedUser);
+    } catch (error) {
+      if (error instanceof ZodError) {
+        const validationError = fromZodError(error);
+        res.status(400).json({ error: validationError.message });
+      } else {
+        res.status(500).json({ error: "Failed to update user" });
+      }
+    }
+  });
+
   app.patch("/api/users/:id", async (req, res) => {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ error: "Not authenticated" });
