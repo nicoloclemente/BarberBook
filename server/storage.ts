@@ -592,14 +592,35 @@ export class DatabaseStorage implements IStorage {
   }
   
   async getBarberEmployees(managerId: number): Promise<User[]> {
+    // Verifichiamo che questo utente sia effettivamente un manager
+    const [manager] = await db.select().from(users).where(
+      and(
+        eq(users.id, managerId),
+        eq(users.isManager, true),
+        eq(users.isBarber, true)
+      )
+    );
+    
+    if (!manager) {
+      return [];
+    }
+    
+    // Eliminiamo la cache per ottenere i risultati più recenti
+    cache.delete(`barber:employees:${managerId}`);
+    
+    // Otteniamo i dipendenti per questo manager
     const cacheKey = `barber:employees:${managerId}`;
     return cache.getOrSet(cacheKey, async () => {
-      return await db.select()
+      console.log(`Cercando dipendenti per manager ID ${managerId}`);
+      const employees = await db.select()
         .from(users)
         .where(and(
           eq(users.managerId, managerId),
           eq(users.isBarber, true)
         ));
+      
+      console.log(`Trovati ${employees.length} dipendenti per manager ID ${managerId}`);
+      return employees;
     }, {
       ttlMs: 5 * 60 * 1000, // 5 minuti
       keyType: 'user'
