@@ -24,6 +24,7 @@ const registerSchema = z.object({
   confirmPassword: z.string(),
   phone: z.string().optional(),
   isBarber: z.boolean().default(false),
+  barberType: z.enum(["independent", "employee"]).optional(),
 }).refine(data => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ["confirmPassword"],
@@ -65,6 +66,7 @@ export default function AuthPage() {
       confirmPassword: "",
       phone: "",
       isBarber: false,
+      barberType: undefined,
     },
   });
 
@@ -324,7 +326,13 @@ export default function AuthPage() {
                           <FormControl>
                             <Checkbox
                               checked={field.value}
-                              onCheckedChange={field.onChange}
+                              onCheckedChange={(checked) => {
+                                field.onChange(checked);
+                                // Reset barberType if isBarber is unchecked
+                                if (!checked) {
+                                  registerForm.setValue("barberType", undefined);
+                                }
+                              }}
                               disabled={registerMutation.isPending}
                               className="data-[state=checked]:bg-black data-[state=checked]:border-black"
                             />
@@ -332,12 +340,62 @@ export default function AuthPage() {
                           <div className="space-y-1 leading-none">
                             <FormLabel className="text-sm font-medium text-gray-700">Sono un barbiere</FormLabel>
                             <FormDescription className="text-xs font-normal text-gray-500">
-                              Seleziona questa opzione se vuoi gestire un salone
+                              Seleziona questa opzione se vuoi gestire un salone o lavorare come barbiere
                             </FormDescription>
                           </div>
                         </FormItem>
                       )}
                     />
+                    
+                    {registerForm.watch("isBarber") && (
+                      <FormField
+                        control={registerForm.control}
+                        name="barberType"
+                        render={({ field }) => (
+                          <FormItem className="rounded-md border border-gray-200 p-4 mt-2 bg-gray-50/50">
+                            <FormLabel className="text-sm font-medium text-gray-700 mb-2 block">Tipo di barbiere</FormLabel>
+                            <div className="space-y-4">
+                              <div className="flex items-center space-x-3">
+                                <FormControl>
+                                  <input
+                                    type="radio"
+                                    checked={field.value === "independent"}
+                                    onChange={() => field.onChange("independent")}
+                                    disabled={registerMutation.isPending}
+                                    className="h-4 w-4 text-black border-gray-300 focus:ring-black"
+                                  />
+                                </FormControl>
+                                <div className="space-y-1 leading-none">
+                                  <FormLabel className="text-sm font-medium text-gray-700">Barbiere indipendente</FormLabel>
+                                  <FormDescription className="text-xs font-normal text-gray-500">
+                                    Gestisci un tuo salone in autonomia. Richiederà approvazione da parte dell'amministratore.
+                                  </FormDescription>
+                                </div>
+                              </div>
+                              
+                              <div className="flex items-center space-x-3">
+                                <FormControl>
+                                  <input
+                                    type="radio"
+                                    checked={field.value === "employee"}
+                                    onChange={() => field.onChange("employee")}
+                                    disabled={registerMutation.isPending}
+                                    className="h-4 w-4 text-black border-gray-300 focus:ring-black"
+                                  />
+                                </FormControl>
+                                <div className="space-y-1 leading-none">
+                                  <FormLabel className="text-sm font-medium text-gray-700">Barbiere dipendente</FormLabel>
+                                  <FormDescription className="text-xs font-normal text-gray-500">
+                                    Lavora come dipendente per un barbiere manager. Comunica il tuo username al tuo manager perché possa collegarti.
+                                  </FormDescription>
+                                </div>
+                              </div>
+                            </div>
+                            <FormMessage className="text-xs font-medium mt-2" />
+                          </FormItem>
+                        )}
+                      />
+                    )}
                     <Button 
                       type="submit" 
                       className="w-full mt-6 h-11 bg-black hover:bg-black/90 text-white font-medium text-[15px] transition-all" 

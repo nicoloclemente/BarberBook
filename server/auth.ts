@@ -86,7 +86,29 @@ export function setupAuth(app: Express) {
 
   app.post("/api/register", async (req, res) => {
     try {
-      const validatedData = insertUserSchema.parse(req.body);
+      // Prendiamo tutti i dati di registrazione
+      const registrationData = req.body;
+      
+      // Verifichiamo se c'è il campo barberType
+      let isApproved = false;
+      
+      // Se è barbiere, impostiamo i valori in base al tipo di barbiere
+      if (registrationData.isBarber) {
+        if (registrationData.barberType === "independent") {
+          // Barbiere indipendente: richiede approvazione admin
+          isApproved = false;
+        } else if (registrationData.barberType === "employee") {
+          // Barbiere dipendente: non richiede approvazione dell'admin
+          // (sarà il manager a collegarlo come dipendente)
+          isApproved = true;
+        }
+      }
+      
+      // Rimuoviamo barberType che non fa parte dello schema del database
+      const { barberType, ...userData } = registrationData;
+      
+      // Validazione dei dati con Zod
+      const validatedData = insertUserSchema.parse(userData);
       
       const existingUser = await storage.getUserByUsername(validatedData.username);
       if (existingUser) {
@@ -96,6 +118,8 @@ export function setupAuth(app: Express) {
       const user = await storage.createUser({
         ...validatedData,
         password: await hashPassword(validatedData.password),
+        // Impostiamo isApproved in base al tipo di barbiere se è un barbiere
+        ...(validatedData.isBarber && { isApproved }),
       });
 
       // Remove password from response
