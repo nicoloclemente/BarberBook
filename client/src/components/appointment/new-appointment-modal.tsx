@@ -144,23 +144,33 @@ export default function NewAppointmentModal({
   });
 
   const onSubmit = (values: AppointmentFormValues) => {
-    // Combine date and time into a single Date object
-    const [hours, minutes] = values.time.split(":").map(Number);
-    const appointmentDate = new Date(values.date);
-    appointmentDate.setHours(hours, minutes, 0, 0);
+    try {
+      // Combine date and time into a single Date object
+      const [hours, minutes] = values.time.split(":").map(Number);
+      const appointmentDate = new Date(values.date);
+      appointmentDate.setHours(hours, minutes, 0, 0);
 
-    // Convert string IDs to numbers
-    const data = {
-      clientId: parseInt(values.clientId),
-      barberId: parseInt(values.barberId),
-      serviceId: parseInt(values.serviceId),
-      date: appointmentDate.toISOString(),
-      status: user?.isBarber ? "confirmed" : "pending",
-      notes: values.notes || "",
-      walkIn: values.walkIn,
-    };
+      // Convert string IDs to numbers
+      const data = {
+        clientId: parseInt(values.clientId),
+        barberId: parseInt(values.barberId),
+        serviceId: parseInt(values.serviceId),
+        date: appointmentDate.toISOString(),
+        status: user?.isBarber ? "confirmed" : "pending",
+        notes: values.notes || null,
+        walkIn: values.walkIn || false,
+      };
 
-    createAppointmentMutation.mutate(data);
+      console.log("Submitting appointment data:", data);
+      createAppointmentMutation.mutate(data);
+    } catch (error) {
+      console.error("Error submitting appointment:", error);
+      toast({
+        title: "Errore nella creazione dell'appuntamento",
+        description: `Si è verificato un errore: ${error}`,
+        variant: "destructive",
+      });
+    }
   };
 
   return (

@@ -548,13 +548,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
 
     try {
-      const appointmentData = insertAppointmentSchema.parse(req.body);
+      console.log("Received appointment data:", req.body);
+      
+      // Assicuriamoci che i campi notes e walkIn siano impostati correttamente
+      const appointmentDataFixed = {
+        ...req.body,
+        notes: req.body.notes || null,
+        walkIn: req.body.walkIn || false
+      };
+      
+      const appointmentData = insertAppointmentSchema.parse(appointmentDataFixed);
+      console.log("Parsed appointment data:", appointmentData);
+      
       const appointment = await storage.createAppointment(appointmentData);
+      console.log("Created appointment:", appointment);
       
       // Invalida la cache per gli appuntamenti di questo barbiere e per questa data
       const dateStr = new Date(appointmentData.date).toISOString().split('T')[0];
-      cache.invalidateByTag(`barber:${appointmentData.barberId}`);
-      cache.invalidateByTag(`date:${dateStr}`);
+      
+      // Usa il metodo più semplice di invalidazione della cache
+      cache.delete(`appointments:date:${appointmentData.barberId}:${dateStr}`);
       
       console.log(`Invalidated cache for barber ${appointmentData.barberId} and date ${dateStr} after creating appointment`);
       
@@ -574,8 +587,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.status(201).json(appointment);
     } catch (error) {
+      console.error("Error creating appointment:", error);
       if (error instanceof ZodError) {
         const validationError = fromZodError(error);
+        console.error("Zod validation error:", validationError);
         res.status(400).json({ error: validationError.message });
       } else {
         res.status(500).json({ error: "Failed to create appointment" });
