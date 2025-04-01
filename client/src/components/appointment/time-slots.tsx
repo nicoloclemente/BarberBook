@@ -1,9 +1,10 @@
-import { useMemo } from "react";
+import { useMemo, useEffect, useState } from "react";
 import { AppointmentWithDetails, User } from "@shared/schema";
-import { parseISO, format, addMinutes, formatISO } from "date-fns";
+import { parseISO, format, addMinutes, formatISO, getDay } from "date-fns";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
-import { Edit, Scissors } from "lucide-react";
+import { Edit, Scissors, AlertCircle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface TimeSlotsProps {
   appointments: AppointmentWithDetails[];
@@ -24,24 +25,74 @@ export default function TimeSlots({
   breaks = [], 
   user 
 }: TimeSlotsProps) {
-  // Generate time slots from 9:00 to 19:00 with 30-minute intervals
+  const [noWorkingHours, setNoWorkingHours] = useState(false);
+  
+  // Generate time slots based on the barber's working hours for the selected day
   const timeSlots = useMemo(() => {
-    const slots = [];
-    const start = new Date(selectedDate);
-    start.setHours(9, 0, 0, 0);
+    const slots: Date[] = [];
+    setNoWorkingHours(false);
     
-    const end = new Date(selectedDate);
-    end.setHours(19, 0, 0, 0);
-    
-    let current = new Date(start);
-    
-    while (current <= end) {
-      slots.push(new Date(current));
-      current = addMinutes(current, 30);
+    // Ottieni gli orari di lavoro per il giorno selezionato
+    if (!user || !user.workingHours) {
+      // Fallback con orari predefiniti se non ci sono orari configurati
+      const defaultStart = new Date(selectedDate);
+      defaultStart.setHours(9, 0, 0, 0);
+      
+      const defaultEnd = new Date(selectedDate);
+      defaultEnd.setHours(19, 0, 0, 0);
+      
+      let current = new Date(defaultStart);
+      
+      while (current <= defaultEnd) {
+        slots.push(new Date(current));
+        current = addMinutes(current, 30);
+      }
+      
+      return slots;
     }
     
-    return slots;
-  }, [selectedDate]);
+    // Ottieni il giorno della settimana (0 = domenica, 1 = lunedì, ...)
+    const dayIndex = getDay(selectedDate);
+    const dayNames = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"] as const;
+    const dayName = dayNames[dayIndex];
+    
+    // Ottieni gli orari di lavoro configurati per questo giorno
+    type TimeSlot = { start: string; end: string; enabled: boolean };
+    const workingHoursForDay = (user.workingHours[dayName] || []) as TimeSlot[];
+    
+    // Verifica se il barbiere lavora in questo giorno
+    if (!Array.isArray(workingHoursForDay) || workingHoursForDay.length === 0 || 
+        !workingHoursForDay.some(slot => slot.enabled)) {
+      setNoWorkingHours(true);
+      return slots; // Ritorna un array vuoto se il barbiere non lavora in questo giorno
+    }
+    
+    // Per ogni fascia oraria configurata
+    workingHoursForDay.forEach(timeRange => {
+      if (!timeRange.enabled) return; // Salta le fasce orarie disabilitate
+      
+      // Converti gli orari di inizio e fine in Date
+      const [startHour, startMinute] = timeRange.start.split(':').map(Number);
+      const [endHour, endMinute] = timeRange.end.split(':').map(Number);
+      
+      const start = new Date(selectedDate);
+      start.setHours(startHour, startMinute, 0, 0);
+      
+      const end = new Date(selectedDate);
+      end.setHours(endHour, endMinute, 0, 0);
+      
+      // Genera gli slot ogni 30 minuti
+      let current = new Date(start);
+      
+      while (current < end) {
+        slots.push(new Date(current));
+        current = addMinutes(current, 30);
+      }
+    });
+    
+    // Ordina gli slot cronologicamente
+    return slots.sort((a, b) => a.getTime() - b.getTime());
+  }, [selectedDate, user]);
 
   // Check if a time slot is occupied
   const isSlotOccupied = (time: Date) => {
@@ -136,6 +187,34 @@ export default function TimeSlots({
     });
   };
 
+  if (noWorkingHours) {
+    return (
+      <div className="mb-6">
+        <Alert className="bg-amber-50 border-amber-200">
+          <AlertCircle className="h-4 w-4 text-amber-700" />
+          <AlertDescription className="text-amber-800">
+            Non ci sono orari di lavoro configurati per {format(selectedDate, 'EEEE')}.
+            {isBarber && " Vai alla sezione 'Gestione Orari' per configurare gli orari di lavoro."}
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
+  
+  if (timeSlots.length === 0) {
+    return (
+      <div className="mb-6">
+        <Alert className="bg-amber-50 border-amber-200">
+          <AlertCircle className="h-4 w-4 text-amber-700" />
+          <AlertDescription className="text-amber-800">
+            Nessuna disponibilità per questa giornata.
+            {isBarber && " Verifica gli orari di lavoro nella sezione 'Gestione Orari'."}
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
+  
   return (
     <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2 md:gap-3 mb-6">
       {timeSlots.map((timeSlot, index) => {
