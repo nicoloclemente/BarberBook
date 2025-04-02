@@ -129,8 +129,21 @@ export default function DailyPage() {
     queryFn: async () => {
       try {
         const response = await apiRequest<AppointmentResponse[]>("GET", `/api/appointments/date/${format(date, 'yyyy-MM-dd')}`);
-        return response.map(mapAppointmentResponse);
+        
+        // Verifica che la risposta sia un array
+        if (!response || !Array.isArray(response)) {
+          console.warn("Risposta API non valida (non è un array):", response);
+          return [];
+        }
+        
+        // Filtra elementi nulli o non validi prima della mappatura
+        const validAppointments = response.filter(appointment => 
+          appointment && typeof appointment === 'object' && appointment.id
+        );
+        
+        return validAppointments.map(mapAppointmentResponse);
       } catch (error) {
+        console.error("Errore durante il recupero degli appuntamenti:", error);
         toast({
           title: "Errore",
           description: "Impossibile caricare gli appuntamenti",
@@ -138,7 +151,13 @@ export default function DailyPage() {
         });
         return [];
       }
-    }
+    },
+    // Valore predefinito sicuro in caso di errore
+    initialData: [],
+    // Diminuisci il numero di tentativi per evitare troppi errori in caso di problemi
+    retry: 1,
+    // Imposta una scadenza dei dati più breve per garantire l'aggiornamento
+    staleTime: 60000 // 1 minuto
   });
 
   // Gestione sicura degli appuntamenti e ordinamento per orario

@@ -1,0 +1,36 @@
+[Error] The above error occurred in the <TimeSlots> component:
+
+TimeSlots@https://bbeee0fb-2fae-4b64-8295-a0bb92b01e7d-00-h5ow2yxv6q8y.worf.replit.dev/src/components/appointment/time-slots.tsx:24:15
+div
+div
+div
+div
+div
+main
+div
+div
+MainLayout@https://bbeee0fb-2fae-4b64-8295-a0bb92b01e7d-00-h5ow2yxv6q8y.worf.replit.dev/src/components/main-layout.tsx:40:46
+DashboardPage@https://bbeee0fb-2fae-4b64-8295-a0bb92b01e7d-00-h5ow2yxv6q8y.worf.replit.dev/src/pages/dashboard-page.tsx:38:27
+Route@https://bbeee0fb-2fae-4b64-8295-a0bb92b01e7d-00-h5ow2yxv6q8y.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js:323:20
+ProtectedRoute@https://bbeee0fb-2fae-4b64-8295-a0bb92b01e7d-00-h5ow2yxv6q8y.worf.replit.dev/src/lib/protected-route.tsx:23:7
+Switch@https://bbeee0fb-2fae-4b64-8295-a0bb92b01e7d-00-h5ow2yxv6q8y.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js:379:25
+Router
+AuthProvider@https://bbeee0fb-2fae-4b64-8295-a0bb92b01e7d-00-h5ow2yxv6q8y.worf.replit.dev/src/hooks/use-auth.tsx:40:40
+QueryClientProvider@https://bbeee0fb-2fae-4b64-8295-a0bb92b01e7d-00-h5ow2yxv6q8y.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js:2805:9
+App
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+	logCapturedError (chunk-RPCDYKBN.js:14032)
+	(anonymous function) (chunk-RPCDYKBN.js:14052)
+	callCallback (chunk-RPCDYKBN.js:11248)
+	commitUpdateQueue (chunk-RPCDYKBN.js:11265)
+	commitLayoutEffectOnFiber (chunk-RPCDYKBN.js:17093)
+	commitLayoutMountEffects_complete (chunk-RPCDYKBN.js:17980)
+	commitLayoutEffects_begin (chunk-RPCDYKBN.js:17969)
+	commitLayoutEffects (chunk-RPCDYKBN.js:17920)
+	commitRootImpl (chunk-RPCDYKBN.js:19353)
+	commitRoot (chunk-RPCDYKBN.js:19277)
+	performSyncWorkOnRoot (chunk-RPCDYKBN.js:18895)
+	flushSyncCallbacks (chunk-RPCDYKBN.js:9119)
+	(anonymous function) (chunk-RPCDYKBN.js:18627)

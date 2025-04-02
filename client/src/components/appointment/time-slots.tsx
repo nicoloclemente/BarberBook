@@ -96,16 +96,53 @@ export default function TimeSlots({
 
   // Check if a time slot is occupied
   const isSlotOccupied = (time: Date) => {
+    // Verifica che appointments sia valido e sia un array
+    if (!appointments || !Array.isArray(appointments)) {
+      return false;
+    }
+    
     return appointments.some(appointment => {
-      const appointmentDate = typeof appointment.date === 'string' 
-        ? parseISO(appointment.date) 
-        : appointment.date;
-      
-      const appointmentEndTime = addMinutes(appointmentDate, appointment.service.duration);
-      
-      return (
-        time >= appointmentDate && time < appointmentEndTime
-      );
+      try {
+        // Verifica che appointment sia un oggetto valido
+        if (!appointment || typeof appointment !== 'object') {
+          return false;
+        }
+        
+        // Gestione sicura della data
+        let appointmentDate: Date;
+        try {
+          appointmentDate = typeof appointment.date === 'string' 
+            ? parseISO(appointment.date) 
+            : (appointment.date instanceof Date ? appointment.date : new Date());
+          
+          // Verifica che la data sia valida
+          if (isNaN(appointmentDate.getTime())) {
+            return false;
+          }
+        } catch (e) {
+          console.error("Errore nel parsing della data:", e);
+          return false;
+        }
+        
+        // Verifica che service esista e che duration sia un numero
+        if (!appointment.service || typeof appointment.service !== 'object') {
+          return false;
+        }
+        
+        const duration = typeof appointment.service.duration === 'number' 
+          ? appointment.service.duration 
+          : 30; // Fallback a 30 minuti
+        
+        const appointmentEndTime = addMinutes(appointmentDate, duration);
+        
+        // Confronto degli orari
+        return (
+          time >= appointmentDate && time < appointmentEndTime
+        );
+      } catch (error) {
+        console.error("Errore nel controllo dell'occupazione degli slot:", error);
+        return false;
+      }
     });
   };
 

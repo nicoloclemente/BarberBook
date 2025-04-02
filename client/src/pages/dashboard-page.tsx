@@ -55,10 +55,20 @@ export default function DashboardPage() {
   });
 
   // Query per ottenere i dati dell'utente (con pause)
-  const { data: userData = { breaks: [] } } = useQuery<any>({
+  const { data: userData, isError: isUserDataError } = useQuery({
     queryKey: ['/api/me'],
+    queryFn: async () => {
+      try {
+        const response = await apiRequest("GET", "/api/me");
+        return response || { breaks: [] };
+      } catch (error) {
+        console.error("Errore nel recupero dei dati utente:", error);
+        return { breaks: [] };
+      }
+    },
     enabled: !!user && isBarber,
-    retry: 1
+    retry: 1,
+    initialData: { breaks: [] } // Valore predefinito sicuro
   });
 
   // Mutation per gli appuntamenti
