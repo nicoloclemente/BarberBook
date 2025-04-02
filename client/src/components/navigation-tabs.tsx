@@ -274,7 +274,7 @@ export default function NavigationTabs({ orientation = "vertical", onItemClick }
               />
               <NavItem
                 icon={<Calendar className="h-4 w-4" />}
-                label="Appuntamenti"
+                label="I miei appuntamenti"
                 href="/appointments"
                 isActive={isActive("/appointments")}
                 onClick={handleItemClick}
@@ -499,10 +499,10 @@ export default function NavigationTabs({ orientation = "vertical", onItemClick }
               />
               <NavItem
                 icon={<Calendar className="h-5 w-5" />}
-                label={collapsed ? "" : "Appuntamenti"}
+                label={collapsed ? "" : "I miei appuntamenti"}
                 href="/appointments"
                 isActive={isActive("/appointments")}
-                tooltip={collapsed ? "Appuntamenti" : undefined}
+                tooltip={collapsed ? "I miei appuntamenti" : undefined}
                 onClick={handleItemClick}
               />
               <NavItem

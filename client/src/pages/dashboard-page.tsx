@@ -289,6 +289,27 @@ export default function DashboardPage() {
                 Aggiorna
               </Button>
               <Button 
+                variant="default"
+                onClick={() => {
+                  if (user) {
+                    console.log("Simulazione evento WebSocket per aggiornamento appuntamenti");
+                    // Simuliamo un evento WebSocket per testare l'aggiornamento automatico
+                    // Invalidiamo le query e forziamo un refresh
+                    queryClient.invalidateQueries({ queryKey: ['/api/appointments'] });
+                    queryClient.invalidateQueries({ queryKey: ['/api/appointments/date'] });
+                    queryClient.invalidateQueries({ queryKey: ['/api/appointments/month'] });
+                    queryClient.refetchQueries({ queryKey: ['/api/appointments/date', format(selectedDate, 'yyyy-MM-dd')] });
+                  }
+                }}
+                size="sm"
+                className="text-xs sm:text-sm h-8 sm:h-10"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 sm:h-4 sm:w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M6.672 1.911a1 1 0 10-1.932.518l.259.966a8.5 8.5 0 00-3.356 2.548 1 1 0 000 1.114A8.001 8.001 0 0115.357 12H17a1 1 0 100-2h-1.642A6.057 6.057 0 0110 8c-1.833 0-3.505.744-4.707 1.943a1 1 0 00-.285.908 6.002 6.002 0 0011.27 1.43 1 1 0 001.683 1.092 8 8 0 00-10.59-10.59l-.259-.966a1 1 0 00-.517-.734zM10 6a4 4 0 00-4 4h2a2 2 0 114 0h2a4 4 0 00-4-4z" clipRule="evenodd" />
+                </svg>
+                Simula WebSocket
+              </Button>
+              <Button 
                 onClick={() => setIsModalOpen(true)}
                 size="sm"
                 className="text-xs sm:text-sm h-8 sm:h-10"

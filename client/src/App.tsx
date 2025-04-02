@@ -17,6 +17,7 @@ import BarberDetailPage from "@/pages/barber-detail-page";
 import BarbersListPage from "@/pages/barbers-list-page";
 // La vista originale è stata sostituita da quella WebSocket-based
 import DailyPage from "@/pages/daily-view-alternative";
+import MyAppointmentsPage from "@/pages/my-appointments-page";
 import SchedulePage from "@/pages/schedule-page";
 import EmployeeManagementPage from "@/pages/employee-management-page";
 import AdminDashboard from "@/pages/admin-dashboard";
@@ -113,6 +114,7 @@ function Router() {
         <ProtectedRoute path="/" component={DashboardPage as React.ComponentType<any>} />
         <ProtectedRoute path="/dashboard" component={DashboardPage as React.ComponentType<any>} />
         <ProtectedRoute path="/daily" component={DailyPage as React.ComponentType<any>} />
+        <ProtectedRoute path="/appointments" component={MyAppointmentsPage as React.ComponentType<any>} />
         <ProtectedRoute path="/clients" component={ClientsPage as React.ComponentType<any>} />
         <ProtectedRoute path="/services" component={ServicesPage as React.ComponentType<any>} />
         <ProtectedRoute path="/chat" component={ChatPage as React.ComponentType<any>} />
