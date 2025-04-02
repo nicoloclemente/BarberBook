@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { format, parseISO, addMinutes } from "date-fns";
 import { Calendar as CalendarIcon, PlusCircle } from "lucide-react";
 import { it } from "date-fns/locale";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import MainLayout from "@/components/main-layout";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -12,6 +12,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest } from "@/lib/queryClient";
+import { addEventListener, removeEventListener } from "@/lib/websocket";
 
 interface AppointmentClient {
   id: number;
@@ -120,9 +121,11 @@ export default function DailyViewAlternative() {
   const { toast } = useToast();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const { user } = useAuth();
+  const wsEventCallbackRef = useRef<((data: any) => void) | null>(null);
   
   // Carica direttamente i dati senza usare React Query
-  const loadAppointments = async () => {
+  const loadAppointments = useCallback(async () => {
     try {
       setIsLoading(true);
       const formattedDate = format(date, 'yyyy-MM-dd');
@@ -164,19 +167,62 @@ export default function DailyViewAlternative() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [date, toast]);
   
-  // Carica i dati all'apertura della pagina e quando cambia la data
+  // Gestore degli eventi WebSocket per gli aggiornamenti in tempo reale
+  const handleAppointmentUpdate = useCallback((data: any) => {
+    console.log("[ALTERNATIVE VIEW] WebSocket update ricevuto:", data);
+    
+    // Aggiorna la vista solo se l'evento riguarda la data corrente
+    const formattedCurrentDate = format(date, 'yyyy-MM-dd');
+    const eventDate = data.date ? data.date.split('T')[0] : null;
+    
+    if (eventDate === formattedCurrentDate || data.action === 'refresh_all') {
+      console.log("[ALTERNATIVE VIEW] Aggiornamento automatico per corrispondenza data:", eventDate);
+      loadAppointments();
+    } else {
+      console.log("[ALTERNATIVE VIEW] Evento ignorato, data non corrisponde:", eventDate, "vs", formattedCurrentDate);
+    }
+  }, [date, loadAppointments]);
+  
+  // Imposta il listener WebSocket all'avvio e al cambio data
   useEffect(() => {
+    // Rimuovi il vecchio listener se presente
+    if (wsEventCallbackRef.current) {
+      removeEventListener('appointment', wsEventCallbackRef.current);
+      wsEventCallbackRef.current = null;
+    }
+    
+    // Esegui il primo caricamento
     loadAppointments();
     
-    // Aggiorna i dati ogni 10 secondi
+    // Aggiungi il nuovo listener per gli eventi WebSocket
+    wsEventCallbackRef.current = handleAppointmentUpdate;
+    addEventListener('appointment', wsEventCallbackRef.current);
+    
+    console.log("[ALTERNATIVE VIEW] Listener WebSocket configurato per gli appuntamenti");
+    
+    // Pulizia al dismontaggio del componente
+    return () => {
+      if (wsEventCallbackRef.current) {
+        console.log("[ALTERNATIVE VIEW] Rimozione listener WebSocket");
+        removeEventListener('appointment', wsEventCallbackRef.current);
+        wsEventCallbackRef.current = null;
+      }
+    };
+  }, [date, handleAppointmentUpdate, loadAppointments]);
+  
+  // Implementa comunque un aggiornamento periodico di fallback
+  // in caso il WebSocket non funzioni correttamente
+  useEffect(() => {
+    // Aggiorna i dati ogni 30 secondi come fallback
     const interval = setInterval(() => {
+      console.log("[ALTERNATIVE VIEW] Aggiornamento periodico di sicurezza (fallback)");
       loadAppointments();
-    }, 10000);
+    }, 30000); // Aumentato da 10s a 30s poiché ora abbiamo anche gli eventi WebSocket
     
     return () => clearInterval(interval);
-  }, [date]);
+  }, [loadAppointments]);
   
   // Ordina gli appuntamenti per orario
   const sortedAppointments = [...appointments].sort((a, b) => {
