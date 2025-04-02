@@ -122,8 +122,8 @@ export default function NewAppointmentModal({
 
   const createAppointmentMutation = useMutation({
     mutationFn: async (data: any) => {
-      const res = await apiRequest("POST", "/api/appointments", data);
-      return res.json();
+      // apiRequest già ritorna i dati JSON parsificati, non c'è bisogno di chiamare res.json()
+      return apiRequest("POST", "/api/appointments", data);
     },
     onSuccess: () => {
       toast({
