@@ -188,58 +188,54 @@ export default function DashboardPage() {
             />
           </div>
 
-          {/* Layout a due colonne su desktop, a una colonna su mobile */}
-          <div className="flex flex-col lg:flex-row gap-6 mb-8">
-            {/* Colonna sinistra: calendario mensile */}
-            <div className="w-full lg:w-1/3">
-              <div className="sticky top-4">
-                <EnhancedCalendar
-                  selectedDate={selectedDate}
-                  onSelectDate={setSelectedDate}
-                  userId={user?.id}
-                  isBarberView={isBarber}
-                />
-              </div>
-            </div>
+          {/* Sezione appuntamenti del giorno */}
+          <div className="bg-white rounded-lg shadow-md p-4 mb-6">
+            <h3 className="text-xl font-heading font-semibold mb-4 border-b pb-2">
+              Appuntamenti del {format(selectedDate, "d MMMM yyyy", { locale: it })}
+            </h3>
             
-            {/* Colonna destra: lista appuntamenti */}
-            <div className="w-full lg:w-2/3">
-              <div className="bg-white rounded-lg shadow-md p-4 mb-6">
-                <h3 className="text-xl font-heading font-semibold mb-4 border-b pb-2">
-                  Appuntamenti del {format(selectedDate, "d MMMM yyyy", { locale: it })}
-                </h3>
-                
-                {isLoading ? (
-                  <div className="py-12 flex justify-center items-center">
-                    <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full"></div>
-                  </div>
+            {isLoading ? (
+              <div className="py-12 flex justify-center items-center">
+                <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full"></div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {appointments.length > 0 ? (
+                  appointments.map((appointment) => (
+                    <AppointmentCard 
+                      key={appointment.id}
+                      appointment={appointment}
+                      onStatusChange={handleUpdateStatus}
+                      onDelete={handleDeleteAppointment}
+                    />
+                  ))
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {appointments.length > 0 ? (
-                      appointments.map((appointment) => (
-                        <AppointmentCard 
-                          key={appointment.id}
-                          appointment={appointment}
-                          onStatusChange={handleUpdateStatus}
-                          onDelete={handleDeleteAppointment}
-                        />
-                      ))
-                    ) : (
-                      <div className="col-span-full py-8 text-center">
-                        <p className="text-gray-500">Nessun appuntamento per questa data</p>
-                        <Button 
-                          variant="link" 
-                          onClick={() => setIsModalOpen(true)}
-                          className="mt-2"
-                        >
-                          Aggiungi un appuntamento
-                        </Button>
-                      </div>
-                    )}
+                  <div className="col-span-full py-8 text-center">
+                    <p className="text-gray-500">Nessun appuntamento per questa data</p>
+                    <Button 
+                      variant="link" 
+                      onClick={() => setIsModalOpen(true)}
+                      className="mt-2"
+                    >
+                      Aggiungi un appuntamento
+                    </Button>
                   </div>
                 )}
               </div>
-            </div>
+            )}
+          </div>
+          
+          {/* Calendario mensile */}
+          <div className="bg-white rounded-lg shadow p-4 mb-6">
+            <h3 className="text-xl font-heading font-semibold mb-4 border-b pb-2">
+              Calendario
+            </h3>
+            <EnhancedCalendar
+              selectedDate={selectedDate}
+              onSelectDate={setSelectedDate}
+              userId={user?.id}
+              isBarberView={isBarber}
+            />
           </div>
 
           <div className="bg-white rounded-lg shadow-md p-4 mb-6">
