@@ -54,20 +54,66 @@ interface Appointment {
 
 // Funzione per convertire il formato della risposta API nel formato atteso dal componente
 const mapAppointmentResponse = (appointment: AppointmentResponse): Appointment => {
-  const appointmentDate = new Date(appointment.date);
-  return {
-    id: appointment.id,
-    clientId: appointment.clientId,
-    barberId: appointment.barberId,
-    date: format(appointmentDate, 'yyyy-MM-dd'),
-    time: format(appointmentDate, 'HH:mm'),
-    serviceId: appointment.serviceId,
-    status: appointment.status,
-    clientName: appointment.client.name,
-    serviceName: appointment.service.name,
-    price: appointment.service.price,
-    duration: appointment.service.duration
-  };
+  try {
+    // Gestione sicura della data
+    let appointmentDate: Date;
+    try {
+      appointmentDate = new Date(appointment.date);
+      // Verifica che la data sia valida
+      if (isNaN(appointmentDate.getTime())) {
+        console.warn("Data appuntamento non valida:", appointment.date);
+        appointmentDate = new Date(); // Fallback alla data corrente
+      }
+    } catch (e) {
+      console.error("Errore nel parsing della data:", e);
+      appointmentDate = new Date(); // Fallback alla data corrente
+    }
+    
+    // Verifica e sanitizza i valori
+    const formattedDate = format(appointmentDate, 'yyyy-MM-dd');
+    const formattedTime = format(appointmentDate, 'HH:mm');
+    
+    // Gestione sicura dei valori dell'oggetto client
+    const client = appointment.client || { id: 0, name: "Cliente non specificato" };
+    
+    // Gestione sicura dei valori dell'oggetto service
+    const service = appointment.service || { 
+      id: 0, 
+      name: "Servizio non specificato", 
+      price: 0, 
+      duration: 0 
+    };
+
+    return {
+      id: typeof appointment.id === 'number' ? appointment.id : 0,
+      clientId: typeof appointment.clientId === 'number' ? appointment.clientId : 0,
+      barberId: typeof appointment.barberId === 'number' ? appointment.barberId : 0,
+      date: formattedDate,
+      time: formattedTime,
+      serviceId: typeof appointment.serviceId === 'number' ? appointment.serviceId : 0,
+      status: typeof appointment.status === 'string' ? appointment.status : "pending",
+      clientName: typeof client.name === 'string' ? client.name : "Cliente non specificato",
+      serviceName: typeof service.name === 'string' ? service.name : "Servizio non specificato",
+      price: typeof service.price === 'number' ? service.price : 0,
+      duration: typeof service.duration === 'number' ? service.duration : 0
+    };
+  } catch (error) {
+    console.error("Errore durante la conversione dell'appuntamento:", error);
+    // Ritorna un appuntamento di fallback sicuro
+    return {
+      id: 0,
+      clientId: 0,
+      barberId: 0,
+      date: format(new Date(), 'yyyy-MM-dd'),
+      time: format(new Date(), 'HH:mm'),
+      serviceId: 0,
+      status: "pending",
+      clientName: "Cliente non disponibile",
+      serviceName: "Servizio non disponibile",
+      price: 0,
+      duration: 0
+    };
+  }
 };
 
 export default function DailyPage() {
@@ -95,10 +141,16 @@ export default function DailyPage() {
     }
   });
 
-  // Ordina gli appuntamenti per orario
-  const sortedAppointments = appointments?.sort((a, b) => {
-    return a.time.localeCompare(b.time);
-  });
+  // Gestione sicura degli appuntamenti e ordinamento per orario
+  const sortedAppointments = appointments && Array.isArray(appointments) && appointments.length > 0 
+    ? [...appointments].sort((a, b) => {
+        // Controlla che time sia una stringa valida prima di confrontare
+        if (typeof a.time === 'string' && typeof b.time === 'string') {
+          return a.time.localeCompare(b.time);
+        }
+        return 0;
+      })
+    : [];
 
   return (
     <MainLayout>
@@ -162,16 +214,33 @@ export default function DailyPage() {
                         <div>
                           <div className="font-medium flex items-start gap-1">
                             <time className="text-xs sm:text-sm font-semibold">
-                              {appointment.time.slice(0, 5)}
+                              {typeof appointment.time === 'string' ? appointment.time.slice(0, 5) : '00:00'}
                             </time>
                             <span className="text-xs sm:text-sm text-muted-foreground mx-1">-</span>
                             <time className="text-xs sm:text-sm font-semibold">
-                              {format(new Date(
-                                new Date(`2000-01-01T${appointment.time}`)
-                                  .setMinutes(
-                                    new Date(`2000-01-01T${appointment.time}`).getMinutes() + appointment.duration
-                                  )
-                              ), 'HH:mm')}
+                              {(() => {
+                                try {
+                                  // Calcolo sicuro dell'orario di fine appuntamento
+                                  if (typeof appointment.time !== 'string' || !appointment.duration) {
+                                    return '00:00';
+                                  }
+                                  
+                                  const timeStr = appointment.time.length >= 5 ? appointment.time : '00:00';
+                                  const baseDate = new Date(`2000-01-01T${timeStr}`);
+                                  
+                                  // Verifica validità della data
+                                  if (isNaN(baseDate.getTime())) {
+                                    return '00:00';
+                                  }
+                                  
+                                  // Aggiungi minuti
+                                  const endTime = addMinutes(baseDate, appointment.duration);
+                                  return format(endTime, 'HH:mm');
+                                } catch (e) {
+                                  console.error('Errore nel calcolo dell\'orario di fine:', e);
+                                  return '00:00';
+                                }
+                              })()}
                             </time>
                           </div>
                           <h4 className="font-medium text-sm sm:text-base">{appointment.clientName}</h4>
@@ -180,20 +249,38 @@ export default function DailyPage() {
                       </div>
                       <div className="mt-2 sm:mt-0 flex flex-wrap gap-1.5 sm:gap-2 items-center">
                         <div className="rounded-full px-2 py-0.5 text-[10px] sm:text-xs font-medium bg-primary/10 text-primary">
-                          {appointment.duration} min
+                          {typeof appointment.duration === 'number' && !isNaN(appointment.duration) 
+                            ? `${appointment.duration} min` 
+                            : '-- min'}
                         </div>
                         <div className="rounded-full px-2 py-0.5 text-[10px] sm:text-xs font-medium bg-primary/10 text-primary">
-                          {(appointment.price / 100).toFixed(2)} €
+                          {typeof appointment.price === 'number' && !isNaN(appointment.price)
+                            ? `${(appointment.price / 100).toFixed(2)} €`
+                            : '--,-- €'}
                         </div>
                         <div className={cn(
                           "rounded-full px-2 py-0.5 text-[10px] sm:text-xs font-medium",
-                          appointment.status === "completed" ? "bg-green-100 text-green-800" :
-                          appointment.status === "cancelled" ? "bg-red-100 text-red-800" :
-                          appointment.status === "confirmed" ? "bg-blue-100 text-blue-800" : "bg-yellow-100 text-yellow-800"
+                          (() => {
+                            const status = typeof appointment.status === 'string' ? appointment.status.toLowerCase() : '';
+                            switch (status) {
+                              case "completed": return "bg-green-100 text-green-800";
+                              case "cancelled": return "bg-red-100 text-red-800";
+                              case "confirmed": return "bg-blue-100 text-blue-800";
+                              case "pending": return "bg-yellow-100 text-yellow-800";
+                              default: return "bg-gray-100 text-gray-800";
+                            }
+                          })()
                         )}>
-                          {appointment.status === "completed" ? "Completato" :
-                           appointment.status === "cancelled" ? "Cancellato" :
-                           appointment.status === "confirmed" ? "Confermato" : "In attesa"}
+                          {(() => {
+                            const status = typeof appointment.status === 'string' ? appointment.status.toLowerCase() : '';
+                            switch (status) {
+                              case "completed": return "Completato";
+                              case "cancelled": return "Cancellato";
+                              case "confirmed": return "Confermato";
+                              case "pending": return "In attesa";
+                              default: return "Stato sconosciuto";
+                            }
+                          })()}
                         </div>
                       </div>
                     </div>
