@@ -155,7 +155,7 @@ export default function NewAppointmentModal({
         clientId: parseInt(values.clientId),
         barberId: parseInt(values.barberId),
         serviceId: parseInt(values.serviceId),
-        date: appointmentDate.toISOString(),
+        date: appointmentDate, // Passa l'oggetto Date direttamente
         status: user?.isBarber ? "confirmed" : "pending",
         notes: values.notes || null,
         walkIn: values.walkIn || false,
@@ -175,7 +175,7 @@ export default function NewAppointmentModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Nuovo appuntamento</DialogTitle>
         </DialogHeader>
