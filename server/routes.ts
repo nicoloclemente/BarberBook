@@ -662,35 +662,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(400).json({ error: "Invalid appointment ID" });
     }
 
-    const appointment = await storage.getAppointment(id);
-    if (!appointment) {
-      return res.status(404).json({ error: "Appointment not found" });
-    }
-
-    const user = req.user!;
-    // Check if the user has access to update this appointment
-    if (user.isBarber && appointment.barberId !== user.id) {
-      return res.status(403).json({ error: "Not authorized to update this appointment" });
-    } else if (!user.isBarber && appointment.clientId !== user.id) {
-      return res.status(403).json({ error: "Not authorized to update this appointment" });
-    }
-
+    console.log(`Updating appointment with ID ${id}`, req.body);
+    
     try {
-      console.log(`Updating appointment with ID ${id}`, req.body);
+      const appointment = await storage.getAppointment(id);
+      if (!appointment) {
+        return res.status(404).json({ error: "Appointment not found" });
+      }
+
+      const user = req.user!;
+      // Check if the user has access to update this appointment
+      if (user.isBarber && appointment.barberId !== user.id) {
+        return res.status(403).json({ error: "Not authorized to update this appointment" });
+      } else if (!user.isBarber && appointment.clientId !== user.id) {
+        return res.status(403).json({ error: "Not authorized to update this appointment" });
+      }
       
-      // Utilizziamo il transform nella schema per convertire stringhe di date in Date
-      const appointmentData = insertAppointmentSchema.transform((data) => {
-        // Converti la data se è una stringa
-        if (data.date && typeof data.date === 'string') {
-          return {
-            ...data,
-            date: new Date(data.date),
-            notes: data.notes || null,
-            walkIn: data.walkIn || false
-          };
+      // Semplifichiamo la validazione usando uno schema manuale
+      const { status } = req.body;
+      
+      // Per ora permettiamo solo l'aggiornamento dello stato
+      const appointmentData: { status?: string } = {};
+      
+      // Validazione manuale per lo status
+      if (status) {
+        // Validiamo che lo status sia uno dei valori ammessi
+        const validStatuses = ['pending', 'confirmed', 'completed', 'cancelled', 'walk_in'];
+        if (!validStatuses.includes(status)) {
+          return res.status(400).json({ error: "Invalid status value" });
         }
-        return data;
-      }).partial().parse(req.body);
+        appointmentData.status = status;
+      }
       
       console.log(`Parsed appointment data for updating:`, appointmentData);
       
@@ -740,12 +742,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(updatedAppointment);
     } catch (error) {
       console.error(`Error updating appointment ${id}:`, error);
-      if (error instanceof ZodError) {
-        const validationError = fromZodError(error);
-        res.status(400).json({ error: validationError.message });
-      } else {
-        res.status(500).json({ error: `Failed to update appointment: ${error.message || 'Unknown error'}` });
-      }
+      res.status(500).json({ error: `Failed to update appointment: ${error instanceof Error ? error.message : 'Unknown error'}` });
     }
   });
 

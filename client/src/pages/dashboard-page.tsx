@@ -119,7 +119,7 @@ export default function DashboardPage() {
           toast({
             title: "Appuntamento aggiornato",
             description: "L'appuntamento è stato aggiornato con successo",
-            variant: "success"
+            variant: "default"
           });
           return result;
         } else {
@@ -149,7 +149,7 @@ export default function DashboardPage() {
           toast({
             title: "Appuntamento eliminato",
             description: "L'appuntamento è stato eliminato con successo",
-            variant: "success"
+            variant: "default"
           });
           return true;
         } else {
