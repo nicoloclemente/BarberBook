@@ -256,7 +256,7 @@ export const queryClient = new QueryClient({
       queryFn: getQueryFn({ on401: "throw" }),
       refetchInterval: false,
       refetchOnWindowFocus: false,
-      staleTime: 60 * 1000, // 1 minuto invece di Infinity per garantire aggiornamenti più frequenti
+      staleTime: 30 * 1000, // 30 secondi invece di 1 minuto per garantire aggiornamenti più frequenti 
       retry: 1, // Aggiungiamo un retry per gestire problemi di connessione intermittenti
       refetchOnMount: true, // Aggiornamento dati quando il componente viene montato
     },

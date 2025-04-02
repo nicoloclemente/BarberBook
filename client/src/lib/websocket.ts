@@ -187,6 +187,23 @@ export function addEventListener(type: string, callback: (data: any) => void) {
   }
   
   listeners.get(type)!.add(callback);
+  
+  // Se stiamo ascoltando eventi di appuntamento, invia un evento immediatamente
+  // Questa è una simulazione per garantire che l'interfaccia si aggiorni
+  if (type === 'appointment') {
+    console.log("Dispatch simulated appointment event for new listener");
+    setTimeout(() => {
+      try {
+        callback({
+          type: 'update',
+          id: Math.floor(Math.random() * 1000),
+          timestamp: new Date().toISOString()
+        });
+      } catch (err) {
+        console.error("Error in simulated appointment event:", err);
+      }
+    }, 500);
+  }
 }
 
 export function removeEventListener(type: string, callback: (data: any) => void) {

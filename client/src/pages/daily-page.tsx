@@ -2,7 +2,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { format, parseISO, addMinutes } from "date-fns";
 import { Calendar as CalendarIcon, PlusCircle } from "lucide-react";
 import { it } from "date-fns/locale";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import MainLayout from "@/components/main-layout";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -122,13 +122,38 @@ export default function DailyPage() {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  
+  // Aggiungiamo un effetto per invalidare le query quando il componente viene montato
+  useEffect(() => {
+    console.log("DailyPage mounted - Invalidating appointment queries");
+    // Forza un aggiornamento di tutte le query relative agli appuntamenti
+    queryClient.invalidateQueries({ queryKey: ['/api/appointments/date'] });
+    
+    // Aggiungi un listener per gli eventi di appuntamento
+    const handleAppointmentUpdate = () => {
+      console.log("Received appointment update event in DailyPage");
+      queryClient.invalidateQueries({ queryKey: ['/api/appointments/date'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/appointments/month'] });
+    };
+    
+    addEventListener('appointment', handleAppointmentUpdate);
+    
+    return () => {
+      removeEventListener('appointment', handleAppointmentUpdate);
+    };
+  }, [queryClient]);
 
   // Query per ottenere gli appuntamenti del giorno selezionato
-  const { data: appointments, isLoading } = useQuery({
-    queryKey: ['/api/appointments/date', format(date, 'yyyy-MM-dd')],
+  const formattedDate = format(date, 'yyyy-MM-dd');
+  const { data: appointments, isLoading, refetch } = useQuery({
+    queryKey: ['/api/appointments/date', formattedDate],
     queryFn: async () => {
       try {
-        const response = await apiRequest<AppointmentResponse[]>("GET", `/api/appointments/date/${format(date, 'yyyy-MM-dd')}`);
+        console.log("Fetching appointments for date:", formattedDate);
+        const response = await apiRequest<AppointmentResponse[]>("GET", `/api/appointments/date/${formattedDate}`);
+        
+        // Debug della risposta
+        console.log("API Response for daily appointments:", response);
         
         // Verifica che la risposta sia un array
         if (!response || !Array.isArray(response)) {
@@ -141,7 +166,11 @@ export default function DailyPage() {
           appointment && typeof appointment === 'object' && appointment.id
         );
         
-        return validAppointments.map(mapAppointmentResponse);
+        console.log("Valid appointments:", validAppointments.length);
+        const mappedAppointments = validAppointments.map(mapAppointmentResponse);
+        console.log("Mapped appointments:", mappedAppointments);
+        
+        return mappedAppointments;
       } catch (error) {
         console.error("Errore durante il recupero degli appuntamenti:", error);
         toast({
@@ -157,7 +186,7 @@ export default function DailyPage() {
     // Diminuisci il numero di tentativi per evitare troppi errori in caso di problemi
     retry: 1,
     // Imposta una scadenza dei dati più breve per garantire l'aggiornamento
-    staleTime: 60000 // 1 minuto
+    staleTime: 10000 // 10 secondi per test
   });
 
   // Gestione sicura degli appuntamenti e ordinamento per orario
