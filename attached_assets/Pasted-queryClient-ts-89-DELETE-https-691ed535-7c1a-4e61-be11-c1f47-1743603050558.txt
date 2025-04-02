@@ -1,0 +1,39 @@
+queryClient.ts:89 
+            
+            
+           DELETE https://691ed535-7c1a-4e61-be11-c1f47a0f8a8b-00-306maqopl43ie.picard.replit.dev/api/appointments/24 404 (Not Found)
+apiRequest @ queryClient.ts:89
+mutationFn @ dashboard-page.tsx:123
+fn @ @tanstack_react-query.js?v=41529431:1189
+run @ @tanstack_react-query.js?v=41529431:494
+(anonymous) @ @tanstack_react-query.js?v=41529431:519
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=41529431:515
+Promise.catch
+run @ @tanstack_react-query.js?v=41529431:498
+start @ @tanstack_react-query.js?v=41529431:536
+execute @ @tanstack_react-query.js?v=41529431:1225
+await in execute
+mutate @ @tanstack_react-query.js?v=41529431:2630
+(anonymous) @ @tanstack_react-query.js?v=41529431:3295
+handleDeleteAppointment @ dashboard-page.tsx:155
+onClick @ appointment-card.tsx:83
+callCallback2 @ chunk-RPCDYKBN.js?v=41529431:3674
+invokeGuardedCallbackDev @ chunk-RPCDYKBN.js?v=41529431:3699
+invokeGuardedCallback @ chunk-RPCDYKBN.js?v=41529431:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-RPCDYKBN.js?v=41529431:3736
+executeDispatch @ chunk-RPCDYKBN.js?v=41529431:7014
+processDispatchQueueItemsInOrder @ chunk-RPCDYKBN.js?v=41529431:7034
+processDispatchQueue @ chunk-RPCDYKBN.js?v=41529431:7043
+dispatchEventsForPlugins @ chunk-RPCDYKBN.js?v=41529431:7051
+(anonymous) @ chunk-RPCDYKBN.js?v=41529431:7174
+batchedUpdates$1 @ chunk-RPCDYKBN.js?v=41529431:18913
+batchedUpdates @ chunk-RPCDYKBN.js?v=41529431:3579
+dispatchEventForPluginEventSystem @ chunk-RPCDYKBN.js?v=41529431:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-RPCDYKBN.js?v=41529431:5478
+dispatchEvent @ chunk-RPCDYKBN.js?v=41529431:5472
+dispatchDiscreteEvent @ chunk-RPCDYKBN.js?v=41529431:5449Understand this errorAI
+queryClient.ts:174 Error in API request: Error: 404: {"error":"Appointment not found"}
+    at throwIfResNotOk (queryClient.ts:14:11)
+    at async apiRequest (queryClient.ts:96:5)
+    at async Object.mutationFn (dashboard-page.tsx:123:7)

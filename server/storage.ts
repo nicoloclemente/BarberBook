@@ -1350,16 +1350,38 @@ export class DatabaseStorage implements IStorage {
     // Prima otteniamo l'appuntamento per conoscere la data e il barbiere da invalidare
     const [appointment] = await db.select().from(appointments).where(eq(appointments.id, id));
     
-    const result = await db.delete(appointments).where(eq(appointments.id, id));
+    if (!appointment) {
+      console.error(`Appuntamento con ID ${id} non trovato prima dell'eliminazione`);
+      return false;
+    }
     
-    if (result.count > 0 && appointment) {
+    console.log(`Appuntamento trovato, procedendo con l'eliminazione: ${JSON.stringify(appointment)}`);
+    
+    try {
+      // Eseguiamo l'eliminazione e verifichiamo se ha avuto successo
+      await db.delete(appointments).where(eq(appointments.id, id));
+      
+      // Controlliamo se l'eliminazione è avvenuta con successo verificando se l'appuntamento esiste ancora
+      const [checkExists] = await db.select().from(appointments).where(eq(appointments.id, id));
+      
+      if (checkExists) {
+        console.error(`Eliminazione fallita: l'appuntamento ${id} esiste ancora dopo il tentativo di eliminazione`);
+        return false;
+      }
+      
       // Invalidiamo la cache degli appuntamenti giornalieri
       const date = new Date(appointment.date);
       const dateString = date.toISOString().split('T')[0];
       cache.delete(`appointments:date:${appointment.barberId}:${dateString}`);
+      cache.invalidateByTag(`barber:${appointment.barberId}`);
+      cache.invalidateByTag(`date:${dateString}`);
+      
+      console.log(`Cache invalidata per il barbiere ${appointment.barberId} e data ${dateString}`);
+      return true;
+    } catch (error) {
+      console.error(`Errore durante l'eliminazione dell'appuntamento ${id}:`, error);
+      return false;
     }
-    
-    return result.count > 0;
   }
 
   // Message related methods
