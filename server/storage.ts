@@ -298,70 +298,20 @@ export class MemStorage implements IStorage {
     return appointmentsWithDetails;
   }
 
+  // Metodo spostato e implementato correttamente in DatabaseStorage
   async getAppointmentsByDate(barberId: number, date: Date): Promise<AppointmentWithDetails[]> {
-    const startOfDay = new Date(date);
-    startOfDay.setHours(0, 0, 0, 0);
-    
-    const endOfDay = new Date(date);
-    endOfDay.setHours(23, 59, 59, 999);
-    
-    const appointmentsForDay = Array.from(this.appointments.values())
-      .filter(appointment => 
-        appointment.barberId === barberId &&
-        new Date(appointment.date) >= startOfDay &&
-        new Date(appointment.date) <= endOfDay
-      );
-    
-    const appointmentsWithDetails: AppointmentWithDetails[] = [];
-    
-    for (const appointment of appointmentsForDay) {
-      const client = await this.getUser(appointment.clientId);
-      const service = await this.getService(appointment.serviceId);
-      
-      if (client && service) {
-        appointmentsWithDetails.push({
-          ...appointment,
-          client,
-          service
-        });
-      }
-    }
-    
-    return appointmentsWithDetails;
+    console.warn("ATTENZIONE: Utilizzo dell'implementazione di MemStorage per getAppointmentsByDate!");
+    // Questa implementazione è temporanea e non dovrebbe essere utilizzata.
+    // L'implementazione corretta si trova nella classe DatabaseStorage.
+    return [];
   }
   
+  // Metodo spostato e implementato correttamente in DatabaseStorage
   async getAppointmentsByClientAndDate(clientId: number, date: Date): Promise<AppointmentWithDetails[]> {
-    const startOfDay = new Date(date);
-    startOfDay.setHours(0, 0, 0, 0);
-    
-    const endOfDay = new Date(date);
-    endOfDay.setHours(23, 59, 59, 999);
-    
-    const appointmentsForDay = Array.from(this.appointments.values())
-      .filter(appointment => 
-        appointment.clientId === clientId &&
-        new Date(appointment.date) >= startOfDay &&
-        new Date(appointment.date) <= endOfDay
-      );
-    
-    const appointmentsWithDetails: AppointmentWithDetails[] = [];
-    
-    for (const appointment of appointmentsForDay) {
-      const client = await this.getUser(appointment.clientId);
-      const barber = await this.getUser(appointment.barberId);
-      const service = await this.getService(appointment.serviceId);
-      
-      if (client && barber && service) {
-        appointmentsWithDetails.push({
-          ...appointment,
-          client,
-          barber,
-          service
-        });
-      }
-    }
-    
-    return appointmentsWithDetails;
+    console.warn("ATTENZIONE: Utilizzo dell'implementazione di MemStorage per getAppointmentsByClientAndDate!");
+    // Questa implementazione è temporanea e non dovrebbe essere utilizzata.
+    // L'implementazione corretta si trova nella classe DatabaseStorage.
+    return [];
   }
 
   async createAppointment(insertAppointment: InsertAppointment): Promise<Appointment> {
