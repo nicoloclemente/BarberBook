@@ -7,15 +7,49 @@ async function throwIfResNotOk(res: Response) {
   }
 }
 
+/**
+ * Funzione per convertire le date in formato ISO string per la serializzazione JSON
+ * Questo evita problemi con oggetti Date nella serializzazione JSON
+ */
+function replaceDatesWithISOStrings(obj: any): any {
+  if (obj === null || obj === undefined) {
+    return obj;
+  }
+  
+  if (obj instanceof Date) {
+    return obj.toISOString(); // Converti le date in ISO string
+  }
+  
+  if (typeof obj !== 'object') {
+    return obj;
+  }
+  
+  if (Array.isArray(obj)) {
+    return obj.map(replaceDatesWithISOStrings);
+  }
+  
+  const result: Record<string, any> = {};
+  for (const key in obj) {
+    if (Object.prototype.hasOwnProperty.call(obj, key)) {
+      result[key] = replaceDatesWithISOStrings(obj[key]);
+    }
+  }
+  
+  return result;
+}
+
 export async function apiRequest<T = any>(
   method: string = "GET",
   url: string,
   data?: unknown | undefined,
 ): Promise<T> {
+  // Prepara i dati assicurandosi che gli oggetti Date siano convertiti in ISO string
+  const processedData = data ? replaceDatesWithISOStrings(data) : undefined;
+  
   const res = await fetch(url, {
     method,
-    headers: data ? { "Content-Type": "application/json" } : {},
-    body: data ? JSON.stringify(data) : undefined,
+    headers: processedData ? { "Content-Type": "application/json" } : {},
+    body: processedData ? JSON.stringify(processedData) : undefined,
     credentials: "include",
   });
 

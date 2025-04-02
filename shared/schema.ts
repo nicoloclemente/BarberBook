@@ -163,7 +163,24 @@ export const appointments = pgTable("appointments", {
   walkIn: boolean("walk_in").default(false).notNull(),
 });
 
-export const insertAppointmentSchema = createInsertSchema(appointments)
+export const insertAppointmentSchema = createInsertSchema(appointments, {
+  // Sostituiamo la validazione di date con uno schema personalizzato
+  // che accetta sia stringhe che Date
+  date: z.preprocess(
+    // Preprocessamento che converte stringhe in Date
+    (arg) => {
+      if (typeof arg === 'string') {
+        return new Date(arg);
+      }
+      return arg;
+    },
+    // Schema che verifica che il risultato sia una Date valida
+    z.date({
+      required_error: "La data è obbligatoria",
+      invalid_type_error: "La data deve essere in un formato valido"
+    })
+  ),
+})
   .pick({
     date: true,
     clientId: true,
@@ -174,25 +191,10 @@ export const insertAppointmentSchema = createInsertSchema(appointments)
     walkIn: true,
   })
   .transform((data) => {
-    // Converti la data da stringa a oggetto Date se necessario
-    let dateObj: Date;
-    
-    if (typeof data.date === 'string') {
-      // Tenta di convertire la stringa in un oggetto Date
-      dateObj = new Date(data.date);
-      // Verifica che la data sia valida
-      if (isNaN(dateObj.getTime())) {
-        throw new Error('Data non valida');
-      }
-    } else if (data.date instanceof Date) {
-      dateObj = data.date;
-    } else {
-      throw new Error('Formato data non supportato');
-    }
-    
+    // A questo punto date è già un oggetto Date valido
+    // grazie al preprocessamento
     return {
       ...data,
-      date: dateObj,
       notes: data.notes || null,
       walkIn: data.walkIn || false
     };

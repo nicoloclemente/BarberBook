@@ -160,7 +160,7 @@ export default function NewAppointmentModal({
         clientId: parseInt(values.clientId),
         barberId: parseInt(values.barberId),
         serviceId: parseInt(values.serviceId),
-        date: appointmentDate.toISOString(), // Invia la data come ISO string per garantire la compatibilità
+        date: appointmentDate, // Invia l'oggetto Date direttamente
         status: user?.isBarber ? "confirmed" : "pending",
         notes: values.notes || null,
         walkIn: values.walkIn || false,
