@@ -113,17 +113,16 @@ export default function DashboardPage() {
       console.log(`Updating appointment ${id} with data:`, data);
       try {
         const res = await apiRequest("PUT", `/api/appointments/${id}`, data);
-        const result = await res.json();
-        console.log(`Update result:`, result);
-        if (res.ok) {
+        if (res && typeof res === 'object') {
+          console.log(`Update result:`, res);
           toast({
             title: "Appuntamento aggiornato",
             description: "L'appuntamento è stato aggiornato con successo",
             variant: "default"
           });
-          return result;
+          return res;
         } else {
-          throw new Error(result.error || "Errore nell'aggiornamento dell'appuntamento");
+          throw new Error("Errore nell'aggiornamento dell'appuntamento");
         }
       } catch (error) {
         console.error(`Error updating appointment ${id}:`, error);
@@ -136,7 +135,9 @@ export default function DashboardPage() {
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/appointments/date', formattedDate] });
+      // Invalidiamo tutte le query relative agli appuntamenti
+      queryClient.invalidateQueries({ queryKey: ['/api/appointments/date'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/appointments/month'] });
     },
   });
 
@@ -145,17 +146,12 @@ export default function DashboardPage() {
       console.log(`Deleting appointment ${id}`);
       try {
         const res = await apiRequest("DELETE", `/api/appointments/${id}`);
-        if (res.ok) {
-          toast({
-            title: "Appuntamento eliminato",
-            description: "L'appuntamento è stato eliminato con successo",
-            variant: "default"
-          });
-          return true;
-        } else {
-          const errorData = await res.json().catch(() => ({ error: "Errore nella risposta del server" }));
-          throw new Error(errorData.error || "Errore nell'eliminazione dell'appuntamento");
-        }
+        toast({
+          title: "Appuntamento eliminato",
+          description: "L'appuntamento è stato eliminato con successo",
+          variant: "default"
+        });
+        return true;
       } catch (error) {
         console.error(`Error deleting appointment ${id}:`, error);
         toast({
@@ -167,7 +163,9 @@ export default function DashboardPage() {
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/appointments/date', formattedDate] });
+      // Invalidiamo tutte le query relative agli appuntamenti
+      queryClient.invalidateQueries({ queryKey: ['/api/appointments/date'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/appointments/month'] });
     },
   });
 
@@ -179,7 +177,8 @@ export default function DashboardPage() {
       connectWebSocket(user.id);
 
       const handleNewAppointment = () => {
-        queryClient.invalidateQueries({ queryKey: ['/api/appointments/date', formattedDate] });
+        queryClient.invalidateQueries({ queryKey: ['/api/appointments/date'] });
+        queryClient.invalidateQueries({ queryKey: ['/api/appointments/month'] });
       };
 
       addEventListener('appointment', handleNewAppointment);
