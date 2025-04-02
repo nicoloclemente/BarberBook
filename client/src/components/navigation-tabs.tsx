@@ -376,8 +376,16 @@ export default function NavigationTabs({ orientation = "vertical", onItemClick }
                 icon={<ListTodo className="h-5 w-5" />}
                 label={collapsed ? "" : "Agenda Giornaliera"}
                 href="/daily"
-                isActive={isActive("/daily") || isActive("/")}
+                isActive={isActive("/daily") && !isActive("/daily-alternative")}
                 tooltip={collapsed ? "Agenda Giornaliera" : undefined}
+                onClick={handleItemClick}
+              />
+              <NavItem
+                icon={<ListTodo className="h-5 w-5" />}
+                label={collapsed ? "" : "Agenda Alternativa"}
+                href="/daily-alternative"
+                isActive={isActive("/daily-alternative")}
+                tooltip={collapsed ? "Agenda Alternativa" : undefined}
                 onClick={handleItemClick}
               />
             </NavSection>
@@ -412,8 +420,16 @@ export default function NavigationTabs({ orientation = "vertical", onItemClick }
                 icon={<ListTodo className="h-5 w-5" />}
                 label={collapsed ? "" : "Giornaliero"}
                 href="/daily"
-                isActive={isActive("/daily")}
+                isActive={isActive("/daily") && !isActive("/daily-alternative")}
                 tooltip={collapsed ? "Giornaliero" : undefined}
+                onClick={handleItemClick}
+              />
+              <NavItem
+                icon={<ListTodo className="h-5 w-5" />}
+                label={collapsed ? "" : "Agenda Alternativa"}
+                href="/daily-alternative"
+                isActive={isActive("/daily-alternative")}
+                tooltip={collapsed ? "Agenda Alternativa" : undefined}
                 onClick={handleItemClick}
               />
               <NavItem
