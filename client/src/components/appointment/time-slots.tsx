@@ -114,13 +114,14 @@ export default function TimeSlots({
         // Verifica che service esista e sia un oggetto
         if (!appointment.service || typeof appointment.service !== 'object') {
           console.log("TimeSlots: service non è un oggetto valido", appointment.service);
-          return false;
+          // Creiamo un oggetto service di fallback
+          appointment.service = { id: 0, name: "Servizio non disponibile", duration: 30, price: 0 };
         }
         
         // Verifica specifica per duration come suggerito dall'errore
         if (appointment.service.duration === undefined || appointment.service.duration === null) {
-          console.log("TimeSlots: service.duration è undefined o null", appointment.service);
-          return false;
+          console.log("TimeSlots: service.duration è undefined o null, impostiamo un valore di default", appointment.service);
+          appointment.service.duration = 30; // Impostiamo un valore di default invece di saltare l'appuntamento
         }
         
         // Ottieni duration con valore di fallback
