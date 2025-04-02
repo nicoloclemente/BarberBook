@@ -138,13 +138,13 @@ export default function ChatMessages({ userId }: ChatMessagesProps) {
                       className={`p-3 rounded-lg max-w-xs ${
                         isCurrentUser 
                           ? 'bg-primary text-white chat-bubble-barber' 
-                          : 'bg-neutral-light chat-bubble-client'
+                          : 'bg-neutral-light chat-bubble-client text-white'
                       }`}
                     >
                       <p className="text-sm">{message.content}</p>
                       <span 
                         className={`text-xs block text-right mt-1 ${
-                          isCurrentUser ? 'text-white text-opacity-70' : 'text-neutral-dark'
+                          isCurrentUser ? 'text-white text-opacity-70' : 'text-white text-opacity-70'
                         }`}
                       >
                         {formatMessageTime(message.timestamp)}
