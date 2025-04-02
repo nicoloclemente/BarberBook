@@ -32,7 +32,7 @@ export default function DateSelector({ selectedDate, onDateChange }: DateSelecto
       >
         <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6" />
       </Button>
-      <h3 className="text-base sm:text-xl font-heading font-semibold text-center truncate max-w-[calc(100%-100px)]">
+      <h3 className="text-base sm:text-xl font-heading font-semibold text-center truncate max-w-[calc(100%-80px)] sm:max-w-[calc(100%-100px)]">
         {capitalizedDate}
       </h3>
       <Button 

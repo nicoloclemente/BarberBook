@@ -128,7 +128,7 @@ export default function EnhancedCalendar({ onSelectDate, selectedDate, userId, i
   const renderWeekDayHeaders = () => (
     <div className="grid grid-cols-7 mb-2">
       {weekDays.map((day, index) => (
-        <div key={day} className="text-center py-2">
+        <div key={day} className="text-center py-1 sm:py-2 text-xs sm:text-sm">
           <span className="hidden md:inline">{day}</span>
           <span className="md:hidden">{shortWeekDays[index]}</span>
         </div>
@@ -162,7 +162,7 @@ export default function EnhancedCalendar({ onSelectDate, selectedDate, userId, i
                 "flex flex-col h-full",
                 isSelected ? "text-primary" : ""
               )}>
-                <div className="text-center md:text-left">
+                <div className="text-center md:text-left text-xs sm:text-sm">
                   {format(day, "d")}
                 </div>
                 
@@ -171,7 +171,7 @@ export default function EnhancedCalendar({ onSelectDate, selectedDate, userId, i
                     <Badge 
                       variant="outline" 
                       className={cn(
-                        "text-xs w-full justify-center truncate",
+                        "text-[10px] sm:text-xs w-full justify-center truncate py-0.5 px-1 h-5",
                         dayAppointments.some(a => a.status === "confirmed") ? "bg-emerald-50 border-emerald-200 text-emerald-700" :
                         dayAppointments.some(a => a.status === "pending") ? "bg-amber-50 border-amber-200 text-amber-700" :
                         "bg-blue-50 border-blue-200 text-blue-700"
@@ -190,13 +190,13 @@ export default function EnhancedCalendar({ onSelectDate, selectedDate, userId, i
   };
 
   return (
-    <Card className="calendar-container">
+    <Card className="calendar-container overflow-hidden">
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2">
           <CalendarIcon className="h-5 w-5 text-primary" />
           Calendario
         </CardTitle>
-        <CardDescription>Seleziona una data per visualizzare gli appuntamenti</CardDescription>
+        <CardDescription className="text-xs sm:text-sm">Seleziona una data per visualizzare gli appuntamenti</CardDescription>
       </CardHeader>
       <CardContent>
         {renderCalendarHeader()}
