@@ -7,6 +7,9 @@ import * as schema from "@shared/schema";
  * Configurazione ottimizzata del pool di connessione PostgreSQL
  * Bilanciata per prestazioni e utilizzo efficiente delle risorse
  */
+console.log('Inizializzazione connessione al database con:', 
+  process.env.DATABASE_URL ? 'URL del database presente' : 'URL del database mancante');
+
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   
@@ -28,6 +31,9 @@ const pool = new Pool({
   // Utilizzo delle query preparate per prestazioni migliori
   statement_timeout: 10000, // 10 secondi timeout per le query
   query_timeout: 10000, // 10 secondi timeout per le query
+  
+  // SSL è richiesto per alcune configurazioni di database
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
 });
 
 // Monitoraggio e gestione degli errori
@@ -50,16 +56,29 @@ pool.on('connect', (client) => {
  * Utile per health checks e monitoraggio
  */
 export async function checkDatabaseConnection(): Promise<boolean> {
+  console.log('Verifica connessione al database con URL:', 
+              process.env.DATABASE_URL ? 'URL disponibile' : 'URL non disponibile');
+  
   try {
+    console.log('Tentativo di connessione al database...');
     const client = await pool.connect();
     try {
+      console.log('Connessione stabilita, esecuzione query di test...');
       await client.query('SELECT 1');
+      console.log('Query di test eseguita con successo');
       return true;
     } finally {
       client.release();
+      console.log('Connessione rilasciata');
     }
   } catch (error) {
     console.error('Errore di connessione al database durante il controllo:', error);
+    console.error('Dettagli errore:', JSON.stringify(error, null, 2));
+    
+    if (!process.env.DATABASE_URL) {
+      console.error('DATABASE_URL non è impostato. Assicurati che sia configurato correttamente.');
+    }
+    
     return false;
   }
 }

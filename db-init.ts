@@ -47,6 +47,9 @@ async function initDatabase() {
       preferred_barber_id INTEGER,
       barber_code TEXT,
       description TEXT,
+      manager_id INTEGER,
+      is_manager BOOLEAN NOT NULL DEFAULT FALSE,
+      shop_id INTEGER,
       working_hours JSONB,
       breaks JSONB,
       closed_days JSONB,
@@ -60,7 +63,8 @@ async function initDatabase() {
       description TEXT,
       price INTEGER NOT NULL,
       duration INTEGER NOT NULL,
-      image_url TEXT
+      image_url TEXT,
+      is_generic BOOLEAN NOT NULL DEFAULT TRUE
     );
 
     -- Crea la tabella degli appuntamenti
@@ -120,6 +124,16 @@ async function initDatabase() {
       created_at TIMESTAMP DEFAULT NOW() NOT NULL
     );
 
+    -- Crea la tabella barber_services per associare barbieri a servizi
+    CREATE TABLE IF NOT EXISTS barber_services (
+      id SERIAL PRIMARY KEY,
+      barber_id INTEGER NOT NULL REFERENCES users(id),
+      service_id INTEGER NOT NULL REFERENCES services(id),
+      price INTEGER,
+      duration INTEGER,
+      is_active BOOLEAN NOT NULL DEFAULT TRUE
+    );
+    
     -- Crea la tabella delle sessioni
     CREATE TABLE IF NOT EXISTS session (
       sid VARCHAR PRIMARY KEY NOT NULL,
@@ -140,28 +154,32 @@ async function initDatabase() {
         description: "Taglio classico con forbici e rifinitura con rasoio.",
         price: 2000, // €20.00
         duration: 30, // 30 minutes
-        imageUrl: "https://images.unsplash.com/photo-1503951914875-452162b0f3f1?auto=format&fit=crop&w=500&q=60"
+        imageUrl: "https://images.unsplash.com/photo-1503951914875-452162b0f3f1?auto=format&fit=crop&w=500&q=60",
+        isGeneric: true
       },
       {
         name: "Barba Completa",
         description: "Rasatura completa con trattamento pre e post-barba.",
         price: 1500, // €15.00
         duration: 20, // 20 minutes
-        imageUrl: "https://images.unsplash.com/photo-1621607512214-68297480165e?auto=format&fit=crop&w=500&q=60"
+        imageUrl: "https://images.unsplash.com/photo-1621607512214-68297480165e?auto=format&fit=crop&w=500&q=60",
+        isGeneric: true
       },
       {
         name: "Taglio + Barba",
         description: "Servizio completo di taglio capelli e sistemazione barba.",
         price: 3500, // €35.00
         duration: 45, // 45 minutes
-        imageUrl: "https://images.unsplash.com/photo-1599351431202-1e0f0137899a?auto=format&fit=crop&w=500&q=60"
+        imageUrl: "https://images.unsplash.com/photo-1599351431202-1e0f0137899a?auto=format&fit=crop&w=500&q=60",
+        isGeneric: true
       },
       {
         name: "Shampoo + Taglio",
         description: "Shampoo professionale e taglio personalizzato.",
         price: 2500, // €25.00
         duration: 35, // 35 minutes
-        imageUrl: "https://images.unsplash.com/photo-1634302066072-dcdb3244782c?auto=format&fit=crop&w=500&q=60"
+        imageUrl: "https://images.unsplash.com/photo-1634302066072-dcdb3244782c?auto=format&fit=crop&w=500&q=60",
+        isGeneric: true
       }
     ]).execute();
 
