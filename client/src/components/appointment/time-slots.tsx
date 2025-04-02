@@ -98,25 +98,69 @@ export default function TimeSlots({
   const isSlotOccupied = (time: Date) => {
     // Verifica che appointments sia valido e sia un array
     if (!appointments || !Array.isArray(appointments)) {
+      console.log("TimeSlots: appointments non è un array valido");
       return false;
     }
     
     return appointments.some(appointment => {
       try {
+        // VALIDAZIONE COMPLETA DELL'APPUNTAMENTO
         // Verifica che appointment sia un oggetto valido
         if (!appointment || typeof appointment !== 'object') {
+          console.log("TimeSlots: appointment non è un oggetto valido", appointment);
           return false;
         }
         
-        // Gestione sicura della data
+        // Verifica che service esista e sia un oggetto
+        if (!appointment.service || typeof appointment.service !== 'object') {
+          console.log("TimeSlots: service non è un oggetto valido", appointment.service);
+          return false;
+        }
+        
+        // Verifica specifica per duration come suggerito dall'errore
+        if (appointment.service.duration === undefined || appointment.service.duration === null) {
+          console.log("TimeSlots: service.duration è undefined o null", appointment.service);
+          return false;
+        }
+        
+        // Ottieni duration con valore di fallback
+        const duration = typeof appointment.service.duration === 'number' 
+          ? appointment.service.duration 
+          : 30; // Fallback a 30 minuti se non è un numero valido
+          
+        // GESTIONE SICURA DELLA DATA
         let appointmentDate: Date;
         try {
-          appointmentDate = typeof appointment.date === 'string' 
-            ? parseISO(appointment.date) 
-            : (appointment.date instanceof Date ? appointment.date : new Date());
+          // Gestione più robusta dei vari tipi di date
+          if (typeof appointment.date === 'string') {
+            appointmentDate = parseISO(appointment.date);
+          } else if (appointment.date instanceof Date) {
+            appointmentDate = appointment.date;
+          } else if (typeof appointment.date === 'object' && appointment.date) {
+            // Tentativo di estrazione più sicuro per date serializzate
+            try {
+              // Se ha una proprietà toISOString, proviamo ad usarla
+              if ('toISOString' in appointment.date && typeof appointment.date.toISOString === 'function') {
+                appointmentDate = new Date(appointment.date.toISOString());
+              } else if ('toString' in appointment.date && typeof appointment.date.toString === 'function') {
+                // Altrimenti proviamo con toString
+                appointmentDate = new Date(appointment.date.toString());
+              } else {
+                // Ultimo tentativo: conversione diretta
+                appointmentDate = new Date(appointment.date as any);
+              }
+            } catch (e) {
+              console.error("Errore nella conversione della data:", e);
+              return false;
+            }
+          } else {
+            console.log("TimeSlots: formato data non riconosciuto", appointment.date);
+            return false; // Se non riusciamo a interpretare la data, lo slot non è occupato
+          }
           
           // Verifica che la data sia valida
           if (isNaN(appointmentDate.getTime())) {
+            console.log("TimeSlots: data appuntamento non valida", appointmentDate);
             return false;
           }
         } catch (e) {
@@ -124,24 +168,21 @@ export default function TimeSlots({
           return false;
         }
         
-        // Verifica che service esista e che duration sia un numero
-        if (!appointment.service || typeof appointment.service !== 'object') {
-          return false;
-        }
-        
-        const duration = typeof appointment.service.duration === 'number' 
-          ? appointment.service.duration 
-          : 30; // Fallback a 30 minuti
-        
+        // Calcola l'ora di fine appuntamento in modo sicuro
         const appointmentEndTime = addMinutes(appointmentDate, duration);
         
         // Confronto degli orari
-        return (
-          time >= appointmentDate && time < appointmentEndTime
-        );
+        const isOccupied = time >= appointmentDate && time < appointmentEndTime;
+        
+        // Log per debug se lo slot è occupato
+        if (isOccupied) {
+          console.log(`TimeSlots: Slot ${format(time, 'HH:mm')} occupato dall'appuntamento ID ${appointment.id}`);
+        }
+        
+        return isOccupied;
       } catch (error) {
         console.error("Errore nel controllo dell'occupazione degli slot:", error);
-        return false;
+        return false; // In caso di errore, lo slot non è considerato occupato per non bloccare l'UI
       }
     });
   };

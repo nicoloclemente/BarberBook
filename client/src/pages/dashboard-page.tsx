@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { useLocation } from "wouter";
@@ -48,11 +48,47 @@ export default function DashboardPage() {
   console.log("Is assigned to manager:", isAssignedToManager, "managerId:", user?.managerId);
 
   // Query per gli appuntamenti - usando lo stesso formato di query key in tutta l'app
-  const { data: appointments = [], isLoading, refetch } = useQuery<AppointmentWithDetails[]>({
+  const { data: appointmentsRaw = [], isLoading, refetch } = useQuery<AppointmentWithDetails[]>({
     queryKey: ['/api/appointments/date', formattedDate],
-    queryFn: () => apiRequest<AppointmentWithDetails[]>("GET", `/api/appointments/date/${formattedDate}`),
+    queryFn: async () => {
+      try {
+        const response = await apiRequest<AppointmentWithDetails[]>("GET", `/api/appointments/date/${formattedDate}`);
+        
+        // Filtriamo gli appuntamenti con dati incompleti
+        return (response || []).filter(appointment => {
+          return appointment && 
+                 typeof appointment === 'object' && 
+                 appointment.service && 
+                 typeof appointment.service === 'object' &&
+                 appointment.service.duration !== undefined;
+        });
+      } catch (error) {
+        console.error("Errore nel recupero degli appuntamenti:", error);
+        return [];
+      }
+    },
     enabled: !!user,
+    retry: 1,
   });
+  
+  // Sanitizza i dati per evitare errori di rendering
+  const appointments = React.useMemo(() => {
+    return (appointmentsRaw || []).map(appointment => {
+      if (!appointment || typeof appointment !== 'object') {
+        return null;
+      }
+      
+      // Assicuriamoci che service esista
+      const service = appointment.service && typeof appointment.service === 'object'
+        ? appointment.service
+        : { id: 0, name: "Servizio non disponibile", duration: 30, price: 0 };
+      
+      return {
+        ...appointment,
+        service
+      };
+    }).filter(Boolean) as AppointmentWithDetails[];
+  }, [appointmentsRaw]);
 
   // Query per ottenere i dati dell'utente (con pause)
   const { data: userData, isError: isUserDataError } = useQuery({
