@@ -515,10 +515,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
 
     const user = req.user!;
-    if (!user.isBarber) {
-      return res.status(403).json({ error: "Only barbers can access this endpoint" });
-    }
-
     const dateStr = req.params.date;
     const date = new Date(dateStr);
     
@@ -526,18 +522,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(400).json({ error: "Invalid date format" });
     }
 
-    // Utilizziamo la cache per gli appuntamenti giornalieri per migliorare le prestazioni
-    const cacheKey = `appointments:barber:${user.id}:date:${dateStr}`;
+    let appointments;
     
-    const appointments = await cache.getOrSet(
-      cacheKey,
-      () => storage.getAppointmentsByDate(user.id, date),
-      { 
-        ttlMs: 2 * 60 * 1000,  // 2 minuti di cache per gli appuntamenti
-        keyType: 'appointment',
-        tags: [`barber:${user.id}`, `date:${dateStr}`]
-      }
-    );
+    if (user.isBarber) {
+      // Utilizziamo la cache per gli appuntamenti giornalieri per migliorare le prestazioni
+      const cacheKey = `appointments:barber:${user.id}:date:${dateStr}`;
+      
+      appointments = await cache.getOrSet(
+        cacheKey,
+        () => storage.getAppointmentsByDate(user.id, date),
+        { 
+          ttlMs: 2 * 60 * 1000,  // 2 minuti di cache per gli appuntamenti
+          keyType: 'appointment',
+          tags: [`barber:${user.id}`, `date:${dateStr}`]
+        }
+      );
+    } else {
+      // Per i clienti, mostriamo i loro appuntamenti in questa data
+      const cacheKey = `appointments:client:${user.id}:date:${dateStr}`;
+      
+      appointments = await cache.getOrSet(
+        cacheKey,
+        () => storage.getAppointmentsByClientAndDate(user.id, date),
+        { 
+          ttlMs: 2 * 60 * 1000,
+          keyType: 'appointment',
+          tags: [`client:${user.id}`, `date:${dateStr}`]
+        }
+      );
+    }
     
     res.json(appointments);
   });

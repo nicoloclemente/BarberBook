@@ -68,6 +68,7 @@ export interface IStorage {
   getAppointmentsByBarber(barberId: number): Promise<AppointmentWithDetails[]>;
   getAppointmentsByClient(clientId: number): Promise<AppointmentWithDetails[]>;
   getAppointmentsByDate(barberId: number, date: Date): Promise<AppointmentWithDetails[]>;
+  getAppointmentsByClientAndDate(clientId: number, date: Date): Promise<AppointmentWithDetails[]>;
   createAppointment(appointment: InsertAppointment): Promise<Appointment>;
   updateAppointment(id: number, appointment: Partial<InsertAppointment>): Promise<Appointment | undefined>;
   deleteAppointment(id: number): Promise<boolean>;
@@ -321,6 +322,40 @@ export class MemStorage implements IStorage {
         appointmentsWithDetails.push({
           ...appointment,
           client,
+          service
+        });
+      }
+    }
+    
+    return appointmentsWithDetails;
+  }
+  
+  async getAppointmentsByClientAndDate(clientId: number, date: Date): Promise<AppointmentWithDetails[]> {
+    const startOfDay = new Date(date);
+    startOfDay.setHours(0, 0, 0, 0);
+    
+    const endOfDay = new Date(date);
+    endOfDay.setHours(23, 59, 59, 999);
+    
+    const appointmentsForDay = Array.from(this.appointments.values())
+      .filter(appointment => 
+        appointment.clientId === clientId &&
+        new Date(appointment.date) >= startOfDay &&
+        new Date(appointment.date) <= endOfDay
+      );
+    
+    const appointmentsWithDetails: AppointmentWithDetails[] = [];
+    
+    for (const appointment of appointmentsForDay) {
+      const client = await this.getUser(appointment.clientId);
+      const barber = await this.getUser(appointment.barberId);
+      const service = await this.getService(appointment.serviceId);
+      
+      if (client && barber && service) {
+        appointmentsWithDetails.push({
+          ...appointment,
+          client,
+          barber,
           service
         });
       }
@@ -1240,6 +1275,33 @@ export class DatabaseStorage implements IStorage {
       return db.query.appointments.findMany({
         where: and(
           eq(appointments.barberId, barberId),
+          between(appointments.date, startOfDay, endOfDay)
+        ),
+        with: {
+          client: true,
+          barber: true,
+          service: true,
+        },
+        orderBy: [asc(appointments.date)],
+      });
+    }, 5 * 60 * 1000); // 5 minuti
+  }
+  
+  async getAppointmentsByClientAndDate(clientId: number, date: Date): Promise<AppointmentWithDetails[]> {
+    const startOfDay = new Date(date);
+    startOfDay.setHours(0, 0, 0, 0);
+    
+    const endOfDay = new Date(date);
+    endOfDay.setHours(23, 59, 59, 999);
+    
+    // Memorizziamo gli appuntamenti giornalieri del cliente in cache per 5 minuti
+    const dateString = startOfDay.toISOString().split('T')[0];
+    const cacheKey = `appointments:client:${clientId}:date:${dateString}`;
+    
+    return cache.getOrSet(cacheKey, async () => {
+      return db.query.appointments.findMany({
+        where: and(
+          eq(appointments.clientId, clientId),
           between(appointments.date, startOfDay, endOfDay)
         ),
         with: {

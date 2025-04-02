@@ -131,7 +131,21 @@ export default function NewAppointmentModal({
         description: "L'appuntamento è stato creato con successo",
       });
       onClose();
+      
+      // Invalidate the simplified query key (matches any date)
       queryClient.invalidateQueries({ queryKey: ['/api/appointments/date'] });
+      
+      // Invalidate the current date query in both formats used throughout the app
+      const currentDateStr = format(selectedDate || new Date(), 'yyyy-MM-dd');
+      
+      queryClient.invalidateQueries({ 
+        queryKey: [`/api/appointments/date/${currentDateStr}`] 
+      });
+      
+      queryClient.invalidateQueries({ 
+        queryKey: ['/api/appointments/date', currentDateStr] 
+      });
+      
       form.reset();
     },
     onError: (error: Error) => {

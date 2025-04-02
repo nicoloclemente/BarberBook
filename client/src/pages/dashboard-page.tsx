@@ -47,9 +47,10 @@ export default function DashboardPage() {
   console.log("Is employee barber:", isEmployeeBarber, "Role:", user?.role, "isManager:", user?.isManager);
   console.log("Is assigned to manager:", isAssignedToManager, "managerId:", user?.managerId);
 
-  // Query per gli appuntamenti
+  // Query per gli appuntamenti - usando lo stesso formato di query key in tutta l'app
   const { data: appointments = [], isLoading, refetch } = useQuery<AppointmentWithDetails[]>({
-    queryKey: [`/api/appointments/date/${formattedDate}`],
+    queryKey: ['/api/appointments/date', formattedDate],
+    queryFn: () => apiRequest<AppointmentWithDetails[]>("GET", `/api/appointments/date/${formattedDate}`),
     enabled: !!user,
   });
 
