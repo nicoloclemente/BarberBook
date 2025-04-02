@@ -1,15 +1,12 @@
 /**
  * Script per creare utenti di test, appuntamenti, messaggi e notifiche per l'applicazione Barber Shop
  */
-import { db } from './server/db';
-import { users, UserRole, appointments, messages, notifications, barberServices } from './shared/schema';
-import bcrypt from 'bcryptjs';
-import { addDays, addHours, addMinutes, setHours, setMinutes, format } from 'date-fns';
+const { db } = require('./server/db');
+const { users, UserRole, appointments, messages, notifications, barberServices } = require('./shared/schema');
+const bcrypt = require('bcryptjs');
+const { addDays, addHours, addMinutes, setHours, setMinutes, format } = require('date-fns');
 
-// Ignoriamo gli errori di tipo per questo script di test
-// @ts-nocheck
-
-async function hashPassword(password: string) {
+async function hashPassword(password) {
   const salt = await bcrypt.genSalt(10);
   return bcrypt.hash(password, salt);
 }
@@ -295,57 +292,42 @@ async function createTestUsers() {
     }
 
     // Inserisci admin
-    const adminResult = await db.insert(users).values(admin).returning({ id: users.id });
-    const adminId = adminResult[0].id;
-    console.log('✅ Admin creato con successo con ID:', adminId);
+    await db.insert(users).values(admin);
+    console.log('✅ Admin creato con successo');
 
     // Inserisci barbieri
-    const barberResults = await db.insert(users).values(barbers).returning({ id: users.id });
-    const barberIds = barberResults.map(b => b.id);
-    console.log('✅ Barbieri creati con successo con IDs:', barberIds);
+    await db.insert(users).values(barbers);
+    console.log('✅ Barbieri creati con successo');
 
     // Inserisci clienti
-    const clientResults = await db.insert(users).values(clients).returning({ id: users.id });
-    const clientIds = clientResults.map(c => c.id);
-    console.log('✅ Clienti creati con successo con IDs:', clientIds);
-    
-    // Ottenere i riferimenti agli utenti
-    const marcoId = barberIds[0]; // Il primo barbiere (Marco)
-    const lucaId = barberIds[1];  // Il secondo barbiere (Luca)
-    const francescaId = barberIds[3]; // La quarta posizione è Francesca (il terzo è Giuseppe)
-    const davideId = barberIds[4]; // Il quinto barbiere (Davide)
-    
-    console.log('ID dei barbieri:');
-    console.log('Marco:', marcoId);
-    console.log('Luca:', lucaId);
-    console.log('Francesca:', francescaId);
-    console.log('Davide:', davideId);
+    await db.insert(users).values(clients);
+    console.log('✅ Clienti creati con successo');
     
     // Creazione di associazioni barbiere-servizi
     // Supponiamo di avere un totale di 6 servizi (ID da 1 a 6)
     const barberServicesData = [
-      // Marco offre tutti i servizi
-      { barberId: marcoId, serviceId: 1, price: 2000, duration: 30 },
-      { barberId: marcoId, serviceId: 2, price: 1500, duration: 20 },
-      { barberId: marcoId, serviceId: 3, price: 3500, duration: 45 },
-      { barberId: marcoId, serviceId: 4, price: 2500, duration: 35 },
-      { barberId: marcoId, serviceId: 5, price: 3000, duration: 40 },
-      { barberId: marcoId, serviceId: 6, price: 2000, duration: 25 },
+      // Marco (ID 1) offre tutti i servizi
+      { barberId: 1, serviceId: 1, price: 2000, duration: 30 },
+      { barberId: 1, serviceId: 2, price: 1500, duration: 20 },
+      { barberId: 1, serviceId: 3, price: 3500, duration: 45 },
+      { barberId: 1, serviceId: 4, price: 2500, duration: 35 },
+      { barberId: 1, serviceId: 5, price: 3000, duration: 40 },
+      { barberId: 1, serviceId: 6, price: 2000, duration: 25 },
       
-      // Luca offre solo alcuni servizi, con prezzi diversi
-      { barberId: lucaId, serviceId: 1, price: 2200, duration: 35 }, // Un po' più caro
-      { barberId: lucaId, serviceId: 2, price: 1800, duration: 25 }, // Un po' più caro
-      { barberId: lucaId, serviceId: 3, price: 3800, duration: 50 }, // Un po' più caro
-      { barberId: lucaId, serviceId: 6, price: 2200, duration: 30 }, // Un po' più caro
+      // Luca (ID 2) offre solo alcuni servizi, con prezzi diversi
+      { barberId: 2, serviceId: 1, price: 2200, duration: 35 }, // Un po' più caro
+      { barberId: 2, serviceId: 2, price: 1800, duration: 25 }, // Un po' più caro
+      { barberId: 2, serviceId: 3, price: 3800, duration: 50 }, // Un po' più caro
+      { barberId: 2, serviceId: 6, price: 2200, duration: 30 }, // Un po' più caro
       
-      // Francesca offre servizi a prezzi leggermente scontati
-      { barberId: francescaId, serviceId: 1, price: 1800, duration: 30 }, // Un po' meno caro
-      { barberId: francescaId, serviceId: 3, price: 3200, duration: 40 }, // Un po' meno caro
-      { barberId: francescaId, serviceId: 4, price: 2300, duration: 30 }, // Un po' meno caro
+      // Francesca (ID 4) offre servizi a prezzi leggermente scontati
+      { barberId: 4, serviceId: 1, price: 1800, duration: 30 }, // Un po' meno caro
+      { barberId: 4, serviceId: 3, price: 3200, duration: 40 }, // Un po' meno caro
+      { barberId: 4, serviceId: 4, price: 2300, duration: 30 }, // Un po' meno caro
       
-      // Davide si specializza in rasature
-      { barberId: davideId, serviceId: 2, price: 1600, duration: 25 },
-      { barberId: davideId, serviceId: 6, price: 1800, duration: 20 }
+      // Davide (ID 5) si specializza in rasature
+      { barberId: 5, serviceId: 2, price: 1600, duration: 25 },
+      { barberId: 5, serviceId: 6, price: 1800, duration: 20 }
     ];
     
     for (const barberService of barberServicesData) {
@@ -354,32 +336,14 @@ async function createTestUsers() {
     console.log('✅ Associazioni barbiere-servizi create con successo');
     
     // Creazione di appuntamenti
-    // Utilizziamo gli ID reali ottenuti
+    // Usiamo alcuni degli ID utente (barbieri: 1, 2, 4, 5 | clienti: 6, 7, 8, 9, 10)
     const appointmentStatuses = ['pending', 'confirmed', 'completed', 'cancelled'];
-    
-    // Prepariamo array dei barbieri e clienti per selezionarli casualmente
-    const barberIdsForApp = [marcoId, lucaId, francescaId, davideId];
-
-    // Ottieni gli ID dei clienti per gli appuntamenti
-    const andrea = clientIds[0];
-    const paolo = clientIds[1];
-    const roberto = clientIds[2];
-    const mario = clientIds[3];
-    const stefano = clientIds[4];
-    const clientIdsForApp = [andrea, paolo, roberto, mario, stefano];
-    
-    console.log('ID dei clienti:');
-    console.log('Andrea:', andrea);
-    console.log('Paolo:', paolo);
-    console.log('Roberto:', roberto);
-    console.log('Mario:', mario);
-    console.log('Stefano:', stefano);
     
     // Appuntamenti passati (completati o cancellati)
     const pastAppointments = [];
-    for (let i = 0; i < 10; i++) {
-      const barberId = barberIdsForApp[Math.floor(Math.random() * barberIdsForApp.length)];
-      const clientId = clientIdsForApp[Math.floor(Math.random() * clientIdsForApp.length)];
+    for (let i = 0; i < 30; i++) {
+      const barberId = [1, 2, 4, 5][Math.floor(Math.random() * 4)];
+      const clientId = [6, 7, 8, 9, 10][Math.floor(Math.random() * 5)];
       const serviceId = Math.floor(Math.random() * 6) + 1;
       const status = i % 10 === 0 ? 'cancelled' : 'completed'; // 10% cancellati, 90% completati
       
@@ -396,9 +360,9 @@ async function createTestUsers() {
     
     // Appuntamenti futuri (in attesa o confermati)
     const futureAppointments = [];
-    for (let i = 0; i < 5; i++) {
-      const barberId = barberIdsForApp[Math.floor(Math.random() * barberIdsForApp.length)];
-      const clientId = clientIdsForApp[Math.floor(Math.random() * clientIdsForApp.length)];
+    for (let i = 0; i < 15; i++) {
+      const barberId = [1, 2, 4, 5][Math.floor(Math.random() * 4)];
+      const clientId = [6, 7, 8, 9, 10][Math.floor(Math.random() * 5)];
       const serviceId = Math.floor(Math.random() * 6) + 1;
       const status = i % 3 === 0 ? 'pending' : 'confirmed'; // 33% in attesa, 67% confermati
       
@@ -419,8 +383,8 @@ async function createTestUsers() {
     const hours = [9, 10, 11, 14, 15, 16, 17];
     
     for (let i = 0; i < 5; i++) {
-      const barberId = barberIdsForApp[Math.floor(Math.random() * barberIdsForApp.length)];
-      const clientId = clientIdsForApp[Math.floor(Math.random() * clientIdsForApp.length)];
+      const barberId = [1, 2, 4, 5][Math.floor(Math.random() * 4)];
+      const clientId = [6, 7, 8, 9, 10][Math.floor(Math.random() * 5)];
       const serviceId = Math.floor(Math.random() * 6) + 1;
       const hour = hours[i % hours.length]; // Orari distribuiti
       const minute = i % 2 === 0 ? 0 : 30;
@@ -466,12 +430,11 @@ async function createTestUsers() {
     const testMessages = [];
     
     // Crea conversazioni tra clienti e barbieri
-    // Utilizziamo gli ID reali ottenuti in precedenza
-    for (let barberIdx = 0; barberIdx < barberIdsForApp.length; barberIdx++) {
-      const barberId = barberIdsForApp[barberIdx];
+    for (let barberIdx = 0; barberIdx < 4; barberIdx++) {
+      const barberId = barberIdx + 1; // Barbieri hanno ID da 1 a 5
       
-      for (let clientIdx = 0; clientIdx < clientIdsForApp.length && clientIdx < 3; clientIdx++) {
-        const clientId = clientIdsForApp[clientIdx];
+      for (let clientIdx = 0; clientIdx < 3; clientIdx++) {
+        const clientId = clientIdx + 6; // Clienti hanno ID da 6 a 10
         
         // Simula una conversazione di 3-7 messaggi
         const messagesCount = Math.floor(Math.random() * 5) + 3;
@@ -527,13 +490,10 @@ async function createTestUsers() {
     
     const testNotifications = [];
     
-    // Crea solo poche notifiche per i barbieri e i clienti principali per velocizzare l'esecuzione
-    // Prendiamo solo i primi ID (admin, 2 barbieri, 2 clienti)
-    const selectedUserIds = [adminId, barberIdsForApp[0], barberIdsForApp[1], clientIdsForApp[0], clientIdsForApp[1]];
-    
-    for (const userId of selectedUserIds) {
-      // Solo 1 notifica per utente
-      const notificationCount = 1;
+    // Crea notifiche per tutti gli utenti
+    for (let userId = 1; userId <= 10; userId++) {
+      // Ogni utente riceve 2-5 notifiche
+      const notificationCount = Math.floor(Math.random() * 4) + 2;
       
       for (let i = 0; i < notificationCount; i++) {
         const titleIndex = Math.floor(Math.random() * notificationTitles.length);
@@ -561,17 +521,8 @@ async function createTestUsers() {
         const daysAgo = Math.floor(Math.random() * 14);
         const timestamp = addDays(new Date(), -daysAgo);
         
-        // Assegna un tipo di notifica appropriato
-        let notificationType = 'system'; // default
-        if (titleIndex === 0) notificationType = 'appointment_confirmation';
-        if (titleIndex === 1) notificationType = 'appointment_reminder';
-        if (titleIndex === 2) notificationType = 'appointment_cancelled';
-        if (titleIndex === 3) notificationType = 'appointment_request';
-        if (titleIndex === 5) notificationType = 'new_message';
-        
         testNotifications.push({
           userId,
-          type: notificationType,
           title: notificationTitles[titleIndex],
           message: content,
           isRead,
@@ -581,13 +532,10 @@ async function createTestUsers() {
       }
     }
     
-    // Aggiungi solo una notifica non letta per ciascuno dei primi due barbieri
-    // per velocizzare l'esecuzione dello script
-    for (let i = 0; i < 2 && i < barberIdsForApp.length; i++) {
-      const barberId = barberIdsForApp[i];
+    // Aggiungi alcune notifiche non lette recenti per testare la funzionalità
+    for (let userId = 1; userId <= 5; userId++) { // Solo per i barbieri
       testNotifications.push({
-        userId: barberId,
-        type: 'appointment_request',
+        userId,
         title: "Nuovo appuntamento oggi",
         message: `Hai un nuovo appuntamento oggi alle ${["15:00", "16:30", "17:00"][Math.floor(Math.random() * 3)]}`,
         isRead: false,
