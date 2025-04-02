@@ -54,9 +54,10 @@ export default function DashboardPage() {
   });
 
   // Query per ottenere i dati dell'utente (con pause)
-  const { data: userData = { breaks: [] } } = useQuery<{ breaks: { date: string; slots: { start: string; end: string }[] }[] }>({
+  const { data: userData = { breaks: [] } } = useQuery<any>({
     queryKey: ['/api/me'],
     enabled: !!user && isBarber,
+    retry: 1
   });
 
   // Mutation per gli appuntamenti
@@ -179,18 +180,19 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+          {/* Selettore data */}
+          <div className="mb-4">
+            <DateSelector 
+              selectedDate={selectedDate} 
+              onDateChange={setSelectedDate} 
+            />
+          </div>
+
+          {/* Layout a due colonne su desktop, a una colonna su mobile */}
+          <div className="flex flex-col lg:flex-row gap-6 mb-8">
             {/* Colonna sinistra: calendario mensile */}
-            <div className="lg:col-span-1">
-              <div className="mb-4">
-                <DateSelector 
-                  selectedDate={selectedDate} 
-                  onDateChange={setSelectedDate} 
-                />
-              </div>
-              
-              {/* Calendario mensile */}
-              <div className="mb-6">
+            <div className="w-full lg:w-1/3">
+              <div className="sticky top-4">
                 <EnhancedCalendar
                   selectedDate={selectedDate}
                   onSelectDate={setSelectedDate}
@@ -201,35 +203,41 @@ export default function DashboardPage() {
             </div>
             
             {/* Colonna destra: lista appuntamenti */}
-            <div className="lg:col-span-2">
+            <div className="w-full lg:w-2/3">
               <div className="bg-white rounded-lg shadow-md p-4 mb-6">
                 <h3 className="text-xl font-heading font-semibold mb-4 border-b pb-2">
                   Appuntamenti del {format(selectedDate, "d MMMM yyyy", { locale: it })}
                 </h3>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {appointments.map((appointment) => (
-                    <AppointmentCard 
-                      key={appointment.id}
-                      appointment={appointment}
-                      onStatusChange={handleUpdateStatus}
-                      onDelete={handleDeleteAppointment}
-                    />
-                  ))}
-                  
-                  {appointments.length === 0 && !isLoading && (
-                    <div className="col-span-full py-8 text-center">
-                      <p className="text-gray-500">Nessun appuntamento per questa data</p>
-                      <Button 
-                        variant="link" 
-                        onClick={() => setIsModalOpen(true)}
-                        className="mt-2"
-                      >
-                        Aggiungi un appuntamento
-                      </Button>
-                    </div>
-                  )}
-                </div>
+                {isLoading ? (
+                  <div className="py-12 flex justify-center items-center">
+                    <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full"></div>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {appointments.length > 0 ? (
+                      appointments.map((appointment) => (
+                        <AppointmentCard 
+                          key={appointment.id}
+                          appointment={appointment}
+                          onStatusChange={handleUpdateStatus}
+                          onDelete={handleDeleteAppointment}
+                        />
+                      ))
+                    ) : (
+                      <div className="col-span-full py-8 text-center">
+                        <p className="text-gray-500">Nessun appuntamento per questa data</p>
+                        <Button 
+                          variant="link" 
+                          onClick={() => setIsModalOpen(true)}
+                          className="mt-2"
+                        >
+                          Aggiungi un appuntamento
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -244,7 +252,7 @@ export default function DashboardPage() {
               selectedDate={selectedDate}
               onSlotClick={() => setIsModalOpen(true)}
               isBarber={isBarber}
-              breaks={userData?.breaks || []}
+              breaks={Array.isArray(userData?.breaks) ? userData.breaks : []}
               user={user || undefined}
             />
             
