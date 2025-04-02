@@ -369,7 +369,7 @@ export default function DailyViewAlternative() {
             </CardContent>
           </Card>
           
-          <div className="flex justify-center mt-2 sm:mt-4">
+          <div className="flex justify-center mt-2 sm:mt-4 gap-3">
             <Button 
               variant="outline" 
               className="w-full sm:w-auto"
@@ -379,6 +379,28 @@ export default function DailyViewAlternative() {
                 <path fillRule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7.805V10a1 1 0 01-2 0V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H16a1 1 0 110 2h-5a1 1 0 01-1-1v-5a1 1 0 112 0v2.101a7.002 7.002 0 01-8.601-3.566 1 1 0 01.61-1.276z" clipRule="evenodd" />
               </svg>
               Aggiorna manualmente
+            </Button>
+            <Button 
+              variant="default" 
+              className="w-full sm:w-auto"
+              onClick={() => {
+                if (user && wsEventCallbackRef.current) {
+                  // Simula un evento WebSocket per testare l'aggiornamento automatico
+                  console.log("Simulazione evento WebSocket manuale");
+                  wsEventCallbackRef.current({
+                    type: 'update',
+                    action: 'refresh_all',
+                    id: Math.floor(Math.random() * 1000),
+                    timestamp: new Date().toISOString(),
+                    date: format(date, 'yyyy-MM-dd')
+                  });
+                }
+              }}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M6.672 1.911a1 1 0 10-1.932.518l.259.966a8.5 8.5 0 00-3.356 2.548 1 1 0 000 1.114A8.001 8.001 0 0115.357 12H17a1 1 0 100-2h-1.642A6.057 6.057 0 0110 8c-1.833 0-3.505.744-4.707 1.943a1 1 0 00-.285.908 6.002 6.002 0 0011.27 1.43 1 1 0 001.683 1.092 8 8 0 00-10.59-10.59l-.259-.966a1 1 0 00-.517-.734zM10 6a4 4 0 00-4 4h2a2 2 0 114 0h2a4 4 0 00-4-4z" clipRule="evenodd" />
+              </svg>
+              Simula WebSocket
             </Button>
           </div>
         </div>

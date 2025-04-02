@@ -21,11 +21,11 @@ export function connectWebSocket(userId: number) {
   // Emulare l'invio di un heartbeat periodico senza usare una vera connessione
   if (heartbeatInterval) {
     clearInterval(heartbeatInterval);
+    heartbeatInterval = null;
   }
   
-  heartbeatInterval = window.setInterval(() => {
-    console.log("Heartbeat simulato - userId:", userId);
-  }, 60000);
+  // Non inviare heartbeat automatici che potrebbero causare aggiornamenti non richiesti
+  console.log("WebSocket simulata attiva senza heartbeat automatici per userId:", userId);
   
   // Notifichiamo che il WebSocket è "connesso" per sbloccare funzionalità
   // Richiamiamo i listener con un messaggio di simulazione
@@ -188,29 +188,11 @@ export function addEventListener(type: string, callback: (data: any) => void) {
   
   listeners.get(type)!.add(callback);
   
-  // Se stiamo ascoltando eventi di appuntamento, invia un evento immediatamente
-  // Questa è una simulazione per garantire che l'interfaccia si aggiorni
+  // Non inviamo automaticamente eventi di test
+  // Gli eventi verranno inviati solo quando ci sono azioni reali o test manuali
   if (type === 'appointment') {
-    console.log("Dispatch simulated appointment event for new listener");
-    
-    // Aggiungiamo un ritardo per dare tempo all'interfaccia di essere pronta
-    setTimeout(() => {
-      try {
-        // Inviamo un evento di aggiornamento che forzerà l'invalidazione della cache
-        callback({
-          type: 'update',
-          action: 'refresh_all', // Indica che dobbiamo aggiornare tutti i dati di appuntamento
-          id: Math.floor(Math.random() * 1000),
-          timestamp: new Date().toISOString(),
-          // Aggiungiamo informazioni relative alla data corrente per facilitare l'aggiornamento
-          date: new Date().toISOString().split('T')[0]
-        });
-        
-        console.log("Simulated appointment event dispatched with refresh_all action");
-      } catch (err) {
-        console.error("Error in simulated appointment event:", err);
-      }
-    }, 500);
+    console.log("Nuovo listener per eventi di appuntamento registrato");
+    // Non facciamo nulla di automatico, ascoltiamo solo eventi reali
   }
 }
 
