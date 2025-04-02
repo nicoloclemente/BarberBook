@@ -123,17 +123,28 @@ export default function DailyPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
-  // Aggiungiamo un effetto per invalidare le query quando il componente viene montato
+  // Aggiungiamo un effetto per forzare il caricamento di tutti gli appuntamenti al montaggio del componente
   useEffect(() => {
-    console.log("DailyPage mounted - Invalidating appointment queries");
-    // Forza un aggiornamento di tutte le query relative agli appuntamenti
-    queryClient.invalidateQueries({ queryKey: ['/api/appointments/date'] });
+    console.log("DailyPage mounted - Forcing immediate refresh of appointment data");
+    
+    // Forza un aggiornamento immediato di tutte le query relative agli appuntamenti
+    queryClient.invalidateQueries({ queryKey: ['/api/appointments'] });
+    
+    // Forza un re-fetch specifico per questa data
+    const currentDateStr = format(date, 'yyyy-MM-dd');
+    queryClient.refetchQueries({ queryKey: ['/api/appointments/date', currentDateStr] });
     
     // Aggiungi un listener per gli eventi di appuntamento
     const handleAppointmentUpdate = () => {
       console.log("Received appointment update event in DailyPage");
+      // Invalidazione aggressiva della cache
+      queryClient.invalidateQueries({ queryKey: ['/api/appointments'] });
       queryClient.invalidateQueries({ queryKey: ['/api/appointments/date'] });
       queryClient.invalidateQueries({ queryKey: ['/api/appointments/month'] });
+      
+      // Forza un refetch specifico per la data corrente
+      const dateStr = format(date, 'yyyy-MM-dd');
+      queryClient.refetchQueries({ queryKey: ['/api/appointments/date', dateStr] });
     };
     
     addEventListener('appointment', handleAppointmentUpdate);
@@ -141,7 +152,7 @@ export default function DailyPage() {
     return () => {
       removeEventListener('appointment', handleAppointmentUpdate);
     };
-  }, [queryClient]);
+  }, [queryClient, date]);
 
   // Query per ottenere gli appuntamenti del giorno selezionato
   const formattedDate = format(date, 'yyyy-MM-dd');
@@ -166,7 +177,7 @@ export default function DailyPage() {
           appointment && typeof appointment === 'object' && appointment.id
         );
         
-        console.log("Valid appointments:", validAppointments.length);
+        console.log("Valid appointments count:", validAppointments.length);
         const mappedAppointments = validAppointments.map(mapAppointmentResponse);
         console.log("Mapped appointments:", mappedAppointments);
         
@@ -186,7 +197,11 @@ export default function DailyPage() {
     // Diminuisci il numero di tentativi per evitare troppi errori in caso di problemi
     retry: 1,
     // Imposta una scadenza dei dati più breve per garantire l'aggiornamento
-    staleTime: 10000 // 10 secondi per test
+    staleTime: 5000, // 5 secondi
+    // Aggiunge un refetch automatico quando la finestra riprende il focus
+    refetchOnWindowFocus: true,
+    // Tenta di aggiornare in background quando i dati sono scaduti
+    refetchOnMount: true
   });
 
   // Gestione sicura degli appuntamenti e ordinamento per orario
