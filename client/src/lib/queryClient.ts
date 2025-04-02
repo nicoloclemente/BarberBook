@@ -256,11 +256,12 @@ export const queryClient = new QueryClient({
       queryFn: getQueryFn({ on401: "throw" }),
       refetchInterval: false,
       refetchOnWindowFocus: false,
-      staleTime: Infinity,
-      retry: false,
+      staleTime: 60 * 1000, // 1 minuto invece di Infinity per garantire aggiornamenti più frequenti
+      retry: 1, // Aggiungiamo un retry per gestire problemi di connessione intermittenti
+      refetchOnMount: true, // Aggiornamento dati quando il componente viene montato
     },
     mutations: {
-      retry: false,
+      retry: 1, // Anche per le mutazioni aggiungiamo un retry
     },
   },
 });
