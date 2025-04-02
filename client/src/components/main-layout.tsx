@@ -18,6 +18,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import { PwaInstallBanner } from "@/components/ui/pwa-install-banner";
+import { PushNotificationManager } from "@/components/ui/push-notification-manager";
 
 interface MainLayoutProps {
   children: ReactNode;
@@ -216,6 +218,12 @@ export default function MainLayout({ children }: MainLayoutProps) {
 
       {/* Mobile navigation */}
       {isMobile && <MobileNavigation />}
+      
+      {/* PWA Install Banner */}
+      <PwaInstallBanner />
+      
+      {/* Push Notification Manager */}
+      <PushNotificationManager />
     </div>
   );
 }
