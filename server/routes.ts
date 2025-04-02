@@ -548,7 +548,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
 
     try {
-      console.log("Received appointment data:", req.body);
+      console.log("Received appointment data:", JSON.stringify(req.body));
+      
+      // Verifica che date sia presente e valida
+      if (!req.body.date) {
+        console.error("Nessuna data fornita nella richiesta");
+        return res.status(400).json({ error: "Data mancante nella richiesta" });
+      }
+      
+      // Informazioni di debug sulla data
+      if (typeof req.body.date === 'string') {
+        console.log(`Data ricevuta come stringa: "${req.body.date}"`);
+        const testDate = new Date(req.body.date);
+        console.log(`Data convertita: ${testDate}, isValid: ${!isNaN(testDate.getTime())}`);
+      } else if (req.body.date instanceof Date) {
+        console.log(`Data ricevuta come oggetto Date: ${req.body.date}`);
+      } else {
+        console.log(`Data ricevuta in formato sconosciuto: ${typeof req.body.date}`);
+      }
       
       // Parsing dei dati con lo schema aggiornato che gestisce la conversione della data
       // Lo schema si occuperà di trasformare le stringhe in Date e impostare valori di default

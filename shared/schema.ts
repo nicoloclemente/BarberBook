@@ -175,9 +175,24 @@ export const insertAppointmentSchema = createInsertSchema(appointments)
   })
   .transform((data) => {
     // Converti la data da stringa a oggetto Date se necessario
+    let dateObj: Date;
+    
+    if (typeof data.date === 'string') {
+      // Tenta di convertire la stringa in un oggetto Date
+      dateObj = new Date(data.date);
+      // Verifica che la data sia valida
+      if (isNaN(dateObj.getTime())) {
+        throw new Error('Data non valida');
+      }
+    } else if (data.date instanceof Date) {
+      dateObj = data.date;
+    } else {
+      throw new Error('Formato data non supportato');
+    }
+    
     return {
       ...data,
-      date: typeof data.date === 'string' ? new Date(data.date) : data.date,
+      date: dateObj,
       notes: data.notes || null,
       walkIn: data.walkIn || false
     };

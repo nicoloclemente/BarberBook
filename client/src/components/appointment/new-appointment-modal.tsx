@@ -150,12 +150,17 @@ export default function NewAppointmentModal({
       const appointmentDate = new Date(values.date);
       appointmentDate.setHours(hours, minutes, 0, 0);
 
+      // Assicuriamoci che la data sia una data valida e che non sia NaN
+      if (isNaN(appointmentDate.getTime())) {
+        throw new Error("Data o orario non validi");
+      }
+
       // Convert string IDs to numbers
       const data = {
         clientId: parseInt(values.clientId),
         barberId: parseInt(values.barberId),
         serviceId: parseInt(values.serviceId),
-        date: appointmentDate, // Passa l'oggetto Date direttamente
+        date: appointmentDate.toISOString(), // Invia la data come ISO string per garantire la compatibilità
         status: user?.isBarber ? "confirmed" : "pending",
         notes: values.notes || null,
         walkIn: values.walkIn || false,
