@@ -149,6 +149,8 @@ export async function apiRequest<T = any>(
             const dateStr = url.split("/date/")[1];
             const filteredAppointments = appointments.filter(app => {
               // Converti entrambe le date in formato stringa per confronto
+              // Verifica che app.date esista prima di fare il confronto
+              if (!app.date) return false;
               const appDate = new Date(app.date).toISOString().split('T')[0];
               return appDate === dateStr;
             });
@@ -226,6 +228,8 @@ export const getQueryFn: <T>(options: {
             if (url.includes("/date/")) {
               const dateStr = url.split("/date/")[1];
               const filteredAppointments = appointments.filter(app => {
+                // Verifica che app.date esista prima di fare il confronto
+                if (!app.date) return false;
                 const appDate = new Date(app.date).toISOString().split('T')[0];
                 return appDate === dateStr;
               });
