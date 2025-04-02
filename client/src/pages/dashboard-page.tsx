@@ -10,6 +10,7 @@ import DateSelector from "@/components/appointment/date-selector";
 import TimeSlots from "@/components/appointment/time-slots";
 import AppointmentCard from "@/components/appointment/appointment-card";
 import NewAppointmentModal from "@/components/appointment/new-appointment-modal";
+import EnhancedCalendar from "@/components/schedule/enhanced-calendar";
 import { Button } from "@/components/ui/button";
 import { PlusIcon, RefreshCw, UsersIcon } from "lucide-react";
 import { format, parseISO, formatISO } from "date-fns";
@@ -48,18 +49,13 @@ export default function DashboardPage() {
 
   // Query per gli appuntamenti
   const { data: appointments = [], isLoading, refetch } = useQuery<AppointmentWithDetails[]>({
-    queryKey: ['/api/appointments/date', formattedDate],
-    queryFn: () => getQueryFn({ on401: "throw" })({
-      queryKey: [`/api/appointments/date/${formattedDate}`],
-    }),
+    queryKey: [`/api/appointments/date/${formattedDate}`],
+    enabled: !!user,
   });
 
   // Query per ottenere i dati dell'utente (con pause)
-  const { data: userData } = useQuery({
+  const { data: userData = { breaks: [] } } = useQuery<{ breaks: { date: string; slots: { start: string; end: string }[] }[] }>({
     queryKey: ['/api/me'],
-    queryFn: () => getQueryFn({ on401: "throw" })({
-      queryKey: ['/api/me'],
-    }),
     enabled: !!user && isBarber,
   });
 
@@ -183,33 +179,59 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <DateSelector 
-            selectedDate={selectedDate} 
-            onDateChange={setSelectedDate} 
-          />
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-            {appointments.map((appointment) => (
-              <AppointmentCard 
-                key={appointment.id}
-                appointment={appointment}
-                onStatusChange={handleUpdateStatus}
-                onDelete={handleDeleteAppointment}
-              />
-            ))}
-            
-            {appointments.length === 0 && !isLoading && (
-              <div className="col-span-full py-8 text-center">
-                <p className="text-gray-500">Nessun appuntamento per questa data</p>
-                <Button 
-                  variant="link" 
-                  onClick={() => setIsModalOpen(true)}
-                  className="mt-2"
-                >
-                  Aggiungi un appuntamento
-                </Button>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            {/* Colonna sinistra: calendario mensile */}
+            <div className="lg:col-span-1">
+              <div className="mb-4">
+                <DateSelector 
+                  selectedDate={selectedDate} 
+                  onDateChange={setSelectedDate} 
+                />
               </div>
-            )}
+              
+              {/* Calendario mensile */}
+              <div className="mb-6">
+                <EnhancedCalendar
+                  selectedDate={selectedDate}
+                  onSelectDate={setSelectedDate}
+                  userId={user?.id}
+                  isBarberView={isBarber}
+                />
+              </div>
+            </div>
+            
+            {/* Colonna destra: lista appuntamenti */}
+            <div className="lg:col-span-2">
+              <div className="bg-white rounded-lg shadow-md p-4 mb-6">
+                <h3 className="text-xl font-heading font-semibold mb-4 border-b pb-2">
+                  Appuntamenti del {format(selectedDate, "d MMMM yyyy", { locale: it })}
+                </h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {appointments.map((appointment) => (
+                    <AppointmentCard 
+                      key={appointment.id}
+                      appointment={appointment}
+                      onStatusChange={handleUpdateStatus}
+                      onDelete={handleDeleteAppointment}
+                    />
+                  ))}
+                  
+                  {appointments.length === 0 && !isLoading && (
+                    <div className="col-span-full py-8 text-center">
+                      <p className="text-gray-500">Nessun appuntamento per questa data</p>
+                      <Button 
+                        variant="link" 
+                        onClick={() => setIsModalOpen(true)}
+                        className="mt-2"
+                      >
+                        Aggiungi un appuntamento
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
 
           <div className="bg-white rounded-lg shadow-md p-4 mb-6">
@@ -222,8 +244,8 @@ export default function DashboardPage() {
               selectedDate={selectedDate}
               onSlotClick={() => setIsModalOpen(true)}
               isBarber={isBarber}
-              breaks={userData?.breaks}
-              user={user}
+              breaks={userData?.breaks || []}
+              user={user || undefined}
             />
             
             {/* Legenda per spiegare i colori degli slot */}
