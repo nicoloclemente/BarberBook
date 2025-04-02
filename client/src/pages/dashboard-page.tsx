@@ -135,9 +135,16 @@ export default function DashboardPage() {
       }
     },
     onSuccess: () => {
-      // Invalidiamo tutte le query relative agli appuntamenti
+      // Invalidiamo tutte le query relative agli appuntamenti in modo più aggressivo
+      console.log("Invalidando tutte le query relative agli appuntamenti dopo aggiornamento");
+      queryClient.invalidateQueries({ queryKey: ['/api/appointments'] });
       queryClient.invalidateQueries({ queryKey: ['/api/appointments/date'] });
       queryClient.invalidateQueries({ queryKey: ['/api/appointments/month'] });
+      
+      // Forziamo un refresh completo dei dati delle agende
+      const today = new Date();
+      const todayStr = today.toISOString().split('T')[0];
+      queryClient.refetchQueries({ queryKey: ['/api/appointments/date', todayStr] });
     },
   });
 
@@ -163,9 +170,16 @@ export default function DashboardPage() {
       }
     },
     onSuccess: () => {
-      // Invalidiamo tutte le query relative agli appuntamenti
+      // Invalidiamo tutte le query relative agli appuntamenti in modo più aggressivo
+      console.log("Invalidando tutte le query relative agli appuntamenti dopo eliminazione");
+      queryClient.invalidateQueries({ queryKey: ['/api/appointments'] });
       queryClient.invalidateQueries({ queryKey: ['/api/appointments/date'] });
       queryClient.invalidateQueries({ queryKey: ['/api/appointments/month'] });
+      
+      // Forziamo un refresh completo dei dati delle agende
+      const today = new Date();
+      const todayStr = today.toISOString().split('T')[0];
+      queryClient.refetchQueries({ queryKey: ['/api/appointments/date', todayStr] });
     },
   });
 
@@ -177,8 +191,23 @@ export default function DashboardPage() {
       connectWebSocket(user.id);
 
       const handleNewAppointment = () => {
+        console.log("WebSocket: Ricevuto evento di appuntamento, aggiornamento cache globale");
+        
+        // Invalidiamo tutte le query relative agli appuntamenti
+        queryClient.invalidateQueries({ queryKey: ['/api/appointments'] });
         queryClient.invalidateQueries({ queryKey: ['/api/appointments/date'] });
         queryClient.invalidateQueries({ queryKey: ['/api/appointments/month'] });
+        
+        // Forziamo un refresh immediato per la data corrente
+        const today = new Date();
+        const todayStr = today.toISOString().split('T')[0];
+        queryClient.refetchQueries({ queryKey: ['/api/appointments/date', todayStr] });
+        
+        // E anche per la data selezionata, se diversa da oggi
+        const selectedDateStr = selectedDate.toISOString().split('T')[0];
+        if (selectedDateStr !== todayStr) {
+          queryClient.refetchQueries({ queryKey: ['/api/appointments/date', selectedDateStr] });
+        }
       };
 
       addEventListener('appointment', handleNewAppointment);
@@ -187,7 +216,7 @@ export default function DashboardPage() {
         removeEventListener('appointment', handleNewAppointment);
       };
     }
-  }, [user, formattedDate]);
+  }, [user, selectedDate]);
 
   const handleUpdateStatus = (id: number, status: string) => {
     updateAppointmentMutation.mutate({ id, data: { status } });

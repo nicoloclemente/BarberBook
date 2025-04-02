@@ -522,17 +522,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(400).json({ error: "Invalid date format" });
     }
 
+    // Registra informazioni sulla richiesta per debug
+    console.log(`GET /api/appointments/date/${dateStr} - userId:${user.id}, isBarber:${user.isBarber}`);
+
     let appointments;
     
     if (user.isBarber) {
       // Utilizziamo la cache per gli appuntamenti giornalieri per migliorare le prestazioni
+      // Ma diminuiamo il TTL a 30 secondi per garantire dati più freschi
       const cacheKey = `appointments:barber:${user.id}:date:${dateStr}`;
       
+      // Disabilita temporaneamente la cache per debug
+      // appointments = await storage.getAppointmentsByDate(user.id, date);
       appointments = await cache.getOrSet(
         cacheKey,
-        () => storage.getAppointmentsByDate(user.id, date),
+        async () => {
+          const result = await storage.getAppointmentsByDate(user.id, date);
+          console.log(`Query db per appuntamenti barber ${user.id} in data ${dateStr}: trovati ${result.length}`);
+          return result;
+        },
         { 
-          ttlMs: 2 * 60 * 1000,  // 2 minuti di cache per gli appuntamenti
+          ttlMs: 30 * 1000,  // 30 secondi di cache per gli appuntamenti
           keyType: 'appointment',
           tags: [`barber:${user.id}`, `date:${dateStr}`]
         }
@@ -543,15 +553,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       appointments = await cache.getOrSet(
         cacheKey,
-        () => storage.getAppointmentsByClientAndDate(user.id, date),
+        async () => {
+          const result = await storage.getAppointmentsByClientAndDate(user.id, date);
+          console.log(`Query db per appuntamenti client ${user.id} in data ${dateStr}: trovati ${result.length}`);
+          return result;
+        },
         { 
-          ttlMs: 2 * 60 * 1000,
+          ttlMs: 30 * 1000,  // 30 secondi di cache
           keyType: 'appointment',
           tags: [`client:${user.id}`, `date:${dateStr}`]
         }
       );
     }
     
+    console.log(`Ritorno ${appointments.length} appuntamenti per data ${dateStr}`);
     res.json(appointments);
   });
 
@@ -592,8 +607,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const dateObj = new Date(appointmentData.date);
       const dateStr = dateObj.toISOString().split('T')[0];
       
-      // Usa il metodo più semplice di invalidazione della cache
-      cache.delete(`appointments:date:${appointmentData.barberId}:${dateStr}`);
+      // Invalida la cache in modo più aggressivo
+      cache.invalidateByTag(`barber:${appointmentData.barberId}`);
+      cache.invalidateByTag(`date:${dateStr}`);
+      cache.delete(`appointments:barber:${appointmentData.barberId}:date:${dateStr}`);
+      
+      console.log(`Aggressivamente invalidata la cache per gli appuntamenti del barbiere ${appointmentData.barberId} in data ${dateStr}`);
       
       console.log(`Invalidated cache for barber ${appointmentData.barberId} and date ${dateStr} after creating appointment`);
       
@@ -715,8 +734,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       cache.invalidateByTag(`barber:${updatedAppointment.barberId}`);
       cache.invalidateByTag(`date:${dateStr}`);
       
-      // Invalida anche le cache per data (usato in altre route)
-      cache.delete(`appointments:date:${updatedAppointment.barberId}:${dateStr}`);
+      // Invalida in modo aggressivo tutte le cache per questo barbiere/data
+      cache.delete(`appointments:barber:${updatedAppointment.barberId}:date:${dateStr}`);
+      
+      console.log(`Aggressivamente invalidata la cache per barbiere ${updatedAppointment.barberId} e data ${dateStr}`);
       
       console.log(`Invalidated cache for barber ${updatedAppointment.barberId} and date ${dateStr} after updating appointment ${id}`);
       
@@ -786,8 +807,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       cache.invalidateByTag(`barber:${appointment.barberId}`);
       cache.invalidateByTag(`date:${dateStr}`);
       
-      // Invalida anche le cache per data (usato in altre route)
-      cache.delete(`appointments:date:${appointment.barberId}:${dateStr}`);
+      // Invalida in modo aggressivo tutte le cache per questo barbiere/data
+      cache.delete(`appointments:barber:${appointment.barberId}:date:${dateStr}`);
+      
+      console.log(`Aggressivamente invalidata la cache per barbiere ${appointment.barberId} e data ${dateStr} dopo eliminazione`);
       
       console.log(`Invalidated cache for barber ${appointment.barberId} and date ${dateStr} after deleting appointment ${id}`);
 

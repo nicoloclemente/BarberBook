@@ -192,13 +192,21 @@ export function addEventListener(type: string, callback: (data: any) => void) {
   // Questa è una simulazione per garantire che l'interfaccia si aggiorni
   if (type === 'appointment') {
     console.log("Dispatch simulated appointment event for new listener");
+    
+    // Aggiungiamo un ritardo per dare tempo all'interfaccia di essere pronta
     setTimeout(() => {
       try {
+        // Inviamo un evento di aggiornamento che forzerà l'invalidazione della cache
         callback({
           type: 'update',
+          action: 'refresh_all', // Indica che dobbiamo aggiornare tutti i dati di appuntamento
           id: Math.floor(Math.random() * 1000),
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
+          // Aggiungiamo informazioni relative alla data corrente per facilitare l'aggiornamento
+          date: new Date().toISOString().split('T')[0]
         });
+        
+        console.log("Simulated appointment event dispatched with refresh_all action");
       } catch (err) {
         console.error("Error in simulated appointment event:", err);
       }
