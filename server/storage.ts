@@ -371,18 +371,9 @@ export class MemStorage implements IStorage {
     return appointment;
   }
 
-  async updateAppointment(id: number, appointmentUpdate: Partial<InsertAppointment>): Promise<Appointment | undefined> {
-    const appointment = this.appointments.get(id);
-    if (!appointment) return undefined;
-    
-    const updatedAppointment = { ...appointment, ...appointmentUpdate };
-    this.appointments.set(id, updatedAppointment);
-    return updatedAppointment;
-  }
+  // Questo metodo è ora implementato nella versione PostgreSQL sotto
 
-  async deleteAppointment(id: number): Promise<boolean> {
-    return this.appointments.delete(id);
-  }
+  // Questo metodo è ora implementato nella versione PostgreSQL sotto
 
   // Message related methods
   async getMessage(id: number): Promise<Message | undefined> {
