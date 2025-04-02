@@ -212,17 +212,8 @@ export default function DailyViewAlternative() {
     };
   }, [date, handleAppointmentUpdate, loadAppointments]);
   
-  // Implementa comunque un aggiornamento periodico di fallback
-  // in caso il WebSocket non funzioni correttamente
-  useEffect(() => {
-    // Aggiorna i dati ogni 30 secondi come fallback
-    const interval = setInterval(() => {
-      console.log("[ALTERNATIVE VIEW] Aggiornamento periodico di sicurezza (fallback)");
-      loadAppointments();
-    }, 30000); // Aumentato da 10s a 30s poiché ora abbiamo anche gli eventi WebSocket
-    
-    return () => clearInterval(interval);
-  }, [loadAppointments]);
+  // Nessun refresh periodico - utilizziamo solo WebSocket per gli aggiornamenti in tempo reale
+  // Il pulsante di aggiornamento manuale è comunque disponibile in caso di necessità
   
   // Ordina gli appuntamenti per orario
   const sortedAppointments = [...appointments].sort((a, b) => {
