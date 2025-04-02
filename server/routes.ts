@@ -676,6 +676,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
 
     try {
+      console.log(`Updating appointment with ID ${id}`, req.body);
+      
       // Utilizziamo il transform nella schema per convertire stringhe di date in Date
       const appointmentData = insertAppointmentSchema.transform((data) => {
         // Converti la data se è una stringa
@@ -689,16 +691,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         return data;
       }).partial().parse(req.body);
+      
+      console.log(`Parsed appointment data for updating:`, appointmentData);
+      
+      // Ottieni nuovamente l'appuntamento per essere sicuri che esista ancora
+      const appointmentToUpdate = await storage.getAppointment(id);
+      if (!appointmentToUpdate) {
+        return res.status(404).json({ error: "Appointment not found before update" });
+      }
+      
       const updatedAppointment = await storage.updateAppointment(id, appointmentData);
       
       if (!updatedAppointment) {
-        return res.status(404).json({ error: "Appointment not found" });
+        return res.status(404).json({ error: "Appointment not found after update" });
       }
+      
+      console.log(`Successfully updated appointment:`, updatedAppointment);
       
       // Invalida la cache per gli appuntamenti di questo barbiere e per questa data
       const dateStr = new Date(updatedAppointment.date).toISOString().split('T')[0];
       cache.invalidateByTag(`barber:${updatedAppointment.barberId}`);
       cache.invalidateByTag(`date:${dateStr}`);
+      
+      // Invalida anche le cache per data (usato in altre route)
+      cache.delete(`appointments:date:${updatedAppointment.barberId}:${dateStr}`);
       
       console.log(`Invalidated cache for barber ${updatedAppointment.barberId} and date ${dateStr} after updating appointment ${id}`);
       
@@ -723,11 +739,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json(updatedAppointment);
     } catch (error) {
+      console.error(`Error updating appointment ${id}:`, error);
       if (error instanceof ZodError) {
         const validationError = fromZodError(error);
         res.status(400).json({ error: validationError.message });
       } else {
-        res.status(500).json({ error: "Failed to update appointment" });
+        res.status(500).json({ error: `Failed to update appointment: ${error.message || 'Unknown error'}` });
       }
     }
   });
@@ -742,32 +759,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(400).json({ error: "Invalid appointment ID" });
     }
 
-    const appointment = await storage.getAppointment(id);
-    if (!appointment) {
-      return res.status(404).json({ error: "Appointment not found" });
-    }
-
-    const user = req.user!;
-    // Check if the user has access to delete this appointment
-    if (user.isBarber && appointment.barberId !== user.id) {
-      return res.status(403).json({ error: "Not authorized to delete this appointment" });
-    } else if (!user.isBarber && appointment.clientId !== user.id) {
-      return res.status(403).json({ error: "Not authorized to delete this appointment" });
-    }
-
-    const deleted = await storage.deleteAppointment(id);
-    if (!deleted) {
-      return res.status(404).json({ error: "Appointment not found" });
-    }
-
-    // Invalida la cache per gli appuntamenti di questo barbiere e per questa data
-    const dateStr = new Date(appointment.date).toISOString().split('T')[0];
-    cache.invalidateByTag(`barber:${appointment.barberId}`);
-    cache.invalidateByTag(`date:${dateStr}`);
+    console.log(`Attempting to delete appointment with ID ${id}`);
     
-    console.log(`Invalidated cache for barber ${appointment.barberId} and date ${dateStr} after deleting appointment ${id}`);
+    try {
+      const appointment = await storage.getAppointment(id);
+      if (!appointment) {
+        console.log(`Appointment with ID ${id} not found`);
+        return res.status(404).json({ error: "Appointment not found" });
+      }
 
-    res.status(204).end();
+      const user = req.user!;
+      // Check if the user has access to delete this appointment
+      if (user.isBarber && appointment.barberId !== user.id) {
+        return res.status(403).json({ error: "Not authorized to delete this appointment" });
+      } else if (!user.isBarber && appointment.clientId !== user.id) {
+        return res.status(403).json({ error: "Not authorized to delete this appointment" });
+      }
+
+      console.log(`Deleting appointment: ${JSON.stringify(appointment)}`);
+      const deleted = await storage.deleteAppointment(id);
+      if (!deleted) {
+        return res.status(404).json({ error: "Appointment was not deleted properly" });
+      }
+
+      console.log(`Successfully deleted appointment ${id}`);
+      
+      // Invalida la cache per gli appuntamenti di questo barbiere e per questa data
+      const dateStr = new Date(appointment.date).toISOString().split('T')[0];
+      cache.invalidateByTag(`barber:${appointment.barberId}`);
+      cache.invalidateByTag(`date:${dateStr}`);
+      
+      // Invalida anche le cache per data (usato in altre route)
+      cache.delete(`appointments:date:${appointment.barberId}:${dateStr}`);
+      
+      console.log(`Invalidated cache for barber ${appointment.barberId} and date ${dateStr} after deleting appointment ${id}`);
+
+      res.status(204).end();
+    } catch (error) {
+      console.error(`Error deleting appointment ${id}:`, error);
+      res.status(500).json({ error: `Failed to delete appointment: ${error.message || 'Unknown error'}` });
+    }
   });
 
   // Barbiere capo e dipendenti routes

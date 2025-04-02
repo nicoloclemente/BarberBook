@@ -72,7 +72,13 @@ export default function AppointmentCard({
           <h4 className="mt-2 font-semibold text-primary">{formatDuration(appointment.service.duration)}</h4>
         </div>
         <div className="flex space-x-2">
-          <Button variant="ghost" size="icon" title="Modifica" className="h-8 w-8">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            title="Modifica" 
+            className="h-8 w-8"
+            onClick={() => console.log(`Mostra modale per modificare l'appuntamento ${appointment.id}`)}
+          >
             <PencilIcon className="h-4 w-4 text-neutral-dark hover:text-primary" />
           </Button>
           <Button 

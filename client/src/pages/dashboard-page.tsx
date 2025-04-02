@@ -110,8 +110,30 @@ export default function DashboardPage() {
   // Mutation per gli appuntamenti
   const updateAppointmentMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number, data: any }) => {
-      const res = await apiRequest("PUT", `/api/appointments/${id}`, data);
-      return await res.json();
+      console.log(`Updating appointment ${id} with data:`, data);
+      try {
+        const res = await apiRequest("PUT", `/api/appointments/${id}`, data);
+        const result = await res.json();
+        console.log(`Update result:`, result);
+        if (res.ok) {
+          toast({
+            title: "Appuntamento aggiornato",
+            description: "L'appuntamento è stato aggiornato con successo",
+            variant: "success"
+          });
+          return result;
+        } else {
+          throw new Error(result.error || "Errore nell'aggiornamento dell'appuntamento");
+        }
+      } catch (error) {
+        console.error(`Error updating appointment ${id}:`, error);
+        toast({
+          title: "Errore",
+          description: error instanceof Error ? error.message : "Si è verificato un errore durante l'aggiornamento dell'appuntamento",
+          variant: "destructive"
+        });
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/appointments/date', formattedDate] });
@@ -120,7 +142,29 @@ export default function DashboardPage() {
 
   const deleteAppointmentMutation = useMutation({
     mutationFn: async (id: number) => {
-      await apiRequest("DELETE", `/api/appointments/${id}`);
+      console.log(`Deleting appointment ${id}`);
+      try {
+        const res = await apiRequest("DELETE", `/api/appointments/${id}`);
+        if (res.ok) {
+          toast({
+            title: "Appuntamento eliminato",
+            description: "L'appuntamento è stato eliminato con successo",
+            variant: "success"
+          });
+          return true;
+        } else {
+          const errorData = await res.json().catch(() => ({ error: "Errore nella risposta del server" }));
+          throw new Error(errorData.error || "Errore nell'eliminazione dell'appuntamento");
+        }
+      } catch (error) {
+        console.error(`Error deleting appointment ${id}:`, error);
+        toast({
+          title: "Errore",
+          description: error instanceof Error ? error.message : "Si è verificato un errore durante l'eliminazione dell'appuntamento",
+          variant: "destructive"
+        });
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/appointments/date', formattedDate] });
