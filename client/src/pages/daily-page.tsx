@@ -2,7 +2,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { format, parseISO, addMinutes } from "date-fns";
 import { Calendar as CalendarIcon, PlusCircle } from "lucide-react";
 import { it } from "date-fns/locale";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import MainLayout from "@/components/main-layout";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -123,9 +123,48 @@ export default function DailyPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
-  // Aggiungiamo un effetto per forzare il caricamento di tutti gli appuntamenti al montaggio del componente
+  // Riferimento per tracciare se è il primo render
+  const initialRenderRef = useRef(true);
+  
+  // Funzione diretta per caricare gli appuntamenti dalla API senza passare per React Query
+  // Questo è un approccio più aggressivo per assicurarsi che i dati siano caricati
+  const [directAppointments, setDirectAppointments] = useState<Appointment[]>([]);
+  
+  const loadAppointmentsDirectly = async () => {
+    try {
+      const formattedDate = format(date, 'yyyy-MM-dd');
+      console.log("DIRECT LOADING: Fetching appointments for date:", formattedDate);
+      
+      const response = await apiRequest<AppointmentResponse[]>("GET", `/api/appointments/date/${formattedDate}`);
+      console.log("DIRECT LOADING: API Response:", response);
+      
+      if (!response || !Array.isArray(response)) {
+        console.warn("DIRECT LOADING: Risposta non valida:", response);
+        return;
+      }
+      
+      const validAppointments = response.filter(a => a && typeof a === 'object' && a.id);
+      console.log("DIRECT LOADING: Valid appointments count:", validAppointments.length);
+      
+      if (validAppointments.length > 0) {
+        const mapped = validAppointments.map(mapAppointmentResponse);
+        console.log("DIRECT LOADING: Mapped appointments:", mapped);
+        setDirectAppointments(mapped);
+      }
+    } catch (error) {
+      console.error("DIRECT LOADING: Errore nel caricamento diretto:", error);
+    }
+  };
+  
+  // Effetto per il caricamento diretto iniziale e per il listener WebSocket
   useEffect(() => {
-    console.log("DailyPage mounted - Forcing immediate refresh of appointment data");
+    console.log("DailyPage mounted - Starting direct loading");
+    
+    // Carica direttamente sulla prima renderizzazione
+    if (initialRenderRef.current) {
+      initialRenderRef.current = false;
+      loadAppointmentsDirectly();
+    }
     
     // Forza un aggiornamento immediato di tutte le query relative agli appuntamenti
     queryClient.invalidateQueries({ queryKey: ['/api/appointments'] });
@@ -137,6 +176,10 @@ export default function DailyPage() {
     // Aggiungi un listener per gli eventi di appuntamento
     const handleAppointmentUpdate = () => {
       console.log("Received appointment update event in DailyPage");
+      
+      // Carica direttamente sulla ricezione di un evento
+      loadAppointmentsDirectly();
+      
       // Invalidazione aggressiva della cache
       queryClient.invalidateQueries({ queryKey: ['/api/appointments'] });
       queryClient.invalidateQueries({ queryKey: ['/api/appointments/date'] });
@@ -153,22 +196,27 @@ export default function DailyPage() {
       removeEventListener('appointment', handleAppointmentUpdate);
     };
   }, [queryClient, date]);
+  
+  // Effetto aggiuntivo per ricaricare i dati quando cambia la data
+  useEffect(() => {
+    loadAppointmentsDirectly();
+  }, [date]);
 
-  // Query per ottenere gli appuntamenti del giorno selezionato
+  // Query per ottenere gli appuntamenti del giorno selezionato (backup)
   const formattedDate = format(date, 'yyyy-MM-dd');
   const { data: appointments, isLoading, refetch } = useQuery({
     queryKey: ['/api/appointments/date', formattedDate],
     queryFn: async () => {
       try {
-        console.log("Fetching appointments for date:", formattedDate);
+        console.log("Fetching appointments for date via React Query:", formattedDate);
         const response = await apiRequest<AppointmentResponse[]>("GET", `/api/appointments/date/${formattedDate}`);
         
         // Debug della risposta
-        console.log("API Response for daily appointments:", response);
+        console.log("React Query API Response for daily appointments:", response);
         
         // Verifica che la risposta sia un array
         if (!response || !Array.isArray(response)) {
-          console.warn("Risposta API non valida (non è un array):", response);
+          console.warn("React Query: Risposta API non valida (non è un array):", response);
           return [];
         }
         
@@ -177,13 +225,13 @@ export default function DailyPage() {
           appointment && typeof appointment === 'object' && appointment.id
         );
         
-        console.log("Valid appointments count:", validAppointments.length);
+        console.log("React Query: Valid appointments count:", validAppointments.length);
         const mappedAppointments = validAppointments.map(mapAppointmentResponse);
-        console.log("Mapped appointments:", mappedAppointments);
+        console.log("React Query: Mapped appointments:", mappedAppointments);
         
         return mappedAppointments;
       } catch (error) {
-        console.error("Errore durante il recupero degli appuntamenti:", error);
+        console.error("React Query: Errore durante il recupero degli appuntamenti:", error);
         toast({
           title: "Errore",
           description: "Impossibile caricare gli appuntamenti",
@@ -195,25 +243,47 @@ export default function DailyPage() {
     // Valore predefinito sicuro in caso di errore
     initialData: [],
     // Diminuisci il numero di tentativi per evitare troppi errori in caso di problemi
-    retry: 1,
+    retry: 2,
     // Imposta una scadenza dei dati più breve per garantire l'aggiornamento
-    staleTime: 5000, // 5 secondi
+    staleTime: 0, // Forza un refresh ogni volta
     // Aggiunge un refetch automatico quando la finestra riprende il focus
     refetchOnWindowFocus: true,
     // Tenta di aggiornare in background quando i dati sono scaduti
-    refetchOnMount: true
+    refetchOnMount: true,
+    // Forza il refetch ad ogni render del componente
+    refetchInterval: 10000 // 10 secondi
   });
 
+  // Combina gli appuntamenti da entrambe le fonti (caricamento diretto e React Query)
+  const allAppointments = useMemo(() => {
+    // Usa gli appuntamenti dal caricamento diretto se disponibili
+    if (directAppointments && directAppointments.length > 0) {
+      console.log("Utilizzando appuntamenti dal caricamento diretto:", directAppointments.length);
+      return directAppointments;
+    }
+    
+    // Altrimenti usa quelli da React Query
+    if (appointments && Array.isArray(appointments) && appointments.length > 0) {
+      console.log("Utilizzando appuntamenti da React Query:", appointments.length);
+      return appointments;
+    }
+    
+    // Se nessuna fonte ha appuntamenti, ritorna un array vuoto
+    return [];
+  }, [appointments, directAppointments]);
+  
   // Gestione sicura degli appuntamenti e ordinamento per orario
-  const sortedAppointments = appointments && Array.isArray(appointments) && appointments.length > 0 
-    ? [...appointments].sort((a, b) => {
-        // Controlla che time sia una stringa valida prima di confrontare
-        if (typeof a.time === 'string' && typeof b.time === 'string') {
-          return a.time.localeCompare(b.time);
-        }
-        return 0;
-      })
-    : [];
+  const sortedAppointments = useMemo(() => {
+    if (allAppointments.length === 0) return [];
+    
+    return [...allAppointments].sort((a, b) => {
+      // Controlla che time sia una stringa valida prima di confrontare
+      if (typeof a.time === 'string' && typeof b.time === 'string') {
+        return a.time.localeCompare(b.time);
+      }
+      return 0;
+    });
+  }, [allAppointments]);
 
   return (
     <MainLayout>
