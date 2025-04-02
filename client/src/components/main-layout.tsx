@@ -209,6 +209,10 @@ export default function MainLayout({ children }: MainLayoutProps) {
         {/* Main content - Native app style */}
         <main className="flex-1 overflow-y-auto bg-background pb-20 md:pb-8 overscroll-none">
           <div className={isMobile ? "px-3 py-2" : "max-w-5xl mx-auto px-5 py-4"}>
+            {/* Push Notification Manager spostato in cima alla pagina di contenuto */}
+            <div className="mb-2 mt-1">
+              <PushNotificationManager />
+            </div>
             <div className="scale-in">
               {children}
             </div>
@@ -221,9 +225,6 @@ export default function MainLayout({ children }: MainLayoutProps) {
       
       {/* PWA Install Banner */}
       <PwaInstallBanner />
-      
-      {/* Push Notification Manager */}
-      <PushNotificationManager />
     </div>
   );
 }

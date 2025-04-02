@@ -184,11 +184,13 @@ export function PushNotificationManager() {
 
   if (showAlert) {
     return (
-      <Alert className="mb-4">
-        <Info className="h-4 w-4" />
-        <AlertTitle>Attiva le notifiche</AlertTitle>
+      <Alert className="mb-4 border border-indigo-100 bg-gradient-to-r from-indigo-50/80 to-blue-50/80 shadow-sm">
+        <div className="flex items-center gap-2">
+          <BellRing className="h-5 w-5 text-indigo-500" />
+          <AlertTitle className="text-indigo-700 font-medium">Attiva le notifiche</AlertTitle>
+        </div>
         <AlertDescription className="flex flex-col sm:flex-row sm:items-center gap-2 mt-2">
-          <span className="flex-1">
+          <span className="flex-1 text-gray-700">
             Ricevi notifiche per appuntamenti, promemoria e messaggi anche quando non stai utilizzando l'app.
           </span>
           <div className="flex gap-2 mt-2 sm:mt-0">
@@ -196,7 +198,7 @@ export function PushNotificationManager() {
               variant="outline" 
               size="sm" 
               onClick={dismissAlert}
-              className="text-gray-500"
+              className="border-gray-200 hover:bg-gray-100/80"
             >
               Non ora
             </Button>
@@ -204,9 +206,9 @@ export function PushNotificationManager() {
               variant="default" 
               size="sm" 
               onClick={subscribeToPushNotifications}
-              className="bg-purple-600 hover:bg-purple-700"
+              className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm"
             >
-              Attiva
+              <BellRing className="h-3.5 w-3.5 mr-1.5" /> Attiva
             </Button>
           </div>
         </AlertDescription>
